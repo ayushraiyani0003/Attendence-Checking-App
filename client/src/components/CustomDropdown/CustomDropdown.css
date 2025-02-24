@@ -1,0 +1,71 @@
+/* Container styling for the dropdown */
+.dropdown-container {
+    max-width: 420px;
+    /* margin: 0 auto; */
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+  }
+  
+  /* Styling the react-select control */
+  .dropdown-container .react-select__control {
+    width: 250px;
+    border: 1px solid #d1d9e6;
+    border-radius: 8px;
+    padding: 4px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+  }
+  
+  /* Hover state */
+  .dropdown-container .react-select__control:hover {
+    border-color: #4a90e2;
+  }
+  
+  /* Focused state */
+  .dropdown-container .react-select__control--is-focused {
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 1px #4a90e2;
+  }
+  
+  /* Dropdown menu styling */
+  .dropdown-container .react-select__menu {
+    border-radius: 8px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Options styling */
+  .dropdown-container .react-select__option {
+    padding: 10px;
+    transition: background-color 0.2s ease;
+  }
+  
+  /* Hovering over an option */
+  .dropdown-container .react-select__option--is-focused {
+    background-color: #f0f4f8;
+  }
+  
+  /* Selected option styling */
+  .dropdown-container .react-select__option--is-selected {
+    background-color: #4a90e2;
+    color: #fff;
+  }
+  
+  /* Process Button styling */
+  .btn-process {
+    padding: 0.75rem;
+    background-color: #4a90e2;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+  }
+  
+  .btn-process:hover {
+    background-color: #357ABD;
+    transform: translateY(-2px);
+  }
+  

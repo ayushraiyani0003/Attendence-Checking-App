@@ -1,0 +1,72 @@
+/* Global Box-Sizing */
+*, *::before, *::after {
+    box-sizing: border-box;
+  }
+  
+  /* Overall Page Layout */
+  .result-page {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+    background: #f0f4f8;
+    font-family: 'Montserrat', sans-serif;
+  }
+  
+  /* Sidebar Styles */
+  .sidebar {
+    width: 220px;
+    background: #fff;
+    border-right: 1px solid #d1d9e6;
+    padding: 1.5rem;
+    overflow-y: auto;
+  }
+  
+  .sidebar h3 {
+    margin-top: 0;
+    color: #4a90e2;
+  }
+  
+  .sidebar ul {
+    list-style-type: none;
+    padding: 0;
+    margin-top: 1rem;
+  }
+  
+  .sidebar li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #eee;
+  }
+  
+  /* Main Content Styles */
+  .main-content {
+    flex: 1;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .dropdown-container {
+    margin-bottom: 1.5rem;
+    align-self: start;
+  }
+  
+  /* Content Display */
+  .content-display {
+    background: #fff;
+    flex: 1;
+    padding: 1.5rem;
+    border: 1px solid #d1d9e6;
+    border-radius: 8px;
+    overflow-y: auto;
+  }
+  
+  .process-log, .result {
+    white-space: pre-wrap;
+    font-family: 'Courier New', monospace;
+  }
+  
+  .process-log h4, .result h4 {
+    margin-top: 0;
+    color: #4a90e2;
+  }
+  

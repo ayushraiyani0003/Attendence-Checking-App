@@ -1,0 +1,94 @@
+/* LoginForm.css */
+.login-form-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: var(--bg-gradient); /* Using gradient from :root */
+  }
+  
+  .login-form {
+    background-color: var(--card-bg); /* White card background */
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 8px 16px var(--shadow); /* Using shadow from :root */
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  
+  .login-logo {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px;
+  }
+  
+  .logo {
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 0 10px;
+  }
+  
+  h2 {
+    margin-bottom: 20px;
+    color: var(--text-color); /* Darker text color from :root */
+    font-size: 28px;
+    font-weight: 600;
+  }
+  
+  .input-field {
+    margin-bottom: 20px;
+    text-align: left;
+  }
+  
+  .input-field label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: var(--text-light); /* Lighter text for labels */
+  }
+  
+  .input-field__input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color); /* Light gray for input border */
+    border-radius: 5px;
+    box-sizing: border-box;
+  }
+  
+  .input-field__input:focus {
+    border-color: var(--primary-color); /* Using primary color on focus */
+    outline: none;
+  }
+  
+  .login-button {
+    background-color: var(--primary-color); /* Primary blue for the button */
+    color: #fff;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 5px;
+    width: 100%;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  
+  .login-button:hover {
+    background-color: var(--accent-color); /* Darker blue for hover */
+  }
+  
+  .login-button:focus {
+    outline: none;
+  }
+  
+  @media screen and (max-width: 400px) {
+    .login-form {
+      width: 100%;
+      padding: 25px;
+    }
+  }
+  

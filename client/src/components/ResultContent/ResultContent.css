@@ -1,0 +1,99 @@
+/* Container for the result content */
+.result-content {
+  padding: 1.5rem;
+  background: #fff;
+  border: 1px solid #d1d9e6;
+  border-radius: 8px;
+  max-width: 1000px;
+  margin: 2rem auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.result-content-header {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.result-content-header h4 {
+  margin: 0;
+  color: #4a90e2;
+}
+
+.result-content-header p {
+  margin: 0.5rem 0 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* Table styling */
+.result-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.result-table th,
+.result-table td {
+  padding: 0.75rem;
+  text-align: left;
+  border: 1px solid #d1d9e6;
+  font-size: 0.95rem;
+}
+
+.result-table th {
+  background-color: #f0f4f8;
+  color: #333;
+}
+
+.result-table tbody tr:nth-child(even) {
+  background-color: #fafafa;
+}
+
+/* OT row styling */
+.ot-row {
+  background-color: #fff7e6;
+}
+
+.ot-label {
+  font-weight: bold;
+  padding-left: 1.5rem;
+}
+
+.correcting-checkBox {
+    /* Remove default appearance */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    
+    /* Size */
+    width: 18px;
+    height: 18px;
+    
+    /* Border and background */
+    border: 2px solid #4a90e2;
+    border-radius: 4px;
+    background-color: #fff;
+    
+    /* Cursor and transition */
+    cursor: pointer;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+    position: relative;
+}
+
+/* Checked state */
+.correcting-checkBox:checked {
+    background-color: #4a90e2;
+    border-color: #4a90e2;
+}
+
+/* Checkmark styling */
+.correcting-checkBox:checked::after {
+    content: "";
+    position: absolute;
+    top: 45%; /* Center vertically */
+    left: 50%; /* Center horizontally */
+    width: 6px;
+    height: 11px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: translate(-50%, -50%) rotate(45deg); /* Adjust for centering */
+}

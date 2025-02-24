@@ -1,31 +1,71 @@
-.App {
-  text-align: center;
+:root {
+  /* Primary Colors */
+  --primary-color: #4a90e2; /* Soft Blue */
+  --accent-color: #357ABD;  /* Darker Blue */
+
+  /* Background and Gradient */
+  --bg-gradient: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+  --card-bg: #ffffff; /* White for cards */
+  --body-bg: #f9fafb; /* Light gray for body background */
+
+  /* Text and Borders */
+  --text-color: #1a1a1a; /* Darker foreground color */
+  --text-light: #4a5568; /* Lighter text for secondary content */
+  --border-color: #d1d9e6; /* Light gray for borders */
+
+  /* Header and Shadows */
+  --header-bg: #3a3a3a; /* Darker header background */
+  --shadow: rgba(0, 0, 0, 0.15);
+
+  /* Alert Colors */
+  --success-color: #48bb78; /* Green for success messages */
+  --warning-color: #ed8936; /* Orange for warnings */
+  --error-color: #e53e3e; /* Red for errors */
+  --info-color: #4299e1; /* Blue for informational messages */
+
+  /* Gray Scale for Consistency */
+  --gray-50: #f9fafb; /* Lightest gray */
+  --gray-100: #f0f4f8;
+  --gray-200: #e8ebf0;
+  --gray-300: #d1d9e6;
+  --gray-400: #a0aec0;
+  --gray-500: #718096;
+  --gray-600: #4a5568;
+  --gray-700: #2d3748;
+  --gray-800: #1a1a1a; /* Darkest gray */
+}
+/* Global Styles */
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: 'Montserrat', sans-serif;
+  background: var(--bg-gradient);
+  color: var(--text-color); /* Applying dark foreground color */
+  box-sizing: border-box;
 }
 
+/* App Layout */
+.App {
+  text-align: center;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* Logo Styling */
 .App-logo {
   height: 40vmin;
   pointer-events: none;
 }
 
+/* Animations */
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
     animation: App-logo-spin infinite 20s linear;
   }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
-.App-link {
-  color: #61dafb;
 }
 
 @keyframes App-logo-spin {

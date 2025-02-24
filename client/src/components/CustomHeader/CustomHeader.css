@@ -1,0 +1,141 @@
+/* Header Styling */
+.custom-header {
+    box-sizing: border-box;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 8px 40px;
+    background-color: var(--gray-200);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: var(--shadow);
+    z-index: 10;
+    overflow: hidden; /* Prevent overflow */
+  }
+  
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    flex: 1; /* Allow space to grow */
+  }
+  
+  .hamburger-menu {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    width: 30px;
+    height: 30px;
+    margin-right: 20px;
+  }
+  
+  .hamburger-menu .line {
+    height: 4px;
+    background-color: #fff;
+    border-radius: 5px;
+  }
+  
+  .search-box {
+    padding: 8px 12px;
+    border: none;
+    background-color: #fff;
+    border-radius: 4px;
+    width: 220px;
+    max-width: 100%; /* Ensure input is responsive */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Right Section Styling */
+  .header-right {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: auto;
+  }
+  
+  .profile-info {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+  }
+  
+  .name-designation {
+    margin-right: 15px;
+    text-align: left;
+    white-space: nowrap; /* Prevent text from wrapping */
+    max-width: 200px; /* Limit the width to prevent overflow */
+  }
+  
+  .name {
+    font-weight: bold;
+    color: #fff;
+    margin-bottom: 2px;
+  }
+  
+  .designation {
+    color: #ddd;
+    font-size: 14px;
+    margin-top: 0;
+  }
+  
+  .profile-img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+  
+  .date-dropdown {
+    padding: 8px 20px;
+    background-color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    width: 180px;
+  }
+  
+  .date-dropdown option {
+    padding: 10px;
+  }
+  
+  /* Prevent Text Wrapping for the Profile Section */
+  .profile-info .name-designation p {
+    white-space: nowrap; /* Prevent text wrapping in profile info */
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .custom-header {
+      padding: 10px;
+    }
+  
+    .header-left {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+  
+    .header-right {
+      flex-direction: column;
+      align-items: flex-start;
+      margin-top: 10px;
+    }
+  
+    .profile-info {
+      margin-bottom: 10px;
+      flex-direction: column; /* Stack profile info vertically */
+      align-items: flex-start;
+    }
+  
+    .search-box {
+      width: 100%;
+      margin-top: 10px;
+    }
+  
+    .date-dropdown {
+      width: 100%;
+      margin-top: 10px;
+    }
+  }
