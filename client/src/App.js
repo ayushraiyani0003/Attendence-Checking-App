@@ -2,6 +2,7 @@ import React from "react";
 import CustomHeader from "./components/CustomHeader/CustomHeader";
 import UploadPage from "./pages/UploadPage/UploadPage";
 import LogInPage from "./pages/LogInPage/LogInPage";
+import UserListPage from "./pages/UserListPage/UserListPage";
 import "./App.css"
 
 const App = () => {
@@ -9,7 +10,8 @@ const App = () => {
     <div>
       {/* <CustomHeader /> */}
       {/* <UploadPage/> */}
-      <LogInPage/> 
+      {/* <LogInPage/>  */}
+      <UserListPage/>
     </div>
   );
 };
