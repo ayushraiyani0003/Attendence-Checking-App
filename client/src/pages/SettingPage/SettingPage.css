@@ -1,0 +1,71 @@
+
+.container {
+    padding: 2rem;
+    background-color: var(--secondary-color);
+}
+
+/* Paper (form container) styling */
+.MuiPaper-root {
+    padding: 2rem;
+    background-color: var(--background-color);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Button styling */
+.MuiButton-containedPrimary {
+    background-color: var(--primary-color);
+    color: #fff;
+    border-radius: 8px;
+    text-transform: none;
+    font-weight: 500;
+    padding: 8px 16px;
+    transition: all 0.2s ease-in-out;
+}
+
+.MuiButton-containedPrimary:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Typography for section titles */
+.MuiTypography-h6 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--chip-text-color);
+}
+
+/* Text Field styling */
+.MuiTextField-root {
+    margin-bottom: 1rem;
+    width: 100%;
+}
+
+/* Chips (list items) styling */
+.MuiChip-root {
+    margin: 5px;
+    font-size: 0.875rem;
+    background-color: var(--chip-background);
+    color: var(--chip-text-color);
+    border-radius: 16px;
+}
+
+/* Delete Icon styling inside chips */
+.MuiIconButton-root {
+    padding: 4px;
+    color: #e53e3e;
+}
+
+.MuiIconButton-root:hover {
+    color: #e53e3e;
+}
+
+/* Stack container for chips */
+.MuiStack-root {
+    margin-bottom: 1.5rem;
+}
+
+/* Add Button icon styling */
+.MuiIconButton-root.Mui-disabled {
+    opacity: 0.5;
+}

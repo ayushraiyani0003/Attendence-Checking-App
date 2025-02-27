@@ -1,0 +1,102 @@
+.employee-page {
+  padding: 24px;
+  margin: 0 auto;
+  max-width: 1200px;
+}
+
+.employee-card {
+  border-radius: 2px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 24px;
+}
+
+.page-header {
+  margin-bottom: 32px;
+}
+
+/* Table spacing */
+.ant-table {
+  margin-top: 24px;
+}
+
+.ant-table-thead > tr > th {
+  padding: 16px;
+}
+
+.ant-table-tbody > tr > td {
+  padding: 12px 16px;
+}
+
+/* Button spacing */
+.ant-space {
+  gap: 12px !important;
+}
+
+/* Responsive styles */
+@media screen and (max-width: 768px) {
+  .employee-page {
+    padding: 16px;
+  }
+
+  .employee-card {
+    padding: 16px;
+  }
+
+  .ant-space-large {
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 16px !important;
+  }
+
+  .ant-input-search {
+    width: 100% !important;
+    margin-bottom: 16px;
+  }
+
+  .ant-table {
+    font-size: 14px;
+    margin-top: 16px;
+  }
+
+  .ant-table-thead > tr > th,
+  .ant-table-tbody > tr > td {
+    padding: 12px;
+  }
+}
+
+@media screen and (max-width: 576px) {
+  .employee-page {
+    padding: 12px;
+  }
+
+  .employee-card {
+    padding: 12px;
+  }
+
+  .ant-table {
+    font-size: 12px;
+  }
+
+  .ant-table-thead > tr > th,
+  .ant-table-tbody > tr > td {
+    padding: 8px;
+  }
+}
+
+/* Delete button color */
+button[type="danger"] {
+  background-color: #ff4d4f;
+  border-color: #ff4d4f;
+  color: #fff;
+  margin-left: 8px;
+}
+
+button[type="danger"]:hover {
+  background-color: #ff7875;
+  border-color: #ff7875;
+}
+
+button[type="danger"]:active {
+  background-color: #d9363e;
+  border-color: #d9363e;
+}

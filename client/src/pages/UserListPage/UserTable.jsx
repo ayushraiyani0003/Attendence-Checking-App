@@ -1,49 +1,117 @@
-import React from 'react';
-import { Button } from '@mui/material';
-import { Edit, Delete } from '@mui/icons-material';
-import { AgGridReact } from 'ag-grid-react';
-import 'ag-grid-community/styles/ag-grid.css';
-import 'ag-grid-community/styles/ag-theme-alpine.css';
+import React, { useState } from 'react'
+import { 
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, 
+  Paper, IconButton, TablePagination, TextField, Box, Tooltip, Chip
+} from '@mui/material'
+import EditIcon from '@mui/icons-material/Edit'
+import DeleteIcon from '@mui/icons-material/Delete'
+import { format } from 'date-fns'
 
-const UserTable = ({ users, onEdit, onDelete }) => {
-  // Debug: Log the users data to check if it's correctly passed
-  console.log("Users Data:", users);
+function UserTable({ onEdit, onDelete, users }) {
+  const [page, setPage] = useState(0)
+  const [rowsPerPage, setRowsPerPage] = useState(5)
+  const [searchTerm, setSearchTerm] = useState('')
 
-  // Define column configurations for AG-Grid
-  const columnDefs = [
-    { headerName: "Username", field: "username", sortable: true, filter: true },
-    { headerName: "Name", field: "name", sortable: true, filter: true },
-    { headerName: "Phone", field: "phone", sortable: true, filter: true },
-    { headerName: "Department", field: "department", sortable: true, filter: true },
-    { headerName: "Designation", field: "designation", sortable: true, filter: true },
-    { headerName: "Role", field: "role", sortable: true, filter: true },
-    { headerName: "Assigned Dept.", field: "assignedDepartment", sortable: true, filter: true },
-    {
-      headerName: "Actions", cellRendererFramework: (params) => (
-        <div className="action-buttons">
-          <Button onClick={() => onEdit(params.data)} startIcon={<Edit />} size="small">Edit</Button>
-          <Button onClick={() => onDelete(params.data.id)} startIcon={<Delete />} size="small" color="error">Delete</Button>
-        </div>
-      )
-    }
-  ];
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage)
+  }
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10))
+    setPage(0)
+  }
+
+  const filteredUsers = users.filter(user => 
+    Object.values(user).some(value => 
+      value.toString().toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  )
+
+  const paginatedUsers = filteredUsers.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  )
 
   return (
-    <div className="ag-theme-alpine" style={{ height: '400px', width: '100%' }}>
-      {/* Check if users data is not empty */}
-      {users.length > 0 ? (
-        <AgGridReact
-          columnDefs={columnDefs}
-          rowData={users} // Ensure this is correctly passed
-          pagination={true}
-          paginationPageSize={5}
-          domLayout="autoHeight"
+    <>
+      <Box sx={{ mb: 2 }}>
+        <TextField
+          fullWidth
+          variant="outlined"
+          placeholder="Search users..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          size="small"
         />
-      ) : (
-        <div>No users available</div> // Fallback when no users
-      )}
-    </div>
-  );
-};
+      </Box>
+      
+      <TableContainer component={Paper} sx={{ boxShadow: 'none' }}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Username</TableCell>
+              <TableCell>Name</TableCell>
+              <TableCell>Phone No</TableCell>
+              <TableCell>Department</TableCell>
+              <TableCell>Designation</TableCell>
+              <TableCell>User Role</TableCell>
+              <TableCell>Assigned Departments</TableCell>
+              <TableCell>Last Login</TableCell>
+              <TableCell align="right">Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {paginatedUsers.map((user) => (
+              <TableRow key={user.id}>
+                <TableCell>{user.username}</TableCell>
+                <TableCell>{user.name}</TableCell>
+                <TableCell>{user.phoneNo}</TableCell>
+                <TableCell>{user.department}</TableCell>
+                <TableCell>{user.designation}</TableCell>
+                <TableCell>{user.userRole}</TableCell>
+                <TableCell>
+                  <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                    {user.assignedDepartments.map((dept, index) => (
+                      <Chip 
+                        key={index}
+                        label={dept}
+                        size="small"
+                        sx={{ fontSize: '0.75rem' }}
+                      />
+                    ))}
+                  </Box>
+                </TableCell>
+                <TableCell>
+                  <Tooltip title={user.lastLogin ? format(new Date(user.lastLogin), 'PPpp') : 'Never'}>
+                    <span>
+                      {user.lastLogin ? format(new Date(user.lastLogin), 'dd/MM/yyyy HH:mm') : 'Never'}
+                    </span>
+                  </Tooltip>
+                </TableCell>
+                <TableCell align="right">
+                  <IconButton onClick={() => onEdit(user)}>
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton onClick={() => onDelete(user.id)}>
+                    <DeleteIcon />
+                  </IconButton>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        <TablePagination
+          rowsPerPageOptions={[5, 10, 25]}
+          component="div"
+          count={filteredUsers.length}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+        />
+      </TableContainer>
+    </>
+  )
+}
 
-export default UserTable;
+export default UserTable
