@@ -10,12 +10,12 @@ import "./App.css"
 const App = () => {
   return (
     <div>
-      {/* <CustomHeader /> */}
+      <CustomHeader />
       {/* <UploadPage/> */}
       {/* <LogInPage/>  */}
       {/* <UserListPage/> */}
       {/* <SettingPage/> */}
-      <EmployeePage/>
+      {/* <EmployeePage/> */}
     </div>
   );
 };

@@ -1,7 +1,7 @@
 :root {
   /* Primary Colors */
-  --primary-color: #4a90e2; /* Soft Blue */
-  --accent-color: #357ABD;  /* Darker Blue */
+  --primary-color: #6d6d6d; /* Dark Gray */
+  --accent-color: #969696; /* Light Gray */
 
   /* Background and Gradient */
   --bg-gradient: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
