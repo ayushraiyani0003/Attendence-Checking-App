@@ -19,6 +19,10 @@
     height: 100%;
     overflow: hidden;
   }
+
+  .scrollable-columns, .scrollable-data-cells {
+    overflow-x: scroll;
+  }
   
   /* Main scroll container - Modified for synced scrolling */
   .scroll-container {
@@ -37,9 +41,8 @@
     width: 100%;
     position: sticky;
     top: 0;
-    z-index: 3;
+    z-index: 10;
     border-radius: var(--border-radius);
-    margin-bottom: 16px;
   }
   
   /* Horizontal scroll wrapper for header - Modified */
@@ -55,6 +58,22 @@
     display: none; /* Chrome, Safari and Opera */
   }
   
+  /* Scrollbars */
+.scrollable-columns::-webkit-scrollbar,
+.scrollable-data-cells::-webkit-scrollbar {
+  height: 8px;
+}
+
+.scrollable-columns::-webkit-scrollbar-thumb,
+.scrollable-data-cells::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.scrollable-columns::-webkit-scrollbar-track,
+.scrollable-data-cells::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
   /* Horizontal scroll wrapper for data - Modified */
   .horizontal-scroll-wrapper {
     display: flex;
@@ -70,17 +89,18 @@
   }
   
   .horizontal-scroll-wrapper::-webkit-scrollbar-track {
-    background: var(--gray-200);
+    background: red;
     border-radius: 10px;
   }
   
   .horizontal-scroll-wrapper::-webkit-scrollbar-thumb {
-    background-color: var(--gray-400);
+    background-color: red;
     border-radius: 10px;
   }
   
   /* Header Row with Sticky Header */
   .header-row {
+    flex-shrink: 0;
     display: flex;
     padding: 0px 2px;
     background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
@@ -118,7 +138,8 @@
   /* Scrollable columns container */
   .scrollable-columns {
     display: flex;
-    overflow-x: visible;
+    overflow-x: auto;
+    flex: 1;
   }
   
   .header-cell {
@@ -205,9 +226,8 @@
   /* Make header follow data scroll position */
 /* Make scrollbars more visible in all browsers */
 .data-container::-webkit-scrollbar {
-    height: 8px !important; /* Standardized scrollbar height */
-    width: 8px !important; /* Added vertical scrollbar width */
-    display: block !important;
+    height: 10px !important; /* Increase height to make it more visible */
+    display: block !important; /* Force display */
   }
   
   .data-container::-webkit-scrollbar-track {
@@ -219,6 +239,7 @@
 .data-container::-webkit-scrollbar-thumb {
     background-color: var(--gray-400);
     border-radius: 10px;
+    min-width: 10px; /* Ensure thumb has minimum width */
   }
 
 
@@ -259,7 +280,8 @@
   /* Scrollable data cells */
   .scrollable-data-cells {
     display: flex;
-    overflow-x: visible;
+    overflow-x: auto;
+    flex: 1;
   }
   
   .data-cell {
@@ -274,6 +296,13 @@
     align-items: center;
     justify-content: center;
     color: var(--gray-800);
+  }
+
+  .fixed-data-cells .data-cell {
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    background-color: white;
   }
   
   /* Fixed data cell widths */

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './AttendancePage.css';
 import AttendanceHeader from './AttendanceHeader';
 import DataRow from './DataRow';
@@ -10,30 +10,33 @@ function AttendancePage() {
   const [filterText, setFilterText] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
   const [view, setView] = useState('all'); // 'all', 'day', 'night'
+  const [hasChanges, setHasChanges] = useState(false); // Track if there are unsaved changes
 
-  const isAdmin = true; 
+  const isAdmin = true;
+  const bodyRef = useRef(null); // Ref for data rows container
+  const headerRef = useRef(null); // Ref for the header container
 
   // Mock data for demonstration
   const mockData = [
     {
       id: '1', // Added unique id
-      punchCode: '001',
+      punchCode: '001', 
       name: 'John Smith',
       designation: 'Senior Developer',
       department: 'Engineering',
       attendance: [
-        { date: '03/10/2024', day: 'Thursday', netHR: '8', otHR: '1', dnShift: 'Day' }, 
+        { date: '03/10/2024', day: 'Thursday', netHR: '8', otHR: '1', dnShift: 'Day' },
         { date: '04/10/2024', day: 'Friday', netHR: '7', otHR: '0', dnShift: 'Day' },
       ]
     },
     {
       id: '2', // Added unique id
       punchCode: '002',
-      name: 'Sarah Johnson',
+      name: 'Sarah Johnson', 
       designation: 'Project Manager',
       department: 'Product',
       attendance: [
-        { date: '03/10/2024', day: 'Thursday', netHR: '8', otHR: '2', dnShift: 'Day' }, 
+        { date: '03/10/2024', day: 'Thursday', netHR: '8', otHR: '2', dnShift: 'Day' },
         { date: '04/10/2024', day: 'Friday', netHR: '6', otHR: '0', dnShift: 'Day' },
       ]
     },
@@ -41,10 +44,10 @@ function AttendancePage() {
       id: '3', // Added unique id
       punchCode: '003',
       name: 'Michael Chen',
-      designation: 'QA Engineer',
+      designation: 'QA Engineer', 
       department: 'Engineering',
       attendance: [
-        { date: '03/10/2024', day: 'Thursday', netHR: '0', otHR: '0', dnShift: 'Off' }, 
+        { date: '03/10/2024', day: 'Thursday', netHR: '0', otHR: '0', dnShift: 'Off' },
         { date: '04/10/2024', day: 'Friday', netHR: '8', otHR: '4', dnShift: 'Night' },
       ]
     },
@@ -55,7 +58,7 @@ function AttendancePage() {
       designation: 'UX Designer',
       department: 'Design',
       attendance: [
-        { date: '03/10/2024', day: 'Thursday', netHR: '7', otHR: '1', dnShift: 'Day' }, 
+        { date: '03/10/2024', day: 'Thursday', netHR: '7', otHR: '1', dnShift: 'Day' },
         { date: '04/10/2024', day: 'Friday', netHR: '8', otHR: '2', dnShift: 'Night' },
       ]
     }
@@ -77,6 +80,7 @@ function AttendancePage() {
       })) || []
     };
     setData(prevData => [...prevData, newEmployee]);
+    setHasChanges(true);
   };
 
   // Function to add a new day column for all employees
@@ -103,6 +107,7 @@ function AttendancePage() {
     }));
     
     setData(updatedData);
+    setHasChanges(true);
   };
 
   // Handle keyboard navigation
@@ -239,10 +244,25 @@ function AttendancePage() {
     setSortConfig({ key, direction });
   };
 
+  // Handle save changes
+  const handleSaveChanges = () => {
+    // Here you would typically make an API call to save the changes
+    console.log('Saving changes:', data);
+    setHasChanges(false);
+  };
+
+ // Sync the scroll positions between the header and the body
+ const syncScroll = () => {
+  if (bodyRef.current && headerRef.current) {
+    headerRef.current.scrollLeft = bodyRef.current.scrollLeft;
+  }
+};
+
   // Load mock data on initial render
   useEffect(() => {
     setData(mockData);
   }, []);
+
 
   const filteredData = getFilteredData();
 
@@ -323,20 +343,51 @@ function AttendancePage() {
         <div className="data-container">
           {filteredData.map((row, rowIndex) => (
             <DataRow
-              key={row.id} // Changed to use unique id
+              key={row.id}
               row={row}
-              rowIndex={data.findIndex(item => item.id === row.id)} // Use original index
+              rowIndex={data.findIndex(item => item.id === row.id)}
               hoveredRow={hoveredRow}
               setHoveredRow={setHoveredRow}
               editableCell={editableCell}
               setEditableCell={setEditableCell}
               data={data}
-              setData={setData}
+              setData={(newData) => {
+                setData(newData);
+                setHasChanges(true);
+              }}
               isAdmin={isAdmin}
               onKeyDown={onKeyDown}
             />
           ))}
         </div>
+
+        {/* Save Changes Button */}
+        {hasChanges && (
+          <div style={{
+            position: 'fixed',
+            bottom: '20px',
+            right: '20px',
+            zIndex: 1000,
+            backgroundColor: 'var(--primary-color)',
+            padding: '12px 24px',
+            borderRadius: '8px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+            cursor: 'pointer'
+          }}
+          onClick={handleSaveChanges}
+          >
+            <button style={{
+              color: 'white',
+              border: 'none',
+              background: 'none',
+              cursor: 'pointer',
+              fontSize: '16px',
+              fontWeight: 'bold'
+            }}>
+              Save Changes
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

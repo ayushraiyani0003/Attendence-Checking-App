@@ -1,5 +1,4 @@
 import React, { useEffect, useRef } from 'react';
-import './AttendancePage.css';
 
 function AttendanceHeader({ columns, onSort, sortConfig }) {
   const renderSortIcon = (key) => {
@@ -9,16 +8,6 @@ function AttendanceHeader({ columns, onSort, sortConfig }) {
     return null;
   };
 
-  document.addEventListener('DOMContentLoaded', function() {
-    const dataContainer = document.querySelector('.data-container');
-    const headerScrollable = document.querySelector('.header-scroll-wrapper');
-    
-    if (dataContainer && headerScrollable) {
-      dataContainer.addEventListener('scroll', function() {
-        headerScrollable.scrollLeft = this.scrollLeft;
-      });
-    }
-  });
 
 
   return (
