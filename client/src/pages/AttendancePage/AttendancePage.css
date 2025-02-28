@@ -24,14 +24,16 @@
   .scroll-container {
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow: hidden; /* Changed from auto to hidden */
     flex: 1;
     position: relative;
+    isolation: isolate;
+    
   }
   
   /* Header wrapper - New */
   .header-wrapper {
-    display: flex;
+    overflow-x: hidden;
     width: 100%;
     position: sticky;
     top: 0;
@@ -40,63 +42,56 @@
     margin-bottom: 16px;
   }
   
-  /* Fixed header section - New */
-  .fixed-header-section {
-    min-width: 600px;
-    flex-shrink: 0;
-  }
-  
-  /* Scrollable header section - New */
-  .scrollable-header-section {
-    overflow-x: auto;
-    flex-grow: 1;
-  }
-  
   /* Horizontal scroll wrapper for header - Modified */
   .header-scroll-wrapper {
+    pointer-events: none;
     display: flex;
     overflow-x: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    scrollbar-width: none; /* Hide scrollbar but keep functionality */
+    -ms-overflow-style: none; /* IE and Edge */
   }
   
   .header-scroll-wrapper::-webkit-scrollbar {
-    display: none;
+    display: none; /* Chrome, Safari and Opera */
   }
   
   /* Horizontal scroll wrapper for data - Modified */
   .horizontal-scroll-wrapper {
     display: flex;
-    overflow-x: auto;
+    overflow-x: visible;
     flex: 1;
-    scrollbar-width: thin;
+    scrollbar-width: none;
     scrollbar-color: var(--gray-400) var(--gray-200);
+    min-width: max-content; 
   }
   
   .horizontal-scroll-wrapper::-webkit-scrollbar {
-    height: 4px;
+    height: 8px;
   }
   
   .horizontal-scroll-wrapper::-webkit-scrollbar-track {
     background: var(--gray-200);
-    border-radius: 4px;
+    border-radius: 10px;
   }
   
   .horizontal-scroll-wrapper::-webkit-scrollbar-thumb {
     background-color: var(--gray-400);
-    border-radius: 4px;
+    border-radius: 10px;
   }
   
   /* Header Row with Sticky Header */
   .header-row {
     display: flex;
+    padding: 0px 2px;
     background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
     color: white;
     font-weight: 600;
     min-height: 50px;
     box-sizing: border-box;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    /* width: max-content; */
+    width: max-content;
+    border-radius: 10px;
+    /* Removed position: sticky as it's now in the parent */
   }
   
   /* Fixed columns container - Updated z-index */
@@ -106,11 +101,20 @@
     flex-shrink: 0;
     position: sticky;
     left: 0;
-    z-index: 4;
+    z-index: 4; /* Increased z-index */
     background: inherit;
     border-radius: var(--border-radius) 0 0 var(--border-radius);
   }
-  
+
+  .fixed-columns, .fixed-data-cells {
+    /* Enhance existing sticky positioning */
+    background-clip: padding-box;
+    z-index: 5; /* Ensure they stay on top */
+    position: sticky;
+    left: 0;
+    z-index: 5;
+  }
+
   /* Scrollable columns container */
   .scrollable-columns {
     display: flex;
@@ -168,10 +172,10 @@
   
   .date-header {
     display: flex;
-    gap: 8px;
+    gap: 22px;
     width: 100%;
     margin-top: 8px;
-    padding: 8px 0;
+    padding: px 0;
     border-top: 1px solid rgba(255, 255, 255, 0.3);
     justify-content: space-between;
   }
@@ -191,13 +195,37 @@
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    overflow-x: hidden;
+    overflow-x: scroll !important;
     padding: 4px 0;
     flex: 1;
+    scroll-behavior: smooth;
+    padding-bottom: 16px; /* Add space for the scrollbar */
+  }
+
+  /* Make header follow data scroll position */
+/* Make scrollbars more visible in all browsers */
+.data-container::-webkit-scrollbar {
+    height: 8px !important; /* Standardized scrollbar height */
+    width: 8px !important; /* Added vertical scrollbar width */
+    display: block !important;
   }
   
+  .data-container::-webkit-scrollbar-track {
+    background: var(--gray-200);
+    border-radius: 10px;
+    display: block !important;
+  }
+
+.data-container::-webkit-scrollbar-thumb {
+    background-color: var(--gray-400);
+    border-radius: 10px;
+  }
+
+
   /* Data Row Styling */
   .data-row {
+    min-width: max-content; /* Ensures row expands to fit all content */
+  width: max-content; /* Ensures the row takes up full width of content */
     display: flex;
     padding: 10px 0;
     transition: var(--transition);
@@ -223,7 +251,7 @@
     flex-shrink: 0;
     position: sticky;
     left: 0;
-    z-index: 2;
+    z-index: 2; /* Increased z-index but lower than header */
     background: white;
     border-radius: var(--border-radius) 0 0 var(--border-radius);
   }
