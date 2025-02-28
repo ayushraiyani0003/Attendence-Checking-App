@@ -1,0 +1,415 @@
+/* Container Styling */
+.attendance-page {
+    margin: 20px;
+    background-color: var(--gray-100);
+    margin-top: 80px;
+    border-radius: var(--border-radius);
+    height: calc(100vh - 100px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: var(--box-shadow);
+    border: 1px solid var(--gray-300);
+  }
+  
+  .attendance-container {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+  }
+  
+  /* Main scroll container - Modified for synced scrolling */
+  .scroll-container {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex: 1;
+    position: relative;
+  }
+  
+  /* Header wrapper - New */
+  .header-wrapper {
+    display: flex;
+    width: 100%;
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    border-radius: var(--border-radius);
+    margin-bottom: 16px;
+  }
+  
+  /* Fixed header section - New */
+  .fixed-header-section {
+    min-width: 600px;
+    flex-shrink: 0;
+  }
+  
+  /* Scrollable header section - New */
+  .scrollable-header-section {
+    overflow-x: auto;
+    flex-grow: 1;
+  }
+  
+  /* Horizontal scroll wrapper for header - Modified */
+  .header-scroll-wrapper {
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .header-scroll-wrapper::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Horizontal scroll wrapper for data - Modified */
+  .horizontal-scroll-wrapper {
+    display: flex;
+    overflow-x: auto;
+    flex: 1;
+    scrollbar-width: thin;
+    scrollbar-color: var(--gray-400) var(--gray-200);
+  }
+  
+  .horizontal-scroll-wrapper::-webkit-scrollbar {
+    height: 4px;
+  }
+  
+  .horizontal-scroll-wrapper::-webkit-scrollbar-track {
+    background: var(--gray-200);
+    border-radius: 4px;
+  }
+  
+  .horizontal-scroll-wrapper::-webkit-scrollbar-thumb {
+    background-color: var(--gray-400);
+    border-radius: 4px;
+  }
+  
+  /* Header Row with Sticky Header */
+  .header-row {
+    display: flex;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    color: white;
+    font-weight: 600;
+    min-height: 50px;
+    box-sizing: border-box;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    /* width: max-content; */
+  }
+  
+  /* Fixed columns container - Updated z-index */
+  .fixed-columns {
+    display: flex;
+    min-width: 600px;
+    flex-shrink: 0;
+    position: sticky;
+    left: 0;
+    z-index: 4;
+    background: inherit;
+    border-radius: var(--border-radius) 0 0 var(--border-radius);
+  }
+  
+  /* Scrollable columns container */
+  .scrollable-columns {
+    display: flex;
+    overflow-x: visible;
+  }
+  
+  .header-cell {
+    padding: 10px 15px;
+    text-align: center;
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+    font-size: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+    box-sizing: border-box;
+    letter-spacing: 0.5px;
+  }
+  
+  /* Fixed column widths */
+  .header-cell.punch-code {
+    min-width: 140px;
+    width: 175px;
+  }
+  
+  .header-cell.name {
+    min-width: 180px;
+    width: 210px;
+  }
+  
+  .header-cell.designation {
+    min-width: 140px;
+    width: 170px;
+  }
+  
+  .header-cell.department {
+    min-width: 140px;
+    width: 170px;
+  }
+  
+  .header-cell.attendance-header-cell {
+    min-width: 230px;
+    width: 230px;
+    font-weight: 700;
+  }
+  
+  .header-cell:last-child {
+    border-right: none;
+  }
+  
+  .header-cell:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .date-header {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+    margin-top: 8px;
+    padding: 8px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    justify-content: space-between;
+  }
+  
+  .sub-header-cell {
+    flex: 1;
+    padding: 6px;
+    text-align: center;
+    font-size: 12px;
+    white-space: nowrap;
+    font-weight: 500;
+    text-transform: uppercase;
+  }
+  
+  /* Data Rows - Modified for synced scrolling */
+  .data-container {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 4px 0;
+    flex: 1;
+  }
+  
+  /* Data Row Styling */
+  .data-row {
+    display: flex;
+    padding: 10px 0;
+    transition: var(--transition);
+    border-radius: var(--border-radius);
+    background-color: white;
+    min-height: 50px;
+    box-sizing: border-box;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--gray-200);
+    width: max-content;
+  }
+  
+  .data-row.hovered {
+    background-color: #f0f7ff;
+    box-shadow: 0 4px 8px rgba(58, 134, 255, 0.15);
+    transform: translateY(-2px);
+  }
+  
+  /* Fixed data cells - Updated z-index */
+  .fixed-data-cells {
+    display: flex;
+    min-width: 600px;
+    flex-shrink: 0;
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: white;
+    border-radius: var(--border-radius) 0 0 var(--border-radius);
+  }
+  
+  /* Scrollable data cells */
+  .scrollable-data-cells {
+    display: flex;
+    overflow-x: visible;
+  }
+  
+  .data-cell {
+    padding: 8px 15px;
+    text-align: center;
+    border-right: 1px solid var(--gray-300);
+    font-size: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gray-800);
+  }
+  
+  /* Fixed data cell widths */
+  .data-cell.punch-code {
+    min-width: 140px;
+    width: 140px;
+  }
+  
+  .data-cell.name {
+    min-width: 180px;
+    width: 180px;
+  }
+  
+  .data-cell.designation {
+    min-width: 140px;
+    width: 140px;
+  }
+  
+  .data-cell.department {
+    min-width: 140px;
+    width: 140px;
+  }
+  
+  .data-cell:last-child {
+    border-right: none;
+  }
+  
+  /* Date-cell Styling */
+  .date-cell {
+    display: flex;
+    gap: 8px;
+    min-width: 220px;
+    width: 220px;
+    padding: 6px;
+    border-right: 1px solid var(--gray-300);
+    background-color: rgba(248, 249, 250, 0.5);
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+    border-radius: 4px;
+  }
+  
+  .date-cell:last-child {
+    border-right: none;
+  }
+  
+  /* Sub-date-cell Styling (For Inputs) */
+  .sub-date-cell {
+    flex: 1;
+    padding: 6px;
+    margin: 0;
+    text-align: center;
+    font-size: 14px;
+    background-color: white;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    height: 12px;
+    border: 1px solid transparent;
+    transition: var(--transition);
+  }
+  
+  .sub-date-cell input {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background-color: transparent;
+    font-size: 14px;
+    text-align: center;
+    padding: 0;
+    margin: 0;
+    outline: none;
+    box-sizing: border-box;
+    color: var(--primary-color);
+    font-weight: 500;
+  }
+  
+  /* Hover effect */
+  .date-cell:hover {
+    background-color: rgba(233, 236, 239, 0.8);
+  }
+  
+  .sub-date-cell:hover {
+    background-color: #f0f7ff;
+    border-color: var(--primary-color);
+  }
+  
+  /* Editable cell highlight */
+  .sub-date-cell.editable,
+  .sub-date-cell:has(input:focus) {
+    background-color: #f0f7ff;
+    border: 1px solid var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(58, 134, 255, 0.2);
+  }
+  
+  /* Status indicators for attendance */
+  .dnShift-Day {
+    background-color: rgba(6, 214, 160, 0.1);
+    color: var(--success-color);
+    font-weight: 500;
+  }
+  
+  .dnShift-Night {
+    background-color: rgba(131, 56, 236, 0.1);
+    color: var(--secondary-color);
+    font-weight: 500;
+  }
+  
+  /* Control buttons */
+  .attendance-controls {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    gap: 12px;
+  }
+  
+  .control-button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius);
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .control-button:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-1px);
+  }
+  
+  .control-button.secondary {
+    background-color: white;
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
+  }
+  
+  .control-button.secondary:hover {
+    background-color: #f0f7ff;
+  }
+  
+  /* Tooltip styling */
+  .tooltip {
+    position: relative;
+  }
+  
+  .tooltip:hover:after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--gray-800);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 10;
+  }
