@@ -47,7 +47,7 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    overflow: scroll;
+    overflow: auto;
     top: 0;
     z-index: 10;
     border-radius: var(--border-radius);
@@ -107,6 +107,25 @@
     z-index: 5;
   }
 
+  .attendance-header-cell-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+  }
+  .attendance-header-date-title-container{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .attendance-header-date-title-container svg {
+    width: 20px;
+    height: 20px;
+    color: var(--card-bg);
+  }
+
   /* Scrollable columns container */
  #header-scrollable {
   display: flex;
@@ -124,7 +143,7 @@
   border-radius: 10px;
 }
 .header-wrapper::-webkit-scrollbar {
-  display: block;
+  display: none;
   width: 10px;  /* Width of the scrollbar */
 }
 
@@ -134,7 +153,7 @@
   display: block;
   visibility: visible;
 }
-  
+
   .header-cell {
     padding: 10px 15px;
     text-align: center;
@@ -171,8 +190,8 @@
   }
   
   .header-cell.attendance-header-cell {
-    min-width: 230px;
-    width: 230px;
+    min-width: 232px;
+    width: 232px;
     font-weight: 700;
   }
   
@@ -189,7 +208,7 @@
     gap: 22px;
     width: 100%;
     margin-top: 8px;
-    padding: px 0;
+    padding: 6px 0 0 0;
     border-top: 1px solid rgba(255, 255, 255, 0.3);
     justify-content: space-between;
   }
@@ -226,7 +245,7 @@
     min-width: max-content; /* Ensures row expands to fit all content */
   width: max-content; /* Ensures the row takes up full width of content */
     display: flex;
-    padding: 10px 0;
+    /* padding: 10px 0; */
     flex: 0 0 auto;
     transition: var(--transition);
     border-radius: var(--border-radius);
@@ -249,7 +268,7 @@
     display: flex;
     min-width: 600px;
     flex-shrink: 0;
-    position: sticky;
+    position: s;
     left: 0;
     z-index: 2; /* Increased z-index but lower than header */
     background: white;
@@ -272,6 +291,13 @@
     align-items: center;
     justify-content: center;
     color: var(--gray-800);
+  }
+  .data-cell:hover {
+    background-color: var(--gray-100);
+  }
+
+  .data-row.hovered .data-cell {
+    background-color: #f0f7ff;
   }
 
   .fixed-data-cells .data-cell {
@@ -444,4 +470,239 @@
     font-size: 12px;
     white-space: nowrap;
     z-index: 10;
+  }
+  /* Enhanced Popup Styles */
+.attendance-lock-popup {
+    /* Position is handled dynamically via props */
+    width: 450px;
+    background-color: var(--card-bg, white);
+    border-radius: var(--border-radius, 8px);
+    box-shadow: var(--box-shadow, 0 6px 16px rgba(0, 0, 0, 0.12), 0 3px 6px rgba(0, 0, 0, 0.08));
+    z-index: 1000;
+    overflow: visible; /* For dropdown visibility */
+    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+    animation: popup-fade-in 0.2s ease-out;
+  }
+  
+  @keyframes popup-fade-in {
+    from { opacity: 0; transform: translateY(-10px) translateX(-50%); }
+    to { opacity: 1; transform: translateY(0) translateX(-50%); }
+  }
+  
+  .popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    background: linear-gradient(to right, #f8f9fa, #f1f3f5);
+    border-bottom: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+    border-radius: var(--border-radius, 8px) var(--border-radius, 8px) 0 0;
+  }
+  
+  .popup-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #2c3e50;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: -0.2px;
+  }
+  
+  .close-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #7f8c8d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    margin-left: 8px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+  }
+  
+  .close-button:hover {
+    color: #e74c3c;
+    background-color: rgba(231, 76, 60, 0.1);
+  }
+  
+  .popup-content {
+    padding: 20px;
+  }
+  
+  .approval-info h4 {
+    margin-top: 0;
+    margin-bottom: 16px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #34495e;
+    letter-spacing: -0.2px;
+  }
+  
+  /* React-Select Customization */
+  .user-select {
+    margin-bottom: 24px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    border-radius: 6px;
+  }
+  
+  .user-select__control {
+    border-color: #dfe6e9 !important;
+    border-radius: 6px !important;
+    box-shadow: none !important;
+    min-height: 45px !important;
+  }
+  
+  .user-select__control--is-focused {
+    border-color: #3498db !important;
+    box-shadow: 0 0 0 1px #3498db !important;
+  }
+  
+  .user-select__value-container {
+    padding: 2px 12px !important;
+  }
+  
+  .user-select__menu {
+    z-index: 1100 !important;
+    border-radius: 6px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    overflow: hidden;
+  }
+  
+  .user-select__menu-list {
+    max-height: 200px;
+    padding: 8px 0 !important;
+  }
+  
+  .user-select__option {
+    padding: 10px 16px !important;
+    cursor: pointer !important;
+  }
+  
+  .action-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 16px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #f0f0f0;
+  }
+  
+  .unlock-button, .lock-button {
+    display: flex;
+    align-items: center;
+    padding: 10px 20px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    gap: 8px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+  
+  .unlock-button {
+    background-color: #3498db;
+    color: white;
+  }
+  
+  .unlock-button:hover {
+    background-color: #2980b9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+  
+  .lock-button {
+    background-color: #e74c3c;
+    color: white;
+  }
+  
+  .lock-button:hover {
+    background-color: #c0392b;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+  
+  /* Custom Styling for React Select Components */
+  body .user-select__menu {
+    background-color: white;
+  }
+  
+  body .user-select__option {
+    background-color: transparent;
+    transition: all 0.2s ease;
+  }
+  
+  body .user-select__option--is-focused {
+    background-color: #f8f9fa;
+  }
+  
+  body .user-select__option--is-selected {
+    background-color: #3498db;
+    color: white;
+  }
+  
+  body .user-select__multi-value {
+    background-color: #e1f0fa;
+    border-radius: 4px;
+    margin: 3px;
+  }
+  
+  body .user-select__multi-value__label {
+    color: #2980b9;
+    font-size: 13px;
+    padding: 3px 6px;
+  }
+  
+  body .user-select__multi-value__remove {
+    color: #7f8c8d;
+    padding: 0 6px;
+    border-radius: 0 4px 4px 0;
+  }
+  
+  body .user-select__multi-value__remove:hover {
+    background-color: #e74c3c;
+    color: white;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 500px) {
+    .attendance-lock-popup {
+      width: 95vw !important;
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+    }
+    
+    .action-buttons {
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .popup-header h3 {
+      font-size: 16px;
+    }
+    
+    .popup-content {
+      padding: 16px;
+    }
+    
+    .unlock-button, .lock-button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+  
+  /* Additional Enhancements */
+  .popup-content p {
+    color: #7f8c8d;
+    font-style: italic;
+    padding: 12px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    text-align: center;
   }

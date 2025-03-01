@@ -15,8 +15,6 @@ function AttendancePage() {
   const [view, setView] = useState("all"); // 'all', 'day', 'night'
   const [hasChanges, setHasChanges] = useState(false); // Track if there are unsaved changes
 
-  const headerWrapperRef = useRef(null);
-  const dataContainerRef = useRef(null);
   const isAdmin = true;
   const fixedColumns = [
     { key: "punchCode", label: "Punch Code" },
@@ -375,29 +373,38 @@ function AttendancePage() {
 
   const filteredData = getFilteredData();
 
+  const headerRef = useRef(null);
+  const dataContainerRef = useRef(null);
+
+  // Synchronize scrolling between header and data container
   useEffect(() => {
-    // Ensure both refs are not null
-    if (headerWrapperRef.current && dataContainerRef.current) {
-      const handleScroll = () => {
-        // Sync header's horizontal scroll with data container's scroll
-        const dataScrollLeft = dataContainerRef.current.scrollLeft;
+    const headerWrapper = headerRef.current;
+    const dataContainer = dataContainerRef.current;
+    
+    if (!headerWrapper || !dataContainer) return;
+    
+    const handleDataScroll = () => {
+      headerWrapper.scrollLeft = dataContainer.scrollLeft;
+    };
+    
+    const handleHeaderScroll = () => {
+      dataContainer.scrollLeft = headerWrapper.scrollLeft;
+    };
+    
+    // Add scroll event listeners
+    dataContainer.addEventListener("scroll", handleDataScroll);
+    headerWrapper.addEventListener("scroll", handleHeaderScroll);
+    
+    // Clean up event listeners
+    return () => {
+      dataContainer.removeEventListener("scroll", handleDataScroll);
+      headerWrapper.removeEventListener("scroll", handleHeaderScroll);
+    };
+  }, []);
 
-        // Update headerWrapper's scrollLeft to match dataContainer
-        headerWrapperRef.current.scrollLeft = dataScrollLeft;
-
-        // Trigger reflow to ensure scrollLeft updates in some browsers
-        headerWrapperRef.current.style.transform = "translateZ(0)";
-      };
-
-      // Attach the scroll event listener to the data container
-      dataContainerRef.current.addEventListener("scroll", handleScroll);
-
-      // Clean up the event listener when the component unmounts
-      return () => {
-        dataContainerRef.current.removeEventListener("scroll", handleScroll);
-      };
-    }
-  }, []); // Empty array means this effect runs only once
+  const downloadReport = () => {
+    console.log("Downloading Final file...");
+  };
 
   return (
     <div className="attendance-page">
@@ -446,13 +453,29 @@ function AttendancePage() {
                 >
                   Add Employee
                 </button>
+                <button
+                  className="control-button secondary"
+                  onClick={downloadReport}
+                >
+                  Download Report
+                </button>
               </>
             )}
+          {/* Save Changes Button */}
+        {hasChanges && (
+          
+            <button
+            className="control-button secondary"
+            onClick={handleSaveChanges}
+            >
+              Save Changes
+            </button>
+        )}
           </div>
         </div>
 
         {/* Header Section */}
-        <div className="header-wrapper">
+        <div className="header-wrapper" ref={headerRef}>
           {filteredData.length > 0 && filteredData[0].attendance && (
             <AttendanceHeader
               columns={filteredData[0].attendance}
@@ -481,7 +504,7 @@ function AttendancePage() {
         )}
 
         {/* Data Container */}
-        <div className="data-container">
+        <div className="data-container" ref={dataContainerRef}>
           {filteredData.map((row, rowIndex) => (
             <DataRow
               key={row.id}
@@ -498,40 +521,10 @@ function AttendancePage() {
               }}
               isAdmin={isAdmin}
               onKeyDown={onKeyDown}
+              dataContainerRef={dataContainerRef}
             />
           ))}
         </div>
-
-        {/* Save Changes Button */}
-        {hasChanges && (
-          <div
-            style={{
-              position: "fixed",
-              bottom: "20px",
-              right: "20px",
-              zIndex: 1000,
-              backgroundColor: "var(--primary-color)",
-              padding: "12px 24px",
-              borderRadius: "8px",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-              cursor: "pointer",
-            }}
-            onClick={handleSaveChanges}
-          >
-            <button
-              style={{
-                color: "white",
-                border: "none",
-                background: "none",
-                cursor: "pointer",
-                fontSize: "16px",
-                fontWeight: "bold",
-              }}
-            >
-              Save Changes
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );
