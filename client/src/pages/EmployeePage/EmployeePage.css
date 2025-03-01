@@ -197,7 +197,7 @@
   }
   
   /* Cell styling */
-  .punch-code {
+  .employee-page-punch-code {
     font-family: monospace;
     font-weight: 600;
     color: #1a3353;
@@ -223,7 +223,7 @@
     margin: 0 !important;
   }
   
-  .designation {
+  .employee-page-designation {
     color: #5a6a7e;
     font-size: 12px;
   }

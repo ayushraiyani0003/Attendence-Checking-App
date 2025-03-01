@@ -18,7 +18,7 @@ const EmployeePage = () => {
       dataIndex: 'punchCode',
       key: 'punchCode',
       sorter: (a, b) => a.punchCode - b.punchCode,
-      render: (text) => <span className="punch-code">{text}</span>,
+      render: (text) => <span className="employee-page-punch-code">{text}</span>,
       width: 10,
       
     },
@@ -58,7 +58,7 @@ const EmployeePage = () => {
         { text: 'Analyst', value: 'Analyst' },
       ],
       onFilter: (value, record) => record.designation.includes(value),
-      render: (text) => <span className="designation">{text}</span>,
+      render: (text) => <span className="employee-page-designation">{text}</span>,
       width: 200,
     },
     {

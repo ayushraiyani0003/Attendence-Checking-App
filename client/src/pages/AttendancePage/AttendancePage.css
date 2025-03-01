@@ -292,12 +292,9 @@
     justify-content: center;
     color: var(--gray-800);
   }
+
   .data-cell:hover {
     background-color: var(--gray-100);
-  }
-
-  .data-row.hovered .data-cell {
-    background-color: #f0f7ff;
   }
 
   .fixed-data-cells .data-cell {
