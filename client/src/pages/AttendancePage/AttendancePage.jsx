@@ -417,7 +417,7 @@ function AttendancePage() {
               placeholder="Search across all fields..."
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
-              className="search-input"
+              className="attendence-page-search-input"
               style={{
                 padding: "8px 12px",
                 borderRadius: "4px",
