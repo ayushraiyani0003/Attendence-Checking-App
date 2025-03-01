@@ -417,7 +417,7 @@ function AttendancePage() {
               placeholder="Search across all fields..."
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
-              className="attendence-page-search-input"
+              className="attendencepage-search-input"
               style={{
                 padding: "8px 12px",
                 borderRadius: "4px",
@@ -441,7 +441,7 @@ function AttendancePage() {
               <option value="night">Night Shift</option>
             </select>
           </div>
-          <div style={{ display: "flex", gap: "12px" }}>
+          <div className="button-group" style={{ display: "flex", gap: "12px" }}>
             {isAdmin && (
               <>
                 <button className="control-button" onClick={addNewDay}>
