@@ -1,98 +1,142 @@
-/* Container styling for the whole page */
-.container {
-  padding: 2rem;
-  background-color: #f4f6f8;
+/* Modern styling for the user management page */
+.user-list-page {
+  padding: 1rem;
   min-height: 100vh;
+  transition: all 0.3s ease;
 }
 
-/* Typography for the title */
-.page-title {
-  font-size: 2rem;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 1.5rem;
-}
-
-/* Button to open the Add User form */
-.add-button {
-  background-color: #007bff;
-  color: #fff;
-  padding: 0.75rem 1.25rem;
-  font-size: 1rem;
-  border-radius: 5px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: background-color 0.3s ease;
-}
-
-.add-button:hover {
-  background-color: #0056b3;
-}
-
-/* Paper styling for form */
-.form-paper {
-  padding: 2rem;
-  margin-top: 2rem;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.form-title {
-  font-size: 1.5rem;
-  margin-bottom: 1.5rem;
-  color: #333;
-}
-
-/* Table styling */
+/* Table styling enhancements */
 .user-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   margin-top: 1.5rem;
-}
-
-.user-table th, .user-table td {
-  padding: 1rem;
-  text-align: left;
-  border-bottom: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .user-table th {
-  background-color: #007bff;
-  color: white;
+  background-color: rgba(25, 118, 210, 0.05);
+  color: #1976d2;
+  font-weight: 600;
+  padding: 1rem 1.5rem;
+  text-align: left;
+  border-bottom: 2px solid rgba(25, 118, 210, 0.1);
+  position: relative;
 }
 
 .user-table td {
-  background-color: #fff;
+  padding: 1rem 1.5rem;
+  vertical-align: middle;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  transition: background-color 0.2s ease;
 }
 
-.user-table tr:hover {
-  background-color: #f5f5f5;
+.user-table tr:last-child td {
+  border-bottom: none;
 }
 
-/* Responsive design for mobile */
+.user-table tr:hover td {
+  background-color: rgba(25, 118, 210, 0.03);
+}
+
+/* User status indicators */
+.status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.status-online {
+  background-color: #4caf50;
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+}
+
+.status-offline {
+  background-color: #bdbdbd;
+}
+
+/* Action buttons */
+.action-button {
+  background-color: transparent;
+  border: none;
+  border-radius: 4px;
+  padding: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  color: #757575;
+}
+
+.action-button:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #1976d2;
+}
+
+.action-button.edit:hover {
+  color: #1976d2;
+}
+
+.action-button.delete:hover {
+  color: #f44336;
+}
+
+/* Card hover effects */
+.user-card {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.user-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Custom scrollbar for better UX */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c0c0c0;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a0a0a0;
+}
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
-  .container {
-    padding: 1rem;
-  }
-
-  .page-title {
-    font-size: 1.5rem;
-  }
-
   .user-table th, .user-table td {
-    font-size: 0.9rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
   }
-
-  .form-title {
-    font-size: 1.25rem;
+  
+  .action-buttons-container {
+    flex-direction: column;
+    gap: 8px;
   }
 }
 
-/* New styles for user-list-page */
-.user-list-page {
-  padding: 2rem; /* Consistent padding */
-  background-color: #f4f6f8; /* Background color */
-  min-height: 100vh; /* Full height */
+/* Loading animation */
+.loading-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: 4px;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }

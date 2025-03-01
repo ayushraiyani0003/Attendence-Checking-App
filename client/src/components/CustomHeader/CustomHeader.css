@@ -34,10 +34,6 @@
   transition: transform 0.3s ease-in-out;
 }
 
-.hamburger-menu:hover {
-  transform: rotate(90deg); /* Rotate on hover */
-}
-
 .hamburger-menu .line {
   height: 3px; /* Thinner lines */
   background-color: var(--card-bg);
@@ -90,14 +86,14 @@
   transform: scale(1.05);
 } */
 
-.name {
+.header-name {
   font-weight: bold;
   color: var(--card-bg);
   margin-bottom: 2px; /* Reduced margin */
   font-size: 14px; /* Smaller font */
 }
 
-.designation {
+.header-designation {
   color: var(--gray-200);
   font-size: 12px; /* Smaller font */
   margin-top: 1px; /* Reduced margin */

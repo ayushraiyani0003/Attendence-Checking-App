@@ -1,3 +1,8 @@
+.user-list-page {
+    margin-top: 25px;
+    padding: 1.5rem;
+    /* background-color: var(--secondary-color); */
+}
 
 .container {
     padding: 2rem;

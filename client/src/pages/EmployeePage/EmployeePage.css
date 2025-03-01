@@ -1,0 +1,334 @@
+/* EmployeePage.css */
+
+/* Page container */
+.employee-page {
+  margin-top: 60px;
+    padding: 24px;
+    background-color: #f5f7fa;
+    min-height: 100vh;
+  }
+  
+  /* Card styling */
+  .employee-card {
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    background-color: #ffffff;
+    border: none;
+  }
+  
+  /* Header section */
+  .page-header {
+    margin-bottom: 24px;
+  }
+  
+  
+  .page-title {
+    font-weight: 600 !important;
+    color: #1a3353 !important;
+    margin: 0;
+    margin-bottom: 4px !important;
+    display: flex;
+    align-items: center;
+  }
+  
+  .title-icon {
+    margin-right: 12px;
+    color: #1890ff;
+    font-size: 24px;
+  }
+  
+  .page-subtitle {
+    color: #6b7a90;
+    margin-left: 36px;
+    font-size: 14px;
+  }
+  
+  .header-divider {
+    margin: 16px 0 !important;
+    background-color: #f0f2f5;
+  }
+  
+  /* Action container */
+  .actions-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 16px;
+  }
+  
+  .search-section {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  
+  .search-input {
+    width: 300px;
+    border-radius: 6px;
+    height: 36px;
+  }
+  
+  .search-icon {
+    color: #6b7a90;
+  }
+  
+  .filter-button {
+    height: 36px;
+    border-radius: 6px;
+    background-color: #f5f7fa;
+    border-color: #d9e1ec;
+    color: #6b7a90;
+  }
+  
+  .button-section {
+    display: flex;
+    gap: 12px;
+  }
+  
+  .add-button {
+    height: 36px;
+    border-radius: 6px;
+    background-color: #1890ff;
+    border-color: #1890ff;
+    box-shadow: 0 2px 6px rgba(24, 144, 255, 0.2);
+    font-weight: 500;
+  }
+  
+  .add-button:hover {
+    background-color: #40a9ff;
+    border-color: #40a9ff;
+  }
+  
+  .export-button {
+    height: 36px;
+    border-radius: 6px;
+    background-color: #ffffff;
+    border-color: #d9e1ec;
+    color: #1a3353;
+    font-weight: 500;
+  }
+  
+  .export-button:hover {
+    color: #1890ff;
+    border-color: #1890ff;
+  }
+  
+  /* Table section - COMPACT LAYOUT */
+  .table-container {
+    margin-top: 12px;
+  }
+  
+  .employee-table {
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  /* Fix table layout to be more compact */
+  .employee-table .ant-table-thead > tr > th {
+    background-color: #f5f7fa;
+    color: #1a3353;
+    font-weight: 600;
+    padding: 8px 12px !important; /* Reduced padding */
+    height: 40px !important; /* Fixed height for header */
+    white-space: nowrap;
+    font-size: 13px;
+  }
+  
+  
+  .employee-table .ant-table-tbody > tr > td {
+    padding: 6px 12px !important; /* Reduced padding */
+    height: 42px !important; /* Fixed height for cells */
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  /* first child of table is disply block */
+  .employee-table .ant-table-tbody > tr:first-child {
+    background-color: #3974cc;
+    display: block;
+  }
+  
+  /* Adjust column widths */
+  .employee-table .ant-table-column-has-sorters {
+    width: auto !important;
+  }
+  
+  /* Set specific column widths */
+  .employee-table th:nth-child(1),
+  .employee-table td:nth-child(1) {
+    width: 80px;
+    max-width: 80px;
+  }
+  
+  .employee-table th:nth-child(2),
+  .employee-table td:nth-child(2) {
+    width: 160px;
+    max-width: 160px;
+  }
+  
+  .employee-table th:nth-child(3),
+  .employee-table td:nth-child(3) {
+    width: 120px;
+    max-width: 120px;
+  }
+  
+  .employee-table th:nth-child(4),
+  .employee-table td:nth-child(4) {
+    width: 180px;
+    max-width: 180px;
+  }
+  
+  .employee-table th:nth-child(5),
+  .employee-table td:nth-child(5) {
+    width: 100px;
+    max-width: 100px;
+  }
+  
+  .employee-table th:last-child,
+  .employee-table td:last-child {
+    width: 120px;
+    max-width: 120px;
+  }
+  
+  .employee-table .ant-table-tbody > tr:hover > td {
+    background-color: #f0f7ff;
+  }
+  
+  /* Cell styling */
+  .punch-code {
+    font-family: monospace;
+    font-weight: 600;
+    color: #1a3353;
+    font-size: 12px;
+  }
+  
+  .employee-name {
+    font-weight: 500;
+    color: #1a3353;
+  }
+  
+  /* Make tags more compact */
+  .department-tag {
+    background-color: #e6f7ff !important;
+    color: #1890ff !important;
+    border: 1px solid #91d5ff !important;
+    border-radius: 4px !important;
+    padding: 0 6px !important; /* Reduced padding */
+    font-weight: 500 !important;
+    font-size: 12px !important;
+    line-height: 1.5 !important;
+    height: 20px !important;
+    margin: 0 !important;
+  }
+  
+  .designation {
+    color: #5a6a7e;
+    font-size: 12px;
+  }
+  
+  .shift-tag {
+    border-radius: 4px !important;
+    padding: 0 6px !important; /* Reduced padding */
+    font-weight: 500 !important;
+    font-size: 12px !important;
+    line-height: 1.5 !important;
+    height: 20px !important;
+    margin: 0 !important;
+  }
+  
+  /* Make action buttons more compact */
+  .employee-action-buttons {
+    display: flex;
+    gap: 4px; /* Reduced gap */
+    justify-content: center;
+  }
+  
+  .edit-button {
+    background-color: #e6f7ff !important;
+    border-color: #91d5ff !important;
+    color: #1890ff !important;
+    font-weight: 500 !important;
+    border-radius: 4px !important;
+    padding: 0 8px !important; /* Reduced padding */
+    height: 28px !important; /* Smaller height */
+    box-shadow: none !important;
+    font-size: 12px !important;
+  }
+  
+  .edit-button:hover {
+    background-color: #bae7ff !important;
+    border-color: #69c0ff !important;
+    color: #0074e1 !important;
+  }
+  
+  .delete-button {
+    background-color: #fff1f0 !important;
+    border-color: #ffccc7 !important;
+    color: #ff4d4f !important;
+    font-weight: 500 !important;
+    border-radius: 4px !important;
+    padding: 0 8px !important; /* Reduced padding */
+    height: 28px !important; /* Smaller height */
+    box-shadow: none !important;
+    font-size: 12px !important;
+  }
+  
+  .delete-button:hover {
+    background-color: #ffd4d2 !important;
+    border-color: #ff7875 !important;
+    color: #dc3545 !important;
+  }
+  
+  /* Smaller icons in buttons */
+  .employee-table .anticon {
+    font-size: 12px !important;
+  }
+  
+  /* Table summary */
+  .table-summary {
+    color: #6b7a90;
+    font-style: italic;
+    text-align: right;
+    padding: 6px 12px !important;
+    font-size: 12px;
+    height: 30px !important;
+  }
+  
+  /* Pagination */
+  .custom-pagination {
+    margin-top: 16px !important;
+  }
+  
+  /* Make entire table more compact */
+  .employee-table .ant-table {
+    font-size: 13px !important;
+  }
+  
+  /* Fix ellipsis for text overflow */
+  .employee-table .ant-table-cell {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .actions-container {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    
+    .search-section, .button-section {
+      width: 100%;
+    }
+    
+    .search-input {
+      width: 100%;
+    }
+    
+    .button-section {
+      justify-content: space-between;
+      margin-top: 12px;
+    }
+  }

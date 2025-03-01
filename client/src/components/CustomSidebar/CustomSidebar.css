@@ -1,0 +1,108 @@
+/* Sidebar container */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 260px;
+    background-color: var(--gray-800);
+    color: var(--card-bg);
+    padding: 20px;
+    box-shadow: 3px 0 10px var(--shadow);
+    z-index: 1001;
+    overflow-y: auto;
+  }
+  
+  /* Sidebar Header */
+  .sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--gray-700);
+  }
+  
+  .sidebar-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+  }
+  
+  /* Close Button */
+  .close-btn {
+    background: none;
+    border: none;
+    color: var(--card-bg);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .close-btn:hover {
+    background-color: var(--gray-700);
+    transform: rotate(90deg);
+  }
+  
+  /* Sidebar Sections */
+  .sidebar-section {
+    margin-bottom: 20px;
+  }
+  
+  .section-title {
+    font-size: 1rem;
+    margin: 0 0 10px 0;
+    color: var(--gray-400);
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--gray-700);
+  }
+  
+  /* Sidebar List */
+  .sidebar-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  
+  .sidebar-item {
+    padding: 10px 15px;
+    margin: 5px 0;
+    cursor: pointer;
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+  }
+  
+  .sidebar-item:hover {
+    background-color: var(--gray-700);
+    transform: translateX(5px);
+  }
+  
+  /* Link Styling */
+  .sidebar-item a {
+    color: var(--card-bg);
+    text-decoration: none;
+    width: 100%;
+    display: block;
+  }
+  
+  .sidebar-item a:hover {
+    color: var(--info-color);
+  }
+  
+  /* Overlay (Background when sidebar is open) */
+  .overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: var(--shadow);
+    z-index: 1000;
+  }
