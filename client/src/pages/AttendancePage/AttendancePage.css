@@ -313,23 +313,22 @@
 
 /* Fixed data cell widths */
 .data-cell.punch-code {
-  min-width: 140px;
-  width: 140px;
+  min-width: 176px;
+  width: 176px;
 }
 
 .data-cell.name {
-  min-width: 180px;
-  width: 180px;
+  min-width: 210px;
+  width: 210px;
 }
-
 .data-cell.designation {
-  min-width: 140px;
-  width: 140px;
+  min-width: 170px;
+  width: 170px;
 }
 
 .data-cell.department {
-  min-width: 140px;
-  width: 140px;
+  min-width: 170px;
+  width: 170px;
 }
 
 .data-cell:last-child {
@@ -340,8 +339,8 @@
 .date-cell {
   display: flex;
   gap: 8px;
-  min-width: 220px;
-  width: 220px;
+  min-width: 232px;
+  width: 232px;
   padding: 6px;
   border-right: 1px solid var(--gray-300);
   background-color: rgba(248, 249, 250, 0.5);
@@ -368,7 +367,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  height: 12px;
+  /* height: 12px; */
   border: 1px solid transparent;
   transition: var(--transition);
 }
@@ -1147,8 +1146,8 @@ RESPONSIVE STYLES FOR ATTENDANCE APP
 
 @media screen and (min-width: 1600px) {
   .attendance-container {
-    max-width: 1600px;
-    margin: 0 auto;
+    /* max-width: 1600px;
+    margin: 0 auto; */
   }
 
   .header-cell {

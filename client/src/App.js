@@ -7,6 +7,7 @@ import EmployeePage from "./pages/EmployeePage/EmployeePage";
 import SettingsPage from "./pages/SettingPage/SettingPage";
 import UploadPage from "./pages/UploadPage/UploadPage";
 import UserListPage from "./pages/UserListPage/UserListPage"
+import LogInPage from "./pages/LogInPage/LogInPage";
 import "./App.css";
 
 const App = () => {
@@ -29,6 +30,7 @@ const App = () => {
     "Settings": "/settings", 
     "Upload": "/upload",
     "UserList": "/user-list",
+    "Logout": "/logout",
   }
   
   return (
