@@ -61,7 +61,7 @@ const CustomDropdown = ({ options, defaultValue, onChange }) => {
 };
 
 // Updated CustomHeader component
-function CustomHeader({ toggleSidebar }) {
+function CustomHeader({ toggleSidebar, user }) {
   const dateOptions = ["Dec 2024", "Jan 2025", "Feb 2025", "Mar 2025"];
   
   return (
@@ -82,8 +82,8 @@ function CustomHeader({ toggleSidebar }) {
         />
         <div className="profile-info">
           <div className="name-designation">
-            <p className="header-name">John Doe</p>
-            <p className="header-designation">Software Engineer</p>
+            <p className="header-name">{user.name}</p>
+            <p className="header-designation">{user.role}</p>
           </div>
           <img
             src="https://plus.unsplash.com/premium_photo-1689568126014-06fea9d5d341?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8cHJvZmlsZXxlbnwwfHwwfHx8MA%3D%3D"
