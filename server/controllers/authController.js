@@ -55,4 +55,30 @@ const userLogin = async (req, res) => {
   }
 };
 
-module.exports = { userLogin };
+const validateToken = (req, res) => {
+  const token = req.cookies.authToken;  // Retrieve token from cookies
+
+  if (!token) {
+    return res.status(401).json({ message: 'No token provided' });
+  }
+
+  // Verify token and respond with user data if valid
+  jwt.verify(token, JWT_SECRET_KEY, (err, user) => {
+    if (err) {
+      return res.status(403).json({ message: 'Invalid or expired token' });
+    }
+
+    // Send back user data if token is valid
+    res.status(200).json({
+      message: 'Token is valid',
+      user: {
+        id: user.userId,
+        username: user.username,
+        role: user.role,
+        name: user.name,
+      },
+    });
+  });
+};
+
+module.exports = { userLogin , validateToken};

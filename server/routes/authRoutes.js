@@ -1,6 +1,6 @@
-// routes/authRoutes.js
 const express = require('express');
-const { userLogin } = require('../controllers/authController.js');
+const { userLogin, validateToken } = require('../controllers/authController.js');
+const { authenticateJWT } = require('../middlewares/authMiddleware');  // Import authentication middleware
 const router = express.Router();
 
 // Handle user login
@@ -12,5 +12,7 @@ router.post('/logout', (req, res) => {
   res.json({ message: 'Logged out successfully' });
 });
 
+// Token validation route
+router.get('/validate-token', authenticateJWT, validateToken);  // Protect the route with JWT authentication middleware
 
 module.exports = router;

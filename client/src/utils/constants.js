@@ -10,7 +10,6 @@ export const ROLES = {
 
 // List of available pages
 export const pageRedirect = {
-  home: "/",
   employee: "/employee",
   settings: "/settings",
   upload: "/upload",

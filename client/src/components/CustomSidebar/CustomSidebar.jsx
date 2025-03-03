@@ -1,6 +1,6 @@
 import { X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "react-router-dom"; // Added import for Link
+import { Link } from "react-router-dom";
 import "./CustomSidebar.css";
 
 export default function CustomSidebar({ isOpen, toggleSidebar, departments, isAdmin, pagesRedirect }) {
@@ -34,31 +34,25 @@ export default function CustomSidebar({ isOpen, toggleSidebar, departments, isAd
             </button>
           </div>
           
-          {/* Departments section */}
+          {/* Departments section - Displayed for both user and admin */}
           <div className="sidebar-section">
             <h3 className="section-title">Departments</h3>
             <ul className="sidebar-list">
-      {/* if isAdmin is true, show only one Attendance page, otherwise show all */}
-{isAdmin ? (
-    <li className="sidebar-item">
-        <Link to="/" onClick={toggleSidebar}>Attendance</Link>
-    </li>
-) : (
-    departments.map((dept) => (
-        <li 
-            key={dept.id} 
-            className="sidebar-item"
-            onClick={toggleSidebar}
-        >
-            {dept.name}
-        </li>
-    ))
-)}
-
+              {isAdmin ? (
+                <li className="sidebar-item">
+                  <Link to="/" onClick={toggleSidebar}>Attendance</Link>
+                </li>
+              ) : (
+                departments.map((dept) => (
+                  <li key={dept.id} className="sidebar-item" onClick={toggleSidebar}>
+                    {dept.name}
+                  </li>
+                ))
+              )}
             </ul>
           </div>
           
-          {/* Admin links section - only shows if isAdmin is true */}
+          {/* Admin links section - Only shows if isAdmin is true */}
           {isAdmin && (
             <div className="sidebar-section">
               <h3 className="section-title">Admin Controls</h3>
