@@ -9,7 +9,7 @@ const app = express();
 
 // CORS configuration
 const corsOptions = {
-  origin: 'http://localhost:3000',  // Allow only requests from this origin
+  origin: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],  // Allow only these methods
   allowedHeaders: ['Content-Type', 'Authorization'],  // Specify allowed headers
   credentials: true,  // Enable cookies to be sent in cross-origin requests

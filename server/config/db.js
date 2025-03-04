@@ -1,12 +1,14 @@
+require('dotenv').config();  // Add this line to load environment variables
+
 const { Sequelize } = require('sequelize');
 
 // Create a new Sequelize instance with your MySQL database credentials
 const sequelize = new Sequelize(
-  'EmployeeAttendance', // Database name
-  'root', // Database username
-  '', // Database password
+  process.env.DB_NAME, // Database name
+  process.env.DB_USER, // Database username
+  process.env.DB_PASSWORD, // Database password
   {
-    host: 'localhost', // MySQL host
+    host: process.env.DB_HOST, // MySQL host
     dialect: 'mysql',  // Dialect for the database (MySQL)
     logging: false,    // Disable logging to console for cleaner output (optional)
     pool: {

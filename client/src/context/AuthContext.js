@@ -9,69 +9,96 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Effect to check token and validate it if present
+  // Set up axios interceptor to add token to all requests
   useEffect(() => {
     const token = localStorage.getItem('authToken');
-    const userData = localStorage.getItem('user'); // Retrieve user info from localStorage
-    if (token && userData) {
-      // Set the token in axios headers
-      axios.defaults.headers['Authorization'] = `Bearer ${token}`;
-      setUser(JSON.parse(userData)); // Parse user data from localStorage
-      setIsAuthenticated(true); // Set the authentication state to true
-      validateToken(); // Validate the token with the backend if needed
-    } else {
-      setLoading(false); // If no token or user, stop loading
-      setIsAuthenticated(false); // User is not authenticated
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     }
-  }, []); // Empty dependency array means this effect runs only once, on mount
+  }, []);
 
-  const validateToken = async () => {
-    try {
-      const response = await axios.get('http://localhost:5003/api/auth/validate-token', { withCredentials: true });
-      if (response.status === 200) {
-        setUser(response.data.user);
-        setIsAuthenticated(true);
-      } else {
-        logout();  // Token is invalid, log out the user
+  // Token validation on mount
+  useEffect(() => {
+    const validateAuth = async () => {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        setIsAuthenticated(false);
+        setLoading(false);
+        return;
       }
-    } catch (error) {
-      console.error('Token validation failed', error);
-      logout();  // If validation fails, log out the user
-    } finally {
-      setLoading(false);  // Stop loading after validation attempt
-    }
-  };
-  
+
+      try {
+        const response = await axios.get(`${API_URL}/auth/validate-token`, {
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json' 
+          }
+        });
+        
+        if (response.status === 200) {
+          const user = response.data.user;
+          setUser(user);
+          setIsAuthenticated(true);
+        } else {
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('user');
+          setIsAuthenticated(false);
+        }
+      } catch (error) {
+        console.error('Token validation failed:', error);
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        setIsAuthenticated(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    validateAuth();
+  }, []);
 
   const login = async (username, password) => {
     try {
       const response = await axios.post(
         `${API_URL}/auth/login`,
         { username, password },
-        { headers: { 'Content-Type': 'application/json' }, withCredentials: true }
+        { headers: { 'Content-Type': 'application/json' }}
       );
+      
       const { token, user } = response.data;
-      localStorage.setItem('authToken', token);  // Store token in localStorage
-      localStorage.setItem('user', JSON.stringify(user));  // Store user in localStorage
-      axios.defaults.headers['Authorization'] = `Bearer ${token}`;
+      
+      // Store token and user in localStorage
+      localStorage.setItem('authToken', token);
+      localStorage.setItem('user', JSON.stringify(user));
+      
+      // Set token for all future requests
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      
       setUser(user);
-      setIsAuthenticated(true); // Set user and authenticated state
+      setIsAuthenticated(true);
+      
+      return true;
     } catch (error) {
-      console.error('Login failed', error.response || error.message);
-      throw new Error('Login failed');
+      console.error('Login failed:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.message || 'Login failed');
     }
   };
 
   const logout = () => {
+    // Remove token from axios headers
+    delete axios.defaults.headers.common['Authorization'];
+    
+    // Clear localStorage
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
+    
+    // Update state
     setIsAuthenticated(false);
     setUser(null);
-    axios.defaults.headers['Authorization'] = ''; // Clear the token
   };
 
   if (loading) {
-    return <div>Loading...</div>; // Show a loading indicator until the state is determined
+    return <div>Loading...</div>;
   }
 
   return (

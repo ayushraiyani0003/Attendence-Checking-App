@@ -1,19 +1,18 @@
 const { Sequelize, DataTypes } = require('sequelize');
-const bcrypt = require('bcrypt');
-const sequelize = require('../config/db.js'); // Adjust this path to where you configure your DB connection
+const sequelize = require('../config/db'); // Adjust this path to your DB connection
 
 const User = sequelize.define('User', {
   username: {
     type: DataTypes.STRING,
     allowNull: false,
-    unique: true,
+    unique: false,  // Ensure unique constraint
   },
   name: {
     type: DataTypes.STRING,
     allowNull: false,
   },
   phone_no: {
-    type: DataTypes.STRING(15),  // Adjusted to match the phone_number field size
+    type: DataTypes.STRING(15),  // Adjust to match the phone number field size
     allowNull: false,
   },
   department: {

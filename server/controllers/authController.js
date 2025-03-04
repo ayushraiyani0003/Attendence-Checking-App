@@ -4,28 +4,22 @@ const { findUserByUsername } = require('../services/userService');
 const { JWT_SECRET_KEY } = require('../utils/constants');
 const User = require('../models/user');
 
+// User login handler
 const userLogin = async (req, res) => {
-  console.log('Login request received');
   const { username, password } = req.body;
-  console.log('Username:', username);
-  console.log('Password:', password);
 
   if (!username || !password) {
-    console.log('Username and password are required.');
     return res.status(400).json({ message: 'Username and password are required.' });
   }
 
   try {
     const user = await findUserByUsername(username);
     if (!user) {
-      console.log('User not found');
       return res.status(400).json({ message: 'Invalid credentials' });
     }
-    // log the encrepted password
-    
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      console.log('Invalid password');
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
@@ -37,38 +31,59 @@ const userLogin = async (req, res) => {
       { expiresIn: '1d' }
     );
 
+    // Still set the cookie for environments where it might work
     res.cookie('authToken', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: false,
       maxAge: 24 * 60 * 60 * 1000,
-      sameSite: 'Strict',
+      sameSite: 'None',
+      path: '/'
     });
 
-    console.log('Login successful');
-    res.status(200).json({
-      
+    // Return the token in the response body as well
+    return res.status(200).json({
       message: 'Login successful',
+      token: token, // Include token in response
       user: { id: user.id, username: user.username, role: user.user_role, name: user.name },
     });
   } catch (error) {
-    res.status(500).json({ message: 'Something went wrong', error: error.message });
+    return res.status(500).json({ message: 'Something went wrong', error: error.message });
   }
 };
 
+const userLogout = (req, res) => {
+  res.clearCookie('authToken', {
+    httpOnly: true,
+    secure: false,
+    sameSite: 'None',
+    path: '/'
+  });
+  
+  return res.status(200).json({ message: 'Logged out successfully' });
+};
+
+// Token validation handler
 const validateToken = (req, res) => {
-  const token = req.cookies.authToken;  // Retrieve token from cookies
+  // Try to get token from cookie first
+  let token = req.cookies.authToken;
+  
+  // If no cookie token, check Authorization header
+  if (!token) {
+    const authHeader = req.headers['authorization'];
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    }
+  }
 
   if (!token) {
     return res.status(401).json({ message: 'No token provided' });
   }
 
-  // Verify token and respond with user data if valid
   jwt.verify(token, JWT_SECRET_KEY, (err, user) => {
     if (err) {
       return res.status(403).json({ message: 'Invalid or expired token' });
     }
 
-    // Send back user data if token is valid
     res.status(200).json({
       message: 'Token is valid',
       user: {
@@ -81,4 +96,4 @@ const validateToken = (req, res) => {
   });
 };
 
-module.exports = { userLogin , validateToken};
+module.exports = { userLogin, validateToken, userLogout };

@@ -62,9 +62,9 @@ const EmployeePage = () => {
       width: 200,
     },
     {
-      title: 'Default Shift',
-      dataIndex: 'defaultShift',
-      key: 'defaultShift',
+      title: 'Reporting Group',
+      dataIndex: 'reportingGroup',
+      key: 'reportingGroup',
       filters: [
         { text: 'Morning', value: 'Morning' },
         { text: 'Afternoon', value: 'Afternoon' },
@@ -122,7 +122,7 @@ const EmployeePage = () => {
         name: 'John Smith',
         department: 'Marketing',
         designation: 'Marketing Specialist',
-        defaultShift: 'Morning',
+        reportingGroup: 'hr',
       },
       {
         key: '2',
@@ -130,7 +130,7 @@ const EmployeePage = () => {
         name: 'Jane Doe',
         department: 'Engineering',
         designation: 'Software Engineer',
-        defaultShift: 'Afternoon',
+        reportingGroup: 'hr',
       },
       {
         key: '3',
@@ -138,7 +138,7 @@ const EmployeePage = () => {
         name: 'Mike Johnson',
         department: 'Finance',
         designation: 'Financial Analyst',
-        defaultShift: 'Morning',
+        reportingGroup: 'hr',
       },
       {
         key: '4',
@@ -146,7 +146,7 @@ const EmployeePage = () => {
         name: 'Sara Williams',
         department: 'Engineering',
         designation: 'DevOps Engineer',
-        defaultShift: 'Night',
+        reportingGroup: 'hr',
       },
       {
         key: '5',
@@ -154,7 +154,7 @@ const EmployeePage = () => {
         name: 'Robert Chen',
         department: 'Marketing',
         designation: 'Digital Marketing Specialist',
-        defaultShift: 'Afternoon',
+        reportingGroup: 'hr',
       },
     ];
     setTimeout(() => {
