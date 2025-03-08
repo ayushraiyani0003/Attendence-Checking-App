@@ -3,6 +3,8 @@ const { authenticateJWT, isAdmin } = require('../middlewares/authMiddleware');
 
 // Get departments and designations
 exports.getSettings = [authenticateJWT, isAdmin, async (req, res) => {
+  // console.log("getSettings for fetch the static data");
+  
   try {
     const departments = await db.Department.findAll();
     const designations = await db.Designation.findAll();

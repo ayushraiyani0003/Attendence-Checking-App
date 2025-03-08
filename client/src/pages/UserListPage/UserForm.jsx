@@ -1,48 +1,83 @@
-import React, { useState, useEffect } from 'react'
-import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, Box, MenuItem } from '@mui/material'
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button, Box, MenuItem } from '@mui/material';
+import { useStaticData } from '../../hooks/userList';  // Import the useStaticData hook
 
-function UserForm({ open, onClose, mode, userData }) {
+function UserForm({ open, onClose, mode, userData, onSubmit }) {
+  const { departments, designations, reportingGroups, loading, error } = useStaticData();
   const [formData, setFormData] = useState({
     username: '',
+    password: '',
     name: '',
     phoneNo: '',
     department: '',
     designation: '',
     userRole: '',
-    assignedDepartments: []
-  })
+    reportingGroup: [],
+  });
 
   useEffect(() => {
     if (mode === 'edit' && userData) {
+      // check if user_role = admin then Admin else User
+      const userRole = userData.user_role === 'admin' ? 'Admin' : 'User';
       setFormData({
         username: userData.username,
         name: userData.name,
-        phoneNo: userData.phoneNo,
+        password: "",
+        phoneNo: userData.phone_no,
         department: userData.department,
-        designation: userData.designation,
-        userRole: userData.userRole,
-        assignedDepartments: userData.assignedDepartments
-      })
+        designation: userData.designation,  // Ensure it is an array for multiple selections
+        userRole: userRole,
+        reportingGroup: userData.reporting_group || []  // Ensure it is an array for multiple selections
+      });
     }
-  }, [mode, userData])
+    else{
+      setFormData({
+        username: "",
+        name: "",
+        password: "",
+        phoneNo: "",
+        department: "",
+        designation: "",  // Ensure it is an array for multiple selections
+        userRole: "",
+        reportingGroup: []  // Ensure it is an array for multiple selections
+      });
+    }
+  }, [mode, userData]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
-  }
+    const { name, value, type } = e.target;
+
+    // If it's a multi-select, update the array (this applies to reportingGroup and designation)
+    if (type === 'select-multiple') {
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    } else {
+        // For single select fields like department or userRole
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    }
+  };
 
   const handleSubmit = (e) => {
-    e.preventDefault()
-    // Handle form submission here
-    // You can make API call to save/update user
-    onClose()
+    e.preventDefault();
+    // Call the onSubmit function passed as a prop (which will either add or update)
+    onSubmit(formData);
+    onClose();
+  };
+
+  if (loading) {
+    return <div>Loading...</div>;
   }
 
-  const userRoles = ['Admin', 'User']
-  const departments = ['HR', 'IT', 'Finance', 'Operations']
+  if (error) {
+    return <div>{error}</div>;
+  }
+
+  const userRoles = ['Admin', 'User'];
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -58,6 +93,15 @@ function UserForm({ open, onClose, mode, userData }) {
               fullWidth
               required
             />
+            <TextField
+              name="password"
+              label="Password"
+              value={formData.password}
+              onChange={handleChange}
+              fullWidth
+              required
+            />
+            
             <TextField
               name="name"
               label="Full Name"
@@ -84,8 +128,8 @@ function UserForm({ open, onClose, mode, userData }) {
               required
             >
               {departments.map((dept) => (
-                <MenuItem key={dept} value={dept}>
-                  {dept}
+                <MenuItem key={dept.id} value={dept.name}>
+                  {dept.name}
                 </MenuItem>
               ))}
             </TextField>
@@ -94,9 +138,16 @@ function UserForm({ open, onClose, mode, userData }) {
               label="Designation"
               value={formData.designation}
               onChange={handleChange}
+              select
               fullWidth
               required
-            />
+            >
+              {designations.map((designation) => (
+                <MenuItem key={designation.id} value={designation.designation_name}>
+                  {designation.designation_name}
+                </MenuItem>
+              ))}
+            </TextField>
             <TextField
               name="userRole"
               label="User Role"
@@ -113,9 +164,9 @@ function UserForm({ open, onClose, mode, userData }) {
               ))}
             </TextField>
             <TextField
-              name="assignedDepartments"
-              label="Assigned Departments"
-              value={formData.assignedDepartments}
+              name="reportingGroup"
+              label="Reporting Group"
+              value={formData.reportingGroup}
               onChange={handleChange}
               select
               fullWidth
@@ -124,9 +175,9 @@ function UserForm({ open, onClose, mode, userData }) {
                 multiple: true
               }}
             >
-              {departments.map((dept) => (
-                <MenuItem key={dept} value={dept}>
-                  {dept}
+              {reportingGroups.map((group) => (
+                <MenuItem key={group.id} value={group.groupname}>
+                  {group.groupname}
                 </MenuItem>
               ))}
             </TextField>
@@ -140,7 +191,7 @@ function UserForm({ open, onClose, mode, userData }) {
         </DialogActions>
       </form>
     </Dialog>
-  )
+  );
 }
 
-export default UserForm
+export default UserForm;

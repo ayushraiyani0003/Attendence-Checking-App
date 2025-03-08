@@ -1,5 +1,6 @@
 const { Sequelize, DataTypes } = require('sequelize');
 const sequelize = require('../config/db'); // Adjust this path to your DB connection
+const bcrypt = require('bcrypt');
 
 const User = sequelize.define('User', {
   username: {
@@ -35,11 +36,19 @@ const User = sequelize.define('User', {
     type: DataTypes.TINYINT(1),
     defaultValue: 1,  // Default is 1 (active)
   },
+  created_at: {
+    type: DataTypes.DATE,
+    defaultValue: Sequelize.NOW,  // Uses current timestamp
+  },
+  updated_at: {
+    type: DataTypes.DATE,
+    defaultValue: Sequelize.NOW,  // Uses current timestamp
+  },
   password: {
     type: DataTypes.STRING,
     allowNull: false,
   },
-  assigned_departments: {
+  reporting_group: {
     type: DataTypes.TEXT('long'),  // Using longtext for larger JSON strings
     allowNull: true,
     defaultValue: '[]',  // Default to an empty JSON array
@@ -52,11 +61,11 @@ const User = sequelize.define('User', {
     },
     set(value) {
       // Ensure value is stored as a valid JSON string
-      this.setDataValue('assigned_departments', JSON.stringify(value));
+      this.setDataValue('reporting_group', JSON.stringify(value));
     },
     get() {
       // Ensure value is returned as a valid JavaScript array
-      const value = this.getDataValue('assigned_departments');
+      const value = this.getDataValue('reporting_group');
       try {
         return JSON.parse(value);
       } catch (e) {
@@ -71,6 +80,13 @@ const User = sequelize.define('User', {
 
 // Hash password before saving user to the database
 User.beforeCreate(async (user) => {
+  if (user.password) {
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(user.password, salt);
+  }
+});
+
+User.beforeUpdate(async (user) => {
   if (user.password) {
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(user.password, salt);

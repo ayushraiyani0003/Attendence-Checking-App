@@ -10,13 +10,13 @@ router.route('/')
   .get(authenticateJWT, isAdmin, settingController.getSettings)   // Fetch departments and designations (admin-only)
   .post(authenticateJWT, isAdmin, settingController.updateSettings); // Update departments and designations (admin-only)
 
-// Route to handle DELETE requests for department and designation by ID (only accessible by admin)
-// DELETE: Remove department by ID
-router.route('/department/:id')
-  .delete(authenticateJWT, isAdmin, settingController.deleteDepartment); // Delete department by ID
+router.route('/departments')
+  .get(authenticateJWT, isAdmin, settingController.getSettings); // Fetch departments (admin-only)
 
-// DELETE: Remove designation by ID
-router.route('/designation/:id')
-  .delete(authenticateJWT, isAdmin, settingController.deleteDesignation); // Delete designation by ID
+router.route('/designations')
+  .get(authenticateJWT, isAdmin, settingController.getSettings); // Fetch designations (admin-only)
 
+router.route('/reporting-groups')
+  .get(authenticateJWT, isAdmin, settingController.getSettings); // Fetch reporting groups (admin-only) 
+  
 module.exports = router;

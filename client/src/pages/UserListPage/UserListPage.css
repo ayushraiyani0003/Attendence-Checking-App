@@ -40,6 +40,8 @@
   background-color: rgba(25, 118, 210, 0.03);
 }
 
+
+
 /* User status indicators */
 .status-indicator {
   width: 10px;
@@ -138,5 +140,80 @@
   }
   100% {
     background-position: -200% 0;
+  }
+}
+
+/* Table styling enhancements */
+.user-table th {
+  background-color: rgba(25, 118, 210, 0.05);
+  color: #1976d2;
+  font-weight: 600;
+  padding: 1rem 1.5rem;
+  text-align: left;
+  border-bottom: 2px solid rgba(25, 118, 210, 0.1);
+  position: relative;
+}
+
+.user-table td {
+  padding: 1rem 1.5rem;
+  vertical-align: middle;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  transition: background-color 0.2s ease;
+}
+
+.user-table tr:last-child td {
+  border-bottom: none;
+}
+
+.user-table tr:hover td {
+  background-color: rgba(25, 118, 210, 0.03);
+}
+
+/* Custom scrollbar for better UX */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c0c0c0;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a0a0a0;
+}
+
+/* Loading animation */
+.loading-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: 4px;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .user-list-page {
+    padding: 1rem;
+  }
+  
+  .user-table th, .user-table td {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
   }
 }
