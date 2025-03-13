@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Input, Button, Select, Space, Typography, Tag, Card, Divider, Tooltip } from 'antd';
+import { Table, Input, Button, Select, Space, Typography, Tag, Card, Divider, Tooltip, notification, Form, Modal } from 'antd';
 import { SearchOutlined, DownloadOutlined, UserOutlined, EditOutlined, DeleteOutlined, PlusOutlined, FilterOutlined } from '@ant-design/icons';
 import * as XLSX from 'xlsx';
 import './EmployeePage.css';
 
 const { Title } = Typography;
+const { Option } = Select;
 
 const EmployeePage = () => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
   const [filteredData, setFilteredData] = useState([]);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [form] = Form.useForm();
   
   const columns = [
     {
@@ -70,7 +73,7 @@ const EmployeePage = () => {
         { text: 'Afternoon', value: 'Afternoon' },
         { text: 'Night', value: 'Night' },
       ],
-      onFilter: (value, record) => record.defaultShift === value,
+      onFilter: (value, record) => record.reportingGroup === value,
       render: (text) => {
         const shiftColors = {
           'Morning': 'green',
@@ -98,7 +101,7 @@ const EmployeePage = () => {
           </Tooltip>
           <Tooltip title="Delete employee">
             <Button 
-              type="danger" 
+              danger 
               icon={<DeleteOutlined />} 
               size="small"
               className="delete-button"
@@ -122,7 +125,7 @@ const EmployeePage = () => {
         name: 'John Smith',
         department: 'Marketing',
         designation: 'Marketing Specialist',
-        reportingGroup: 'hr',
+        reportingGroup: 'Morning',
       },
       {
         key: '2',
@@ -130,7 +133,7 @@ const EmployeePage = () => {
         name: 'Jane Doe',
         department: 'Engineering',
         designation: 'Software Engineer',
-        reportingGroup: 'hr',
+        reportingGroup: 'Afternoon',
       },
       {
         key: '3',
@@ -138,7 +141,7 @@ const EmployeePage = () => {
         name: 'Mike Johnson',
         department: 'Finance',
         designation: 'Financial Analyst',
-        reportingGroup: 'hr',
+        reportingGroup: 'Night',
       },
       {
         key: '4',
@@ -146,7 +149,7 @@ const EmployeePage = () => {
         name: 'Sara Williams',
         department: 'Engineering',
         designation: 'DevOps Engineer',
-        reportingGroup: 'hr',
+        reportingGroup: 'Morning',
       },
       {
         key: '5',
@@ -154,7 +157,7 @@ const EmployeePage = () => {
         name: 'Robert Chen',
         department: 'Marketing',
         designation: 'Digital Marketing Specialist',
-        reportingGroup: 'hr',
+        reportingGroup: 'Afternoon',
       },
     ];
     setTimeout(() => {
@@ -181,6 +184,25 @@ const EmployeePage = () => {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Employees');
     XLSX.writeFile(wb, 'employees.xlsx');
+  };
+  
+  const handleAddEmployee = () => {
+    setIsModalVisible(true); // Show the modal when the "+" button is clicked
+  };
+
+  const handleCancel = () => {
+    setIsModalVisible(false); // Close the modal
+  };
+
+  const handleSubmit = (values) => {
+    console.log('Employee Data:', values);
+    // You can handle adding the employee to the state or send it to an API here
+    notification.success({
+      message: 'Employee Added Successfully',
+      description: `Employee ${values.name} has been added.`,
+    });
+
+    setIsModalVisible(false); // Close the modal after form submission
   };
 
   return (
@@ -219,6 +241,7 @@ const EmployeePage = () => {
                 type="primary"
                 icon={<PlusOutlined />}
                 className="add-button"
+                onClick={handleAddEmployee}
               >
                 Add Employee
               </Button>
@@ -264,6 +287,84 @@ const EmployeePage = () => {
           />
         </div>
       </Card>
+
+       {/* Modal for adding employee */}
+       <Modal
+        title="Add Employee"
+        visible={isModalVisible}
+        onCancel={handleCancel}
+        footer={null} // Remove default footer buttons
+        width={600}
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleSubmit} // Handle the form submission
+        >
+          <Form.Item
+            label="Name"
+            name="name"
+            rules={[{ required: true, message: 'Please enter the employee name!' }]}
+          >
+            <Input placeholder="Enter employee's name" />
+          </Form.Item>
+
+          <Form.Item
+            label="Punch Code"
+            name="punchCode"
+            rules={[{ required: true, message: 'Please enter the punch code!' }]}
+          >
+            <Input placeholder="Enter employee's punch code" />
+          </Form.Item>
+
+          <Form.Item
+            label="Department"
+            name="department"
+            rules={[{ required: true, message: 'Please select the department!' }]}
+          >
+            <Select placeholder="Select department">
+              <Option value="Marketing">Marketing</Option>
+              <Option value="Engineering">Engineering</Option>
+              <Option value="Finance">Finance</Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            label="Designation"
+            name="designation"
+            rules={[{ required: true, message: 'Please select the designation!' }]}
+          >
+            <Select placeholder="Select designation">
+              <Option value="Specialist">Specialist</Option>
+              <Option value="Engineer">Engineer</Option>
+              <Option value="Analyst">Analyst</Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            label="Reporting Group"
+            name="reportingGroup"
+            rules={[{ required: true, message: 'Please select the reporting group!' }]}
+          >
+            <Select placeholder="Select reporting group">
+              <Option value="Morning">Morning</Option>
+              <Option value="Afternoon">Afternoon</Option>
+              <Option value="Night">Night</Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item>
+            <Space>
+              <Button onClick={handleCancel} type="default">
+                Cancel
+              </Button>
+              <Button type="primary" htmlType="submit">
+                Submit
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };
