@@ -296,18 +296,10 @@ const EmployeePage = () => {
         footer={null} // Remove default footer buttons
         width={600}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSubmit} // Handle the form submission
-        >
-          <Form.Item
-            label="Name"
-            name="name"
-            rules={[{ required: true, message: 'Please enter the employee name!' }]}
-          >
-            <Input placeholder="Enter employee's name" />
-          </Form.Item>
+          <Form form={form} layout="vertical" onFinish={handleSubmit}>
+            <Form.Item name="name" label="Name" rules={[{ required: true }]}>
+              <Input />
+            </Form.Item>
 
           <Form.Item
             label="Punch Code"
