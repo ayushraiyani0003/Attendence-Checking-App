@@ -1,29 +1,46 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Input, Button, Select, Space, Typography, Tag, Card, Divider, Tooltip, notification, Form, Modal } from 'antd';
 import { SearchOutlined, DownloadOutlined, UserOutlined, EditOutlined, DeleteOutlined, PlusOutlined, FilterOutlined } from '@ant-design/icons';
-import * as XLSX from 'xlsx';
+import { useSettings } from '../../context/SettingsContext'; // Import useSettings hook
+import useEmployee from '../../hooks/useEmployee'; // Import employee hook
 import './EmployeePage.css';
 
 const { Title } = Typography;
 const { Option } = Select;
 
 const EmployeePage = () => {
-  const [employees, setEmployees] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [searchText, setSearchText] = useState('');
+  // Fetch departments, designations, and reporting groups from the useSettings hook
+  const { departments, designations, reportingGroups, loading: settingsLoading } = useSettings();
+  const { employees, loading, addEmployee, editEmployee, removeEmployee } = useEmployee();
   const [filteredData, setFilteredData] = useState([]);
+  const [searchText, setSearchText] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+
   const [form] = Form.useForm();
-  
+
+  // UseEffect to update filtered data when employees or searchText changes
+  useEffect(() => {
+    const filtered = employees.filter(
+      (item) =>
+        item.name.toLowerCase().includes(searchText.toLowerCase()) ||
+        item.department.toLowerCase().includes(searchText.toLowerCase()) ||
+        item.designation.toLowerCase().includes(searchText.toLowerCase()) ||
+        item.punchCode.includes(searchText)
+    );
+    setFilteredData(filtered);
+  }, [employees, searchText]);
+
+  console.log("employees", employees);
+
   const columns = [
     {
       title: 'Punch Code',
-      dataIndex: 'punchCode',
-      key: 'punchCode',
+      dataIndex: 'punch_code',
+      key: 'punch_code',
       sorter: (a, b) => a.punchCode - b.punchCode,
       render: (text) => <span className="employee-page-punch-code">{text}</span>,
-      width: 10,
-      
+      width: 100,
     },
     {
       title: 'Name',
@@ -36,174 +53,97 @@ const EmployeePage = () => {
           {text}
         </Space>
       ),
-      width: 350,
+      width: 200,
     },
     {
       title: 'Department',
       dataIndex: 'department',
       key: 'department',
-      filters: [
-        { text: 'Marketing', value: 'Marketing' },
-        { text: 'Engineering', value: 'Engineering' },
-        { text: 'Finance', value: 'Finance' },
-      ],
+      filters: departments.map((dept) => ({ text: dept.name, value: dept.id })), // Use dept.name and dept.id
       onFilter: (value, record) => record.department === value,
-      render: (text) => <Tag className="department-tag">{text}</Tag>,
-      width: 300,
+      render: (text) => <Tag>{text}</Tag>,
+      width: 150,
     },
     {
       title: 'Designation',
       dataIndex: 'designation',
       key: 'designation',
-      filters: [
-        { text: 'Specialist', value: 'Specialist' },
-        { text: 'Engineer', value: 'Engineer' },
-        { text: 'Analyst', value: 'Analyst' },
-      ],
-      onFilter: (value, record) => record.designation.includes(value),
-      render: (text) => <span className="employee-page-designation">{text}</span>,
-      width: 200,
+      filters: designations.map((desig) => ({ text: desig.designation_name, value: desig.designation_name })), // Use desig.name and desig.id
+      onFilter: (value, record) => record.designation === value,
+      render: (text) => <span>{text}</span>,
+      width: 150,
     },
     {
       title: 'Reporting Group',
-      dataIndex: 'reportingGroup',
-      key: 'reportingGroup',
-      filters: [
-        { text: 'Morning', value: 'Morning' },
-        { text: 'Afternoon', value: 'Afternoon' },
-        { text: 'Night', value: 'Night' },
-      ],
+      dataIndex: 'reporting_group',
+      key: 'reporting_group',
+      filters: reportingGroups.map((group) => ({ text: group.groupname, value: group.groupname })), // Use group.name and group.id
       onFilter: (value, record) => record.reportingGroup === value,
       render: (text) => {
         const shiftColors = {
-          'Morning': 'green',
-          'Afternoon': 'blue',
-          'Night': 'purple'
+          Morning: 'green',
+          Afternoon: 'blue',
+          Night: 'purple',
         };
-        return <Tag color={shiftColors[text]} className="shift-tag">{text}</Tag>;
+        return <Tag color={shiftColors[text]}>{text}</Tag>;
       },
-      width: 200,
+      width: 180,
     },
     {
       title: 'Actions',
       key: 'actions',
       render: (_, record) => (
-        <Space className="employee-action-buttons" size={4}>
-          <Tooltip title="Edit employee">
-            <Button 
-              type="primary" 
-              icon={<EditOutlined />} 
-              size="small"
-              className="edit-button"
-            >
-              Edit
-            </Button>
-          </Tooltip>
+        <Space size={4}>
+           <Tooltip title="Edit employee">
+        <Button type="primary" icon={<EditOutlined />} size="small" onClick={() => handleEditEmployee(record)} />
+      </Tooltip>
           <Tooltip title="Delete employee">
-            <Button 
-              danger 
-              icon={<DeleteOutlined />} 
-              size="small"
-              className="delete-button"
-            >
-              Delete
-            </Button>
+            <Button danger icon={<DeleteOutlined />} size="small" onClick={() => removeEmployee(record.employee_id)} />
           </Tooltip>
         </Space>
       ),
-      width: 200,
+      width: 180,
       fixed: 'right',
     },
   ];
 
-  // Mock data - replace with actual API call
-  useEffect(() => {
-    const mockData = [
-      {
-        key: '1',
-        punchCode: '1001',
-        name: 'John Smith',
-        department: 'Marketing',
-        designation: 'Marketing Specialist',
-        reportingGroup: 'Morning',
-      },
-      {
-        key: '2',
-        punchCode: '1002',
-        name: 'Jane Doe',
-        department: 'Engineering',
-        designation: 'Software Engineer',
-        reportingGroup: 'Afternoon',
-      },
-      {
-        key: '3',
-        punchCode: '1003',
-        name: 'Mike Johnson',
-        department: 'Finance',
-        designation: 'Financial Analyst',
-        reportingGroup: 'Night',
-      },
-      {
-        key: '4',
-        punchCode: '1004',
-        name: 'Sara Williams',
-        department: 'Engineering',
-        designation: 'DevOps Engineer',
-        reportingGroup: 'Morning',
-      },
-      {
-        key: '5',
-        punchCode: '1005',
-        name: 'Robert Chen',
-        department: 'Marketing',
-        designation: 'Digital Marketing Specialist',
-        reportingGroup: 'Afternoon',
-      },
-    ];
-    setTimeout(() => {
-      setEmployees(mockData);
-      setFilteredData(mockData);
-      setLoading(false);
-    }, 1000);
-  }, []);
-
   const handleSearch = (value) => {
     setSearchText(value);
-    const filtered = employees.filter(
-      (item) =>
-        item.name.toLowerCase().includes(value.toLowerCase()) ||
-        item.department.toLowerCase().includes(value.toLowerCase()) ||
-        item.designation.toLowerCase().includes(value.toLowerCase()) ||
-        item.punchCode.includes(value)
-    );
-    setFilteredData(filtered);
   };
 
-  const handleExport = () => {
-    const ws = XLSX.utils.json_to_sheet(filteredData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Employees');
-    XLSX.writeFile(wb, 'employees.xlsx');
-  };
-  
   const handleAddEmployee = () => {
     setIsModalVisible(true); // Show the modal when the "+" button is clicked
   };
 
-  const handleCancel = () => {
-    setIsModalVisible(false); // Close the modal
-  };
+const handleCancel = () => {
+  setIsModalVisible(false);
+  setSelectedEmployee(null); // Reset selected employee
+  form.resetFields(); // Clear form fields
+};
 
-  const handleSubmit = (values) => {
-    console.log('Employee Data:', values);
-    // You can handle adding the employee to the state or send it to an API here
-    notification.success({
-      message: 'Employee Added Successfully',
-      description: `Employee ${values.name} has been added.`,
-    });
 
-    setIsModalVisible(false); // Close the modal after form submission
-  };
+const handleSubmit = (values) => {
+  if (selectedEmployee) {
+    // If editing, update the employee
+    editEmployee(selectedEmployee.employee_id, values);
+  } else {
+    // If adding, create a new employee
+    addEmployee(values);
+  }
+
+  setIsModalVisible(false); // Close modal
+  setSelectedEmployee(null); // Reset selected employee
+  form.resetFields(); // Clear the form
+};
+
+
+const handleEditEmployee = (employee) => {
+  setSelectedEmployee(employee); // Store selected employee details
+  form.setFieldsValue(employee); // Pre-fill the form
+  setIsModalVisible(true); // Open modal
+};
+
+
 
   return (
     <div className="employee-page">
@@ -216,9 +156,9 @@ const EmployeePage = () => {
             </Title>
             <p className="page-subtitle">Manage your company's employee information</p>
           </div>
-          
+
           <Divider className="header-divider" />
-          
+
           <div className="actions-container">
             <div className="search-section">
               <Input
@@ -228,14 +168,11 @@ const EmployeePage = () => {
                 className="search-input"
                 allowClear
               />
-              <Button
-                icon={<FilterOutlined />}
-                className="filter-button"
-              >
+              <Button icon={<FilterOutlined />} className="filter-button">
                 Filters
               </Button>
             </div>
-            
+
             <div className="button-section">
               <Button
                 type="primary"
@@ -245,12 +182,7 @@ const EmployeePage = () => {
               >
                 Add Employee
               </Button>
-              <Button
-                type="default"
-                icon={<DownloadOutlined />}
-                onClick={handleExport}
-                className="export-button"
-              >
+              <Button type="default" icon={<DownloadOutlined />} className="export-button">
                 Export
               </Button>
             </div>
@@ -261,16 +193,16 @@ const EmployeePage = () => {
           <Table
             columns={columns}
             dataSource={filteredData}
-            loading={loading}
+            loading={loading || settingsLoading}
             pagination={{
               total: filteredData.length,
               pageSize: 10,
               showSizeChanger: true,
               showTotal: (total) => `Total: ${total} employees`,
-              className: "custom-pagination",
-              size: "small"
+              className: 'custom-pagination',
+              size: 'small',
             }}
-            rowKey="punchCode"
+            rowKey="punch_code"
             bordered
             scroll={{ x: 'max-content' }}
             className="employee-table"
@@ -288,60 +220,50 @@ const EmployeePage = () => {
         </div>
       </Card>
 
-       {/* Modal for adding employee */}
-       <Modal
-        title="Add Employee"
-        visible={isModalVisible}
+      {/* Modal for adding employee */}
+      <Modal
+        title={selectedEmployee ? "Edit Employee" : "Add Employee"} // Change title dynamically
+        open={isModalVisible}
         onCancel={handleCancel}
         footer={null} // Remove default footer buttons
         width={600}
       >
-          <Form form={form} layout="vertical" onFinish={handleSubmit}>
-            <Form.Item name="name" label="Name" rules={[{ required: true }]}>
-              <Input />
-            </Form.Item>
+        <Form form={form} layout="vertical" onFinish={handleSubmit}>
+          <Form.Item name="name" label="Name" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
 
-          <Form.Item
-            label="Punch Code"
-            name="punchCode"
-            rules={[{ required: true, message: 'Please enter the punch code!' }]}
-          >
+          <Form.Item label="Punch Code" name="punch_code" rules={[{ required: true, message: 'Please enter the punch code!' }]}>
             <Input placeholder="Enter employee's punch code" />
           </Form.Item>
 
-          <Form.Item
-            label="Department"
-            name="department"
-            rules={[{ required: true, message: 'Please select the department!' }]}
-          >
+          <Form.Item label="Department" name="department" rules={[{ required: true, message: 'Please select the department!' }]}>
             <Select placeholder="Select department">
-              <Option value="Marketing">Marketing</Option>
-              <Option value="Engineering">Engineering</Option>
-              <Option value="Finance">Finance</Option>
+              {departments.map((dept) => (
+                <Option key={dept.id} value={dept.name}>
+                  {dept.name}
+                </Option>
+              ))}
             </Select>
           </Form.Item>
 
-          <Form.Item
-            label="Designation"
-            name="designation"
-            rules={[{ required: true, message: 'Please select the designation!' }]}
-          >
+          <Form.Item label="Designation" name="designation" rules={[{ required: true, message: 'Please select the designation!' }]}>
             <Select placeholder="Select designation">
-              <Option value="Specialist">Specialist</Option>
-              <Option value="Engineer">Engineer</Option>
-              <Option value="Analyst">Analyst</Option>
+              {designations.map((desig) => (
+                <Option key={desig.id} value={desig.designation_name}>
+                  {desig.designation_name}
+                </Option>
+              ))}
             </Select>
           </Form.Item>
 
-          <Form.Item
-            label="Reporting Group"
-            name="reportingGroup"
-            rules={[{ required: true, message: 'Please select the reporting group!' }]}
-          >
+          <Form.Item label="Reporting Group" name="reporting_group" rules={[{ required: true, message: 'Please select the reporting group!' }]}>
             <Select placeholder="Select reporting group">
-              <Option value="Morning">Morning</Option>
-              <Option value="Afternoon">Afternoon</Option>
-              <Option value="Night">Night</Option>
+              {reportingGroups.map((group) => (
+                <Option key={group.id} value={group.groupname}>
+                  {group.groupname}
+                </Option>
+              ))}
             </Select>
           </Form.Item>
 

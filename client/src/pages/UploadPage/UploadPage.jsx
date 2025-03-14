@@ -75,7 +75,7 @@ function UploadPage() {
         )}
 
         <div className="form-section">
-          <div className="form-group">
+          {/* <div className="form-group">
             <label htmlFor="zohoFiles">
               <span className="label-text">Zoho Files</span>
               <span className="required">*</span>
@@ -105,7 +105,7 @@ function UploadPage() {
                 ))}
               </div>
             )}
-          </div>
+          </div> */}
 
           <div className="form-group">
             <label htmlFor="networkHourFile">

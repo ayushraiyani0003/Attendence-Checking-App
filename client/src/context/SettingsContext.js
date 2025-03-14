@@ -1,24 +1,28 @@
-import { useState, useEffect } from 'react';
-import { fetchSettings, addDepartment, addDesignation, deleteDepartment, deleteDesignation } from '../services/settingsService';
+import { useState, useEffect } from "react";
+import {
+  fetchSettings,
+  deleteDepartment,
+  deleteDesignation,
+  deleteReportingGroup,
+} from "../services/settingsService";
 
 export const useSettings = () => {
-  const [departments, setDepartments] = useState([]);  // Initialize as an empty array
-  const [designations, setDesignations] = useState([]);  // Initialize as an empty array
+  const [departments, setDepartments] = useState([]);
+  const [designations, setDesignations] = useState([]);
+  const [reportingGroups, setReportingGroups] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [reportingGroups, setReportingGroups] = useState([]);
-
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         const settings = await fetchSettings();
-        setDepartments(settings.departments || []);  // Ensure it's an array even if data is missing
-        setDesignations(settings.designations || []);  // Ensure it's an array even if data is missing
+        setDepartments(settings.departments || []);
+        setDesignations(settings.designations || []);
         setReportingGroups(settings.reportingGroups || []);
       } catch (error) {
-        setError('Failed to fetch settings');
+        setError("Failed to fetch settings");
       } finally {
         setLoading(false);
       }
@@ -27,30 +31,34 @@ export const useSettings = () => {
     fetchData();
   }, []);
 
+  // Method to add a new department (you might need to create an actual service for adding)
   const handleAddDepartment = async (newDepartment) => {
     try {
-      const updatedDepartments = await addDepartment(newDepartment);
+      // Update your logic here if an add method is created or handled in saveSettingsToServer
+      const updatedDepartments = [...departments, newDepartment]; // Example of direct state modification
       setDepartments(updatedDepartments);
     } catch (error) {
-      setError('Failed to add department');
+      setError("Failed to add department");
     }
   };
 
+  // Method to add a new designation
   const handleAddDesignation = async (newDesignation) => {
     try {
-      const updatedDesignations = await addDesignation(newDesignation);
+      const updatedDesignations = [...designations, newDesignation]; // Direct state modification example
       setDesignations(updatedDesignations);
     } catch (error) {
-      setError('Failed to add designation');
+      setError("Failed to add designation");
     }
   };
 
+  // Method to add a new reporting group
   const handleAddReportingGroup = async (newReportingGroup) => {
     try {
-      const updatedReportingGroups = await addReportingGroup(newReportingGroup);
+      const updatedReportingGroups = [...reportingGroups, newReportingGroup]; // Direct state modification example
       setReportingGroups(updatedReportingGroups);
     } catch (error) {
-      setError('Failed to add reporting group');  
+      setError("Failed to add reporting group");
     }
   };
 
@@ -59,7 +67,7 @@ export const useSettings = () => {
       const updatedDepartments = await deleteDepartment(departmentToDelete);
       setDepartments(updatedDepartments);
     } catch (error) {
-      setError('Failed to delete department');
+      setError("Failed to delete department");
     }
   };
 
@@ -68,16 +76,18 @@ export const useSettings = () => {
       const updatedDesignations = await deleteDesignation(designationToDelete);
       setDesignations(updatedDesignations);
     } catch (error) {
-      setError('Failed to delete designation');
+      setError("Failed to delete designation");
     }
   };
 
   const handleDeleteReportingGroup = async (reportingGroupToDelete) => {
     try {
-      const updatedReportingGroups = await deleteReportingGroup(reportingGroupToDelete);
+      const updatedReportingGroups = await deleteReportingGroup(
+        reportingGroupToDelete
+      );
       setReportingGroups(updatedReportingGroups);
     } catch (error) {
-      setError('Failed to delete reporting group');
+      setError("Failed to delete reporting group");
     }
   };
 

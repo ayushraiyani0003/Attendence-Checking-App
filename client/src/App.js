@@ -1,5 +1,11 @@
 import React, { useState, useContext, useEffect } from "react";
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+} from "react-router-dom";
 import CustomHeader from "./components/CustomHeader/CustomHeader";
 import CustomSidebar from "./components/CustomSidebar/CustomSidebar";
 import AttendencePage from "./pages/AttendancePage/AttendancePage";
@@ -10,6 +16,7 @@ import UserListPage from "./pages/UserListPage/UserListPage";
 import LogInPage from "./pages/LogInPage/LogInPage";
 import { AuthContext } from "./context/AuthContext";
 import { pageRedirect } from "./utils/constants";
+import { EmployeeProvider } from "./context/EmployeeContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./App.css";
 
@@ -27,10 +34,10 @@ const App = () => {
     if (isAuthenticated && user) {
       // Only redirect if the current path is not the default one after login
       const currentPath = window.location.pathname;
-      
+
       if (currentPath === "/" || currentPath === "/login") {
         // Redirect to the appropriate dashboard after login
-        if (user.role === 'admin') {
+        if (user.role === "admin") {
           navigate("/");
         } else {
           navigate("/");
@@ -46,7 +53,7 @@ const App = () => {
           <CustomSidebar
             isOpen={isSidebarOpen}
             toggleSidebar={toggleSidebar}
-            isAdmin={user?.role === 'admin'}
+            isAdmin={user?.role === "admin"}
             onLogout={logout}
             pagesRedirect={pageRedirect}
           />
@@ -66,7 +73,9 @@ const App = () => {
                 path="/employee"
                 element={
                   <ProtectedRoute isAuthenticated={isAuthenticated}>
-                    <EmployeePage />
+                    <EmployeeProvider>
+                      <EmployeePage />
+                    </EmployeeProvider>
                   </ProtectedRoute>
                 }
               />

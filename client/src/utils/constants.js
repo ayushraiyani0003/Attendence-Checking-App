@@ -1,6 +1,6 @@
 // src/utils/constants.js
 
-export const API_URL = "http://192.168.10.132:5003/api";
+export const API_URL = "http://localhost:5003/api";
 
 // Define roles or any other constants you may need
 export const ROLES = {

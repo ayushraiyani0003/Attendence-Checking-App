@@ -1,29 +1,44 @@
-const { Employee } = require('../models');  // Assuming Employee model is in 'models' directory
-const { isAdmin } = require('../middleware/authMiddleware'); // Assuming isAdmin middleware
-const { authenticateJWT } = require('../middleware/authMiddleware'); // Assuming authenticateJWT middleware
+const {
+  createEmployeeService,
+  editEmployeeService,
+  deleteEmployeeService,
+  getAllEmployeesService,
+  getEmployeeService,
+} = require("../services/employeeServices"); // Import services
 
 // Create a new employee
 const createEmployee = async (req, res) => {
   try {
-    const { name, department, punch_code, designation } = req.body;
+    const { name, department, punch_code, designation, reporting_group } =
+      req.body;
+    console.log(req.body);
 
     // Validate required fields
-    if (!name || !department || !punch_code || !designation) {
-      return res.status(400).json({ message: 'All fields are required.' });
+    if (
+      !name ||
+      !department ||
+      !punch_code ||
+      !designation ||
+      !reporting_group
+    ) {
+      return res.status(400).json({ message: "All fields are required." });
     }
 
-    // Create a new employee
-    const newEmployee = await Employee.create({
+    const newEmployee = await createEmployeeService({
       name,
       department,
       punch_code,
       designation,
+      reporting_group,
     });
 
-    res.status(201).json({ message: 'Employee created successfully!', employee: newEmployee });
+    res.status(201).json({
+      message: "Employee created successfully!",
+      employee: newEmployee,
+    });
   } catch (error) {
-    console.error('Error creating employee:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Error creating employee:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -31,31 +46,29 @@ const createEmployee = async (req, res) => {
 const editEmployee = async (req, res) => {
   try {
     const { employee_id } = req.params;
-    const { name, department, punch_code, designation } = req.body;
+    const { name, department, punch_code, designation, reporting_group } =
+      req.body;
 
     // Validate required fields
     if (!name || !department || !punch_code || !designation) {
-      return res.status(400).json({ message: 'All fields are required.' });
+      return res.status(400).json({ message: "All fields are required." });
     }
 
-    // Find employee by ID
-    const employee = await Employee.findByPk(employee_id);
-    if (!employee) {
-      return res.status(404).json({ message: 'Employee not found' });
-    }
+    const updatedEmployee = await editEmployeeService(employee_id, {
+      name,
+      department,
+      punch_code,
+      designation,
+      reporting_group,
+    });
 
-    // Update employee details
-    employee.name = name;
-    employee.department = department;
-    employee.punch_code = punch_code;
-    employee.designation = designation;
-
-    await employee.save();
-
-    res.status(200).json({ message: 'Employee updated successfully!', employee });
+    res.status(200).json({
+      message: "Employee updated successfully!",
+      employee: updatedEmployee,
+    });
   } catch (error) {
-    console.error('Error updating employee:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Error updating employee:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -64,47 +77,37 @@ const deleteEmployee = async (req, res) => {
   try {
     const { employee_id } = req.params;
 
-    // Find employee by ID
-    const employee = await Employee.findByPk(employee_id);
-    if (!employee) {
-      return res.status(404).json({ message: 'Employee not found' });
-    }
+    const deletedEmployee = await deleteEmployeeService(employee_id);
 
-    // Delete the employee
-    await employee.destroy();
-
-    res.status(200).json({ message: 'Employee deleted successfully!' });
+    res.status(200).json({ message: "Employee deleted successfully!" });
   } catch (error) {
-    console.error('Error deleting employee:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Error deleting employee:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
 // Get all employees
 const getAllEmployees = async (req, res) => {
   try {
-    const employees = await Employee.findAll();
+    const employees = await getAllEmployeesService();
     res.status(200).json({ employees });
   } catch (error) {
-    console.error('Error fetching employees:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Error fetching employees:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
-// Example of an API route requiring admin access
+// Get employee by ID
 const getEmployee = async (req, res) => {
   try {
     const { employee_id } = req.params;
 
-    const employee = await Employee.findByPk(employee_id);
-    if (!employee) {
-      return res.status(404).json({ message: 'Employee not found' });
-    }
+    const employee = await getEmployeeService(employee_id);
 
     res.status(200).json({ employee });
   } catch (error) {
-    console.error('Error fetching employee:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Error fetching employee:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
