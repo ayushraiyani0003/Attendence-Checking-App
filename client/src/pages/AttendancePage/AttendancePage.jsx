@@ -23,6 +23,20 @@ function AttendancePage() {
     { key: "department", label: "Department" },
   ];
 
+
+  // {
+  //   id: "1", // Added unique id
+  //   punchCode: "001",
+  //   name: "John Smith",
+  //   reporing group: "Developer",
+  //   department: "Engineering",
+        // monthYear:"march-2025"
+  //   locked_date: [
+  //     
+  //   ],
+    // unlocked_+date:[
+    // ].
+  // },
   // Mock data for demonstration
   const mockData = [
     {
