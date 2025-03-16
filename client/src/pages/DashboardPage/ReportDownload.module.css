@@ -1,0 +1,30 @@
+/* src/components/ReportDownload/ReportDownload.module.css */
+.reportDownload {
+    padding: 20px;
+    border-left: 2px solid #ccc;
+    width: 300px;
+  }
+  
+  .buttons {
+    margin: 20px 0;
+  }
+  
+  .checkbox {
+    margin: 10px 0;
+  }
+  
+  .downloadButton {
+    background-color: #4caf50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 20px;
+    border-radius: 8px;
+  }
+  
+  .downloadButton:hover {
+    background-color: #45a049;
+  }
+  
