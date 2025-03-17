@@ -1,9 +1,14 @@
 import { X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
+import useAuth from '../../hooks/useAuth'; // Import the custom hook
+import { useNavigate } from 'react-router-dom';
 import "./CustomSidebar.css";
 
-export default function CustomSidebar({ isOpen, toggleSidebar, departments, isAdmin, pagesRedirect }) {
+export default function CustomSidebar({ isOpen, toggleSidebar, departments, isAdmin, onLogout, pagesRedirect }) {
+  const { logout } = useAuth(); // Use the hook to get the logout function
+  const navigate = useNavigate(); // Hook to navigate programmatically
+
   return (
     <>
       {/* Background overlay when sidebar is open */}
@@ -67,6 +72,17 @@ export default function CustomSidebar({ isOpen, toggleSidebar, departments, isAd
               </ul>
             </div>
           )}
+
+          {/* Display logout option */}
+          <div className="sidebar-section">
+            <h3 className="section-title">Admin Controls</h3>
+            <ul className="sidebar-list">
+              <li className="sidebar-item" onClick={onLogout}>
+                Logout
+              </li>
+            </ul>
+          </div>
+
         </motion.div>
       </AnimatePresence>
     </>

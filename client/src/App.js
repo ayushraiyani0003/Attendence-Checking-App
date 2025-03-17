@@ -14,7 +14,7 @@ import SettingsPage from "./pages/SettingPage/SettingPage";
 import UploadPage from "./pages/UploadPage/UploadPage";
 import UserListPage from "./pages/UserListPage/UserListPage";
 import LogInPage from "./pages/LogInPage/LogInPage";
-import { AuthContext } from "./context/AuthContext";
+import { AuthContext, AuthProvider } from "./context/AuthContext";
 import { pageRedirect } from "./utils/constants";
 import { EmployeeProvider } from "./context/EmployeeContext";
 import { UploadProvider } from "./context/UploadContext";
@@ -29,6 +29,12 @@ const App = () => {
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
+
+    // Handle logout properly
+    const handleLogout = () => {
+      logout();
+      navigate('/login'); // Force navigation to login page
+    };
 
   // Redirection logic after login based on the intended destination
   useEffect(() => {
@@ -48,16 +54,17 @@ const App = () => {
   }, [isAuthenticated, user, navigate]);
 
   return (
-    <>
+    <AuthProvider>
       {isAuthenticated ? (
         <div className="flex">
-          <CustomSidebar
-            isOpen={isSidebarOpen}
-            toggleSidebar={toggleSidebar}
-            isAdmin={user?.role === "admin"}
-            onLogout={logout}
-            pagesRedirect={pageRedirect}
-          />
+            <CustomSidebar
+              isOpen={isSidebarOpen}
+              toggleSidebar={toggleSidebar}
+              isAdmin={user?.role === "admin"}
+              onLogout={handleLogout}
+              pagesRedirect={pageRedirect}
+            />
+
           <div className="flex-1">
             <CustomHeader toggleSidebar={toggleSidebar} user={user} />
             <Routes>
@@ -116,7 +123,7 @@ const App = () => {
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       )}
-    </>
+    </AuthProvider>
   );
 };
 
