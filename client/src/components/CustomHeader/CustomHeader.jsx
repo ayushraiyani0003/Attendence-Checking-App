@@ -1,69 +1,15 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./CustomHeader.css";
 
-const CustomDropdown = ({ options, defaultValue, onChange }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedOption, setSelectedOption] = useState(defaultValue || options[0]);
-  const dropdownRef = useRef(null);
+// Updated CustomHeader component with month-year picker styled like a dropdown
+function CustomHeader({ toggleSidebar, user }) {
+  const [selectedDate, setSelectedDate] = useState("2024-12");
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
-    };
-    
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const handleSelect = (option) => {
-    setSelectedOption(option);
-    setIsOpen(false);
-    if (onChange) onChange(option);
+  const handleMonthYearChange = (event) => {
+    setSelectedDate(event.target.value);
+    console.log("Selected Month-Year:", event.target.value);
   };
 
-  return (
-    <div className="custom-dropdown-container" ref={dropdownRef}>
-      <div 
-        className={`custom-dropdown-selected ${isOpen ? 'active' : ''}`}
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <span>{selectedOption}</span>
-        <svg 
-          className={`dropdown-arrow ${isOpen ? 'open' : ''}`} 
-          width="12" 
-          height="7" 
-          viewBox="0 0 12 7" 
-          fill="none" 
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path d="M1 1L6 6L11 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      </div>
-      
-      {isOpen && (
-        <div className="custom-dropdown-options">
-          {options.map((option, index) => (
-            <div 
-              key={index} 
-              className={`custom-dropdown-option ${selectedOption === option ? 'selected' : ''}`}
-              onClick={() => handleSelect(option)}
-            >
-              {option}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
-// Updated CustomHeader component
-function CustomHeader({ toggleSidebar, user }) {
-  const dateOptions = ["Dec 2024", "Jan 2025", "Feb 2025", "Mar 2025"];
-  
   return (
     <header className="custom-header">
       <div className="header-left">
@@ -75,11 +21,15 @@ function CustomHeader({ toggleSidebar, user }) {
         <input type="text" className="search-box" placeholder="sunchaser / HR" />
       </div>
       <div className="header-right">
-        <CustomDropdown 
-          options={dateOptions} 
-          defaultValue="Dec 2024" 
-          onChange={(selected) => console.log("Selected:", selected)}
-        />
+        {/* Month-Year Picker styled like a dropdown */}
+        <div className="custom-month-year-dropdown">
+          <input 
+            type="month" 
+            value={selectedDate} 
+            onChange={handleMonthYearChange} 
+            className="month-year-picker"
+          />
+        </div>
         <div className="profile-info">
           <div className="name-designation">
             <p className="header-name">{user.name}</p>

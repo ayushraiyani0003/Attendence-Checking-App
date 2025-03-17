@@ -1,34 +1,27 @@
-const fs = require("fs");
-const path = require("path");
-const csv = require("csv-parser");
+const xlsx = require("xlsx");
 
-const parseCSVFile = (file) => {
+const parseExcelFile = (file) => {
   return new Promise((resolve, reject) => {
-    const results = [];
-    fs.createReadStream(file.path)
-      .pipe(csv())
-      .on("data", (data) => results.push(data))
-      .on("end", () => {
-        resolve(results);
-      })
-      .on("error", (err) => reject(err));
-  });
-};
-
-const parseOTFile = (file) => {
-  return new Promise((resolve, reject) => {
-    const results = [];
-    fs.createReadStream(file.path)
-      .pipe(csv())
-      .on("data", (data) => results.push(data))
-      .on("end", () => {
-        resolve(results);
-      })
-      .on("error", (err) => reject(err));
+    try {
+      const workbook = xlsx.readFile(file.path);
+      const sheetName = workbook.SheetNames[0]; // Assuming data is in first sheet
+      const worksheet = workbook.Sheets[sheetName];
+      
+      // Convert Excel to JSON with proper header handling
+      const data = xlsx.utils.sheet_to_json(worksheet, {
+        raw: false, // Convert numbers to strings to preserve format
+        defval: ''  // Default empty cells to empty string
+      });
+      
+      // Return the JSON representation
+      resolve(data);
+    } catch (error) {
+      console.error("Error parsing Excel file:", error);
+      reject(error);
+    }
   });
 };
 
 module.exports = {
-  parseCSVFile,
-  parseOTFile,
+  parseExcelFile,
 };

@@ -1,6 +1,4 @@
 const metricsService = require("../services/metricsService");
-
-// Handle file upload and process metrics data
 const handleMetricsUpload = async (req, res) => {
   try {
     // Extract files and month_year from the request
@@ -16,8 +14,8 @@ const handleMetricsUpload = async (req, res) => {
 
     // Call the service to handle file processing and data insertion
     const result = await metricsService.processMetricsFiles(
-      networkFile,
-      otFile,
+      networkFile[0], // The first file in the array (multer handles it as an array)
+      otFile[0], // The first file in the array (multer handles it as an array)
       monthYear
     );
 

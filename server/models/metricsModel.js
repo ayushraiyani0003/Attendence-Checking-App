@@ -5,12 +5,12 @@ const Metrics = sequelize.define(
   "metrics",
   {
     metric_id: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(50), // Increased length to accommodate "YYYY-MM_PUNCHCODE" format
       primaryKey: true,
-      autoIncrement: true,
+      autoIncrement: false // Not using autoIncrement for string ids
     },
     punch_code: {
-      type: DataTypes.STRING(11),
+      type: DataTypes.STRING(30),
       allowNull: false,
     },
     month_year: {
@@ -18,26 +18,26 @@ const Metrics = sequelize.define(
       allowNull: false,
     },
     network_hours: {
-      type: DataTypes.JSON,
+      type: DataTypes.TEXT, // Changed to TEXT to handle JSON strings
       allowNull: true,
-      validate: {
-        isValidJSON(value) {
-          if (!value || !Array.isArray(value)) {
-            throw new Error("Invalid JSON format for network_hours");
-          }
-        },
+      get() {
+        const value = this.getDataValue('network_hours');
+        return value ? JSON.parse(value) : [];
       },
+      set(value) {
+        this.setDataValue('network_hours', JSON.stringify(value));
+      }
     },
     overtime_hours: {
-      type: DataTypes.JSON,
+      type: DataTypes.TEXT, // Changed to TEXT to handle JSON strings
       allowNull: true,
-      validate: {
-        isValidJSON(value) {
-          if (!value || !Array.isArray(value)) {
-            throw new Error("Invalid JSON format for overtime_hours");
-          }
-        },
+      get() {
+        const value = this.getDataValue('overtime_hours');
+        return value ? JSON.parse(value) : [];
       },
+      set(value) {
+        this.setDataValue('overtime_hours', JSON.stringify(value));
+      }
     },
     created_at: {
       type: DataTypes.DATE,
@@ -48,7 +48,6 @@ const Metrics = sequelize.define(
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: DataTypes.NOW,
-      onUpdate: DataTypes.NOW,
     },
   },
   {
