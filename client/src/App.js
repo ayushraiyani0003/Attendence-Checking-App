@@ -17,6 +17,7 @@ import LogInPage from "./pages/LogInPage/LogInPage";
 import { AuthContext } from "./context/AuthContext";
 import { pageRedirect } from "./utils/constants";
 import { EmployeeProvider } from "./context/EmployeeContext";
+import { UploadProvider } from "./context/UploadContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import "./App.css";
 
@@ -99,7 +100,9 @@ const App = () => {
                 path="/upload"
                 element={
                   <ProtectedRoute isAuthenticated={isAuthenticated}>
-                    <UploadPage />
+                    <UploadProvider>
+                      <UploadPage />
+                    </UploadProvider>
                   </ProtectedRoute>
                 }
               />
