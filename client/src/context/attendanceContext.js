@@ -1,7 +1,16 @@
-import { useState, useEffect } from "react";
-import { getAttendanceByEmployee, addAttendance, editAttendance, getAttendanceByReportingGroup } from "../services/attendanceService"; // Assuming you have a service for API calls
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { getAttendanceByEmployee, addAttendance, editAttendance, getAttendanceByReportingGroup } from "../services/attendanceService"; // Assuming you have an API service for attendance
 
-const useAttendance = () => {
+// Create Context
+const AttendanceContext = createContext();
+
+// Create a custom hook to use the attendance context
+export const useAttendanceContext = () => {
+  return useContext(AttendanceContext);
+};
+
+// AttendanceContextProvider component to wrap your app
+export const AttendanceContextProvider = ({ children }) => {
   const [attendanceData, setAttendanceData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -10,7 +19,7 @@ const useAttendance = () => {
   const fetchAttendanceByEmployee = async (employeeId) => {
     setIsLoading(true);
     try {
-      const response = await getAttendanceByEmployee(employeeId); // Assuming you have an API service
+      const response = await getAttendanceByEmployee(employeeId); // Call API to get data
       setAttendanceData(response.data);
     } catch (err) {
       setError(err.message);
@@ -23,7 +32,7 @@ const useAttendance = () => {
   const fetchAttendanceByReportingGroup = async (groupName, monthYear) => {
     setIsLoading(true);
     try {
-      const response = await getAttendanceByReportingGroup(groupName, monthYear); // Assuming API for reporting group
+      const response = await getAttendanceByReportingGroup(groupName, monthYear); // Call API for reporting group
       setAttendanceData(response.data);
     } catch (err) {
       setError(err.message);
@@ -36,7 +45,7 @@ const useAttendance = () => {
   const createAttendance = async (attendanceDetails) => {
     setIsLoading(true);
     try {
-      const response = await addAttendance(attendanceDetails); // Add attendance API service
+      const response = await addAttendance(attendanceDetails); // Call API to add attendance
       setAttendanceData((prevData) => [...prevData, response.data]);
     } catch (err) {
       setError(err.message);
@@ -49,7 +58,7 @@ const useAttendance = () => {
   const updateAttendance = async (attendanceId, updatedDetails) => {
     setIsLoading(true);
     try {
-      const response = await editAttendance(attendanceId, updatedDetails); // Update attendance API service
+      const response = await editAttendance(attendanceId, updatedDetails); // Call API to update attendance
       setAttendanceData((prevData) =>
         prevData.map((att) =>
           att.id === attendanceId ? { ...att, ...response.data } : att
@@ -62,18 +71,19 @@ const useAttendance = () => {
     }
   };
 
-  // Additional functions to interact with the attendance data
-  // For example, to calculate mistakes, lock/unlock attendance, etc.
-
-  return {
-    attendanceData,
-    isLoading,
-    error,
-    fetchAttendanceByEmployee,
-    fetchAttendanceByReportingGroup,
-    createAttendance,
-    updateAttendance,
-  };
+  return (
+    <AttendanceContext.Provider
+      value={{
+        attendanceData,
+        isLoading,
+        error,
+        fetchAttendanceByEmployee,
+        fetchAttendanceByReportingGroup,
+        createAttendance,
+        updateAttendance,
+      }}
+    >
+      {children}
+    </AttendanceContext.Provider>
+  );
 };
-
-export default useAttendance;
