@@ -1,0 +1,21 @@
+/* src/components/Dashboard/Dashboard.module.css */
+.dashboard {
+    flex: 1;
+    padding: 20px;
+  }
+  
+  .section {
+    margin-bottom: 20px;
+  }
+  
+  .chart {
+    height: 200px;
+    background-color: #e0e0e0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #555;
+    font-size: 18px;
+    border-radius: 8px;
+  }
+  
