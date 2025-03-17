@@ -1,14 +1,120 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./CustomHeader.css";
 
-// Updated CustomHeader component with month-year picker styled like a dropdown
-function CustomHeader({ toggleSidebar, user }) {
-  const [selectedDate, setSelectedDate] = useState("2024-12");
+const CustomDropdown = ({ options, defaultValue, onChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedOption, setSelectedOption] = useState(defaultValue || options[0]);
+  const dropdownRef = useRef(null);
+  const optionsContainerRef = useRef(null);
+  const selectedOptionRef = useRef(null);
 
-  const handleMonthYearChange = (event) => {
-    setSelectedDate(event.target.value);
-    console.log("Selected Month-Year:", event.target.value);
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Scroll to center the selected option when dropdown opens
+  useEffect(() => {
+    if (isOpen && optionsContainerRef.current && selectedOptionRef.current) {
+      const container = optionsContainerRef.current;
+      const selectedElement = selectedOptionRef.current;
+      
+      // Calculate the position to center the selected option
+      const containerHeight = container.offsetHeight;
+      const selectedHeight = selectedElement.offsetHeight;
+      const selectedTop = selectedElement.offsetTop;
+      
+      // Scroll position to center the selected item
+      const scrollPosition = selectedTop - (containerHeight / 2) + (selectedHeight / 2);
+      
+      container.scrollTop = scrollPosition;
+    }
+  }, [isOpen]);
+
+  const handleSelect = (option) => {
+    setSelectedOption(option);
+    setIsOpen(false);
+    if (onChange) onChange(option);
   };
+
+  return (
+    <div className="custom-dropdown-container" ref={dropdownRef}>
+      <div
+        className={`custom-dropdown-selected ${isOpen ? 'active' : ''}`}
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <span>{selectedOption}</span>
+        <svg
+          className={`dropdown-arrow ${isOpen ? 'open' : ''}`}
+          width="12"
+          height="7"
+          viewBox="0 0 12 7"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path d="M1 1L6 6L11 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </div>
+      {isOpen && (
+        <div className="custom-dropdown-options" ref={optionsContainerRef}>
+          {options.map((option, index) => (
+            <div
+              key={index}
+              ref={selectedOption === option ? selectedOptionRef : null}
+              className={`custom-dropdown-option ${selectedOption === option ? 'selected' : ''}`}
+              onClick={() => handleSelect(option)}
+            >
+              {option}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Updated CustomHeader component with current month centered
+function CustomHeader({ toggleSidebar, user }) {
+  // Function to generate date list
+  function generateDateList(startDate, endYear) {
+    const dateOptions = [];
+    const [startMonth, startYear] = startDate.split(" ");
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    let currentYear = parseInt(startYear);
+    let currentMonthIndex = months.indexOf(startMonth);
+    
+    while (currentYear <= endYear) {
+      dateOptions.push(`${months[currentMonthIndex]} ${currentYear}`);
+      // Move to the next month
+      currentMonthIndex++;
+      if (currentMonthIndex >= months.length) {
+        currentMonthIndex = 0;
+        currentYear++;
+      }
+    }
+    return dateOptions;
+  }
+
+  // Get current month and year
+  const getCurrentMonthYear = () => {
+    const now = new Date();
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    return `${months[now.getMonth()]} ${now.getFullYear()}`;
+  };
+
+  const dateOptions = generateDateList("Dec 2024", 2030);
+  const currentMonthYear = getCurrentMonthYear();
+  
+  // Find the closest option to current month/year
+  const defaultValue = dateOptions.includes(currentMonthYear) 
+    ? currentMonthYear 
+    : dateOptions[0];
 
   return (
     <header className="custom-header">
@@ -21,15 +127,11 @@ function CustomHeader({ toggleSidebar, user }) {
         <input type="text" className="search-box" placeholder="sunchaser / HR" />
       </div>
       <div className="header-right">
-        {/* Month-Year Picker styled like a dropdown */}
-        <div className="custom-month-year-dropdown">
-          <input 
-            type="month" 
-            value={selectedDate} 
-            onChange={handleMonthYearChange} 
-            className="month-year-picker"
-          />
-        </div>
+        <CustomDropdown 
+          options={dateOptions} 
+          defaultValue={defaultValue} 
+          onChange={(selected) => console.log("Selected:", selected)} 
+        />
         <div className="profile-info">
           <div className="name-designation">
             <p className="header-name">{user.name}</p>
