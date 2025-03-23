@@ -1,3 +1,4 @@
+// React Context for managing Attendance data
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { getAttendanceByEmployee, addAttendance, editAttendance, getAttendanceByReportingGroup } from "../services/attendanceService"; // Assuming you have an API service for attendance
 
@@ -15,38 +16,12 @@ export const AttendanceContextProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Fetch attendance by employee ID
-  const fetchAttendanceByEmployee = async (employeeId) => {
-    setIsLoading(true);
-    try {
-      const response = await getAttendanceByEmployee(employeeId); // Call API to get data
-      setAttendanceData(response.data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   // Fetch attendance by reporting group and month/year
   const fetchAttendanceByReportingGroup = async (groupName, monthYear) => {
     setIsLoading(true);
     try {
       const response = await getAttendanceByReportingGroup(groupName, monthYear); // Call API for reporting group
       setAttendanceData(response.data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Add new attendance record
-  const createAttendance = async (attendanceDetails) => {
-    setIsLoading(true);
-    try {
-      const response = await addAttendance(attendanceDetails); // Call API to add attendance
-      setAttendanceData((prevData) => [...prevData, response.data]);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -77,9 +52,7 @@ export const AttendanceContextProvider = ({ children }) => {
         attendanceData,
         isLoading,
         error,
-        fetchAttendanceByEmployee,
         fetchAttendanceByReportingGroup,
-        createAttendance,
         updateAttendance,
       }}
     >

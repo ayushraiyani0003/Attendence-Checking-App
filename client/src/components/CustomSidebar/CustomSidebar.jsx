@@ -1,14 +1,12 @@
 import { X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
-import useAuth from '../../hooks/useAuth'; // Import the custom hook
-import { useNavigate } from 'react-router-dom';
+import logo from '../../assets/sunchaser.png'; 
 import "./CustomSidebar.css";
 
-export default function CustomSidebar({ isOpen, toggleSidebar, departments, isAdmin, onLogout, pagesRedirect }) {
-  const { logout } = useAuth(); // Use the hook to get the logout function
-  const navigate = useNavigate(); // Hook to navigate programmatically
-
+export default function CustomSidebar({ isOpen, toggleSidebar, userDepartments, isAdmin, onLogout, pagesRedirect }) {
+  // console.log(userDepartments);
+  
   return (
     <>
       {/* Background overlay when sidebar is open */}
@@ -33,7 +31,7 @@ export default function CustomSidebar({ isOpen, toggleSidebar, departments, isAd
           transition={{ type: "spring", stiffness: 400, damping: 40 }}
         >
           <div className="sidebar-header">
-            <h2>Departments</h2>
+            <h2><img src={logo} alt="Logo" className="sidebar-logo" /></h2>
             <button onClick={toggleSidebar} className="close-btn">
               <X size={24} />
             </button>
@@ -41,16 +39,16 @@ export default function CustomSidebar({ isOpen, toggleSidebar, departments, isAd
           
           {/* Departments section - Displayed for both user and admin */}
           <div className="sidebar-section">
-            <h3 className="section-title">Departments</h3>
+            <h3 className="section-title"> Departments</h3>
             <ul className="sidebar-list">
               {isAdmin ? (
                 <li className="sidebar-item">
                   <Link to="/" onClick={toggleSidebar}>Attendance</Link>
                 </li>
               ) : (
-                departments.map((dept) => (
-                  <li key={dept.id} className="sidebar-item" onClick={toggleSidebar}>
-                    {dept.name}
+                userDepartments.map((dept) => (
+                  <li key={dept.name} className="sidebar-item" onClick={toggleSidebar}>
+                     <Link to="/" onClick={toggleSidebar}>{dept}</Link>
                   </li>
                 ))
               )}

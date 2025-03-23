@@ -19,8 +19,7 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 15px;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--gray-700);
+    padding: 0px 0 10px 0;
   }
   
   .sidebar-header h2 {
@@ -90,6 +89,16 @@
     text-decoration: none;
     width: 100%;
     display: block;
+  }
+
+  .sidebar-logo{
+    padding: 3px;
+    border-radius: 10px;
+    /* background-color: white; */
+    width: 70%;
+  height: auto; /* Maintain aspect ratio of the logo */
+  display: inline-block; /* Ensure that background color applies just around the logo */
+
   }
   
   .sidebar-item a:hover {

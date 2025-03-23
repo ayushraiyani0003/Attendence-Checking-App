@@ -26,7 +26,7 @@ const userLogin = async (req, res) => {
     await User.update({ last_login: new Date() }, { where: { id: user.id } });
 
     const token = jwt.sign(
-      { userId: user.id, username: user.username, role: user.user_role, name: user.name },
+      { userId: user.id, username: user.username, role: user.user_role, name: user.name,  userReportingGroup: user.reporting_group },
       JWT_SECRET_KEY,
       { expiresIn: '1d' }
     );
@@ -39,12 +39,12 @@ const userLogin = async (req, res) => {
       sameSite: 'None',
       path: '/'
     });
-
+    
     // Return the token in the response body as well
     return res.status(200).json({
       message: 'Login successful',
       token: token, // Include token in response
-      user: { id: user.id, username: user.username, role: user.user_role, name: user.name },
+      user: { id: user.id, username: user.username, role: user.user_role, name: user.name , userReportingGroup: user.reporting_group},
     });
   } catch (error) {
     return res.status(500).json({ message: 'Something went wrong', error: error.message });
@@ -83,7 +83,6 @@ const validateToken = (req, res) => {
     if (err) {
       return res.status(403).json({ message: 'Invalid or expired token' });
     }
-
     res.status(200).json({
       message: 'Token is valid',
       user: {
@@ -91,6 +90,7 @@ const validateToken = (req, res) => {
         username: user.username,
         role: user.role,
         name: user.name,
+        userReportingGroup: user.userReportingGroup,
       },
     });
   });

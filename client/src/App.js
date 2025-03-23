@@ -19,6 +19,7 @@ import { pageRedirect } from "./utils/constants";
 import { EmployeeProvider } from "./context/EmployeeContext";
 import { UploadProvider } from "./context/UploadContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { WebSocketProvider } from "./context/WebSocketContext";
 import "./App.css";
 
 const App = () => {
@@ -53,6 +54,8 @@ const App = () => {
     }
   }, [isAuthenticated, user, navigate]);
 
+  // console.log(user);
+  
   return (
     <AuthProvider>
       {isAuthenticated ? (
@@ -61,6 +64,7 @@ const App = () => {
               isOpen={isSidebarOpen}
               toggleSidebar={toggleSidebar}
               isAdmin={user?.role === "admin"}
+              userDepartments={user.userReportingGroup}
               onLogout={handleLogout}
               pagesRedirect={pageRedirect}
             />
@@ -73,7 +77,9 @@ const App = () => {
                 path="/"
                 element={
                   <ProtectedRoute isAuthenticated={isAuthenticated}>
-                    <AttendencePage />
+                    <WebSocketProvider>
+                    <AttendencePage user={user} />
+                    </WebSocketProvider>
                   </ProtectedRoute>
                 }
               />

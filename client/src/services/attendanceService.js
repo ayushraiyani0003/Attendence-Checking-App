@@ -1,7 +1,8 @@
 import axios from 'axios';
+import { API_URL } from "../utils/constants";
 
 // Base API URL (you can replace this with your actual API URL)
-const BASE_URL = "https://your-api-url.com/api/attendance";
+const BASE_URL = `${API_URL}/attendance`;
 
 // Helper function to get the attendance by employee ID
 export const getAttendanceByEmployee = async (employeeId) => {
@@ -15,10 +16,17 @@ export const getAttendanceByEmployee = async (employeeId) => {
 };
 
 // Helper function to get the attendance by reporting group and month/year
-export const getAttendanceByReportingGroup = async (groupName, monthYear) => {
+export const getAttendanceByReportingGroup = async (groupNames, monthYear) => {
   try {
-    const response = await axios.get(`${BASE_URL}/reporting-group/${groupName}/month/${monthYear}`);
-    return response.data;  // Returning the data from the response
+    if (!Array.isArray(groupNames)) groupNames = [groupNames];
+
+    const allResponses = await Promise.all(
+      groupNames.map(group =>
+        axios.get(`${BASE_URL}/reporting-group-status/${group}/month/${monthYear}`)
+      )
+    );
+
+    return allResponses.flatMap(res => res.data); // Flatten the array of results
   } catch (error) {
     console.error("Error fetching attendance by reporting group:", error);
     throw error;
@@ -47,22 +55,22 @@ export const editAttendance = async (attendanceId, updatedDetails) => {
   }
 };
 
-// Helper function to lock attendance record
+// Lock attendance by reporting group and date
 export const lockAttendance = async (attendanceId, lockedBy) => {
   try {
     const response = await axios.put(`${BASE_URL}/lock/${attendanceId}`, { locked_by: lockedBy });
-    return response.data;  // Returning the success message
+    return response.data;
   } catch (error) {
     console.error("Error locking attendance:", error);
     throw error;
   }
 };
 
-// Helper function to unlock attendance record
+// Unlock attendance by reporting group and date
 export const unlockAttendance = async (attendanceId, lockedBy) => {
   try {
     const response = await axios.put(`${BASE_URL}/unlock/${attendanceId}`, { locked_by: lockedBy });
-    return response.data;  // Returning the success message
+    return response.data;
   } catch (error) {
     console.error("Error unlocking attendance:", error);
     throw error;

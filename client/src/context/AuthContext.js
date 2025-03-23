@@ -1,7 +1,7 @@
 import React, { createContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import CustomLoader from "../assets/loader.svg";
 import { API_URL } from '../utils/constants';
-
 
 export const AuthContext = createContext();
 
@@ -9,7 +9,8 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
-
+  const [userRole, setUserRole] = useState(null);  // Added role for user/admin
+  const [groupName, setGroupName] = useState("");  // Added groupName for filtering attendance by group
 
   // Set up axios interceptor to add token to all requests
   useEffect(() => {
@@ -40,6 +41,9 @@ export const AuthProvider = ({ children }) => {
         if (response.status === 200) {
           const user = response.data.user;
           setUser(user);
+          setUserRole(user.role);  // Store role (admin/user)
+          setGroupName(user.groupNames || []); // Always store as array
+
           setIsAuthenticated(true);
         } else {
           localStorage.removeItem('authToken');
@@ -77,6 +81,9 @@ export const AuthProvider = ({ children }) => {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
       setUser(user);
+      setUserRole(user.role);  // Set role
+      setGroupName(user.groupNames || []); // Always store as array
+  // Set group name
       setIsAuthenticated(true);
 
       return true;
@@ -97,14 +104,16 @@ export const AuthProvider = ({ children }) => {
     // Update state
     setIsAuthenticated(false);
     setUser(null);
+    setUserRole(null);
+    setGroupName("");
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <div><img href={CustomLoader} /></div>;
   }
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ user, userRole, groupName, isAuthenticated, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

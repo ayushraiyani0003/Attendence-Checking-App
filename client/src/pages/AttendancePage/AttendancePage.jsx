@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./AttendancePage.css";
 import AttendanceHeader from "./AttendanceHeader";
+import AttendencePageSearchFilters from "./AttendencePageSearchFilters";
 import DataRow from "./DataRow";
+import { useWebSocket } from "../../hooks/useWebSocket"; // Import the WebSocket hook
 
-function AttendancePage() {
+function AttendancePage({ user, monthYear }) {
   const [hoveredRow, setHoveredRow] = useState(null);
   const [editableCell, setEditableCell] = useState(null);
-  const [data, setData] = useState([]);
   const [filterText, setFilterText] = useState("");
   const [sortConfig, setSortConfig] = useState({
     key: null,
@@ -14,8 +15,12 @@ function AttendancePage() {
   });
   const [view, setView] = useState("all"); // 'all', 'day', 'night'
   const [hasChanges, setHasChanges] = useState(false); // Track if there are unsaved changes
+  const [attendanceData, setAttendanceData] = useState([]); // For storing attendance data
 
-  const isAdmin = true;
+  const { ws, send } = useWebSocket(); // WebSocket hook to send messages
+
+  const isAdmin = user.userRole === "admin"; // Determine if user is admin
+
   const fixedColumns = [
     { key: "punchCode", label: "Punch Code" },
     { key: "name", label: "Name" },
@@ -23,221 +28,96 @@ function AttendancePage() {
     { key: "department", label: "Department" },
   ];
 
+  // Fetch initial attendance data when component mounts
+  useEffect(() => {
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    // Send WebSocket request to fetch attendance data for the user's group and the selected month
+    send("getAttendance", { group: user.userReportingGroup, month: currentMonth });
+  }, [user.userReportingGroup]);
 
-  // {
-  //   id: "1", // Added unique id
-  //   punchCode: "001",
-  //   name: "John Smith",
-  //   reporing group: "Developer",
-  //   department: "Engineering",
-        // monthYear:"march-2025"
-  //   locked_date: [
-  //     
-  //   ],
-    // unlocked_+date:[
-    // ].
-  // },
-  // Mock data for demonstration
-  const mockData = [
-    {
-      id: "1", // Added unique id
-      punchCode: "001",
-      name: "John Smith",
-      designation: "Senior Developer",
-      department: "Engineering",
-      attendance: [
-        {
-          date: "03/10/2024",
-          day: "Thursday",
-          netHR: "8",
-          otHR: "1",
-          dnShift: "Day",
-        },
-        {
-          date: "04/10/2024",
-          day: "Friday",
-          netHR: "7",
-          otHR: "0",
-          dnShift: "Day",
-        },
-      ],
-    },
-    {
-      id: "2", // Added unique id
-      punchCode: "002",
-      name: "Sarah Johnson",
-      designation: "Project Manager",
-      department: "Product",
-      attendance: [
-        {
-          date: "03/10/2024",
-          day: "Thursday",
-          netHR: "8",
-          otHR: "2",
-          dnShift: "Day",
-        },
-        {
-          date: "04/10/2024",
-          day: "Friday",
-          netHR: "6",
-          otHR: "0",
-          dnShift: "Day",
-        },
-      ],
-    },
-    {
-      id: "3", // Added unique id
-      punchCode: "003",
-      name: "Michael Chen",
-      designation: "QA Engineer",
-      department: "Engineering",
-      attendance: [
-        {
-          date: "03/10/2024",
-          day: "Thursday",
-          netHR: "0",
-          otHR: "0",
-          dnShift: "Off",
-        },
-        {
-          date: "04/10/2024",
-          day: "Friday",
-          netHR: "8",
-          otHR: "4",
-          dnShift: "Night",
-        },
-      ],
-    },
-    {
-      id: "4", // Added unique id
-      punchCode: "004",
-      name: "Emily Rodriguez",
-      designation: "UX Designer",
-      department: "Design",
-      attendance: [
-        {
-          date: "03/10/2024",
-          day: "Thursday",
-          netHR: "7",
-          otHR: "1",
-          dnShift: "Day",
-        },
-        {
-          date: "04/10/2024",
-          day: "Friday",
-          netHR: "8",
-          otHR: "2",
-          dnShift: "Night",
-        },
-      ],
-    },
-  ];
+  // Handle WebSocket messages to update attendance data
+  useEffect(() => {
+    if (!ws) return;
 
-  // Function to add a new employee
-  const addNewEmployee = () => {
-    const newEmployee = {
-      id: `${data.length + 1}`, // Added unique id
-      punchCode: `00${data.length + 1}`,
-      name: "New Employee",
-      designation: "Staff",
-      department: "Department",
-      attendance:
-        data[0]?.attendance.map((att) => ({
-          ...att,
-          netHR: "0",
-          otHR: "0",
-          dnShift: "Day",
-        })) || [],
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log("Received WebSocket message: ", data);
+
+      // If it's attendance data, update the state
+      if (data.action === "attendanceData") {
+        setAttendanceData(data.attendance); // Set the fetched attendance data
+      }
+
+      // If it's an update to an attendance row, update the data
+      if (data.action === "attendanceUpdated") {
+        setAttendanceData((prevData) =>
+          prevData.map((row) =>
+            row.id === data.attendance.id ? data.attendance : row
+          )
+        );
+      }
+
+      // If it's a lock/unlock action, handle accordingly
+      if (data.action === "attendanceLockStatus") {
+        setAttendanceData((prevData) =>
+          prevData.map((row) =>
+            row.attendance_date === data.date
+              ? { ...row, isLocked: data.status === "locked" }
+              : row
+          )
+        );
+      }
     };
-    setData((prevData) => [...prevData, newEmployee]);
-    setHasChanges(true);
+  }, [ws]);
+
+  // Handle WebSocket "lock" and "unlock" actions
+  const handleLockAttendance = (date) => {
+    send("lockAttendance", { date: date, status: "locked" });
   };
 
-  // Function to add a new day column for all employees
-  const addNewDay = () => {
-    // Get the last date and increment by 1 day
-    const lastDate = data[0]?.attendance[data[0].attendance.length - 1]?.date;
+  const handleUnlockAttendance = (date) => {
+    send("unlockAttendance", { date: date, status: "unlocked" });
+  };
 
-    if (!lastDate) return;
+  // Handle Cell Data Update
+  const handleCellDataUpdate = (rowIndex, columnIndex, field, value) => {
+    const updatedEmployee = { ...attendanceData[rowIndex] };
+    updatedEmployee.attendance[columnIndex][field] = value;
 
-    const [month, day, year] = lastDate.split("/");
-    const nextDate = new Date(year, month - 1, parseInt(day) + 1);
-    const formattedDate = `${String(nextDate.getMonth() + 1).padStart(
-      2,
-      "0"
-    )}/${String(nextDate.getDate()).padStart(
-      2,
-      "0"
-    )}/${nextDate.getFullYear()}`;
-
-    // Get day of week
-    const days = [
-      "Sunday",
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday",
-    ];
-    const dayName = days[nextDate.getDay()];
-
-    const updatedData = data.map((employee) => ({
-      ...employee,
-      attendance: [
-        ...employee.attendance,
-        {
-          date: formattedDate,
-          day: dayName,
-          netHR: "0",
-          otHR: "0",
-          dnShift: "Day",
-        },
-      ],
-    }));
-
-    setData(updatedData);
+    // Use the WebSocket send function to send the updated data
+    send("updateAttendance", { employeeId: updatedEmployee.id, updatedEmployee });
     setHasChanges(true);
   };
 
   // Handle keyboard navigation
   const onKeyDown = (e, rowIndex, column) => {
     if (!column) return;
-
     const [field, columnIndex] = column.split("-");
     const colIndex = parseInt(columnIndex);
 
     if (e.key === "Tab") {
       e.preventDefault();
-      // Determine next field in the same cell or move to next cell
       const fields = ["netHR", "otHR", "dnShift"];
       const currentFieldIndex = fields.indexOf(field);
-
       const filteredData = getFilteredData();
       const currentRowId = filteredData[rowIndex].id;
-      const currentRowOriginalIndex = data.findIndex(
+      const currentRowOriginalIndex = attendanceData.findIndex(
         (item) => item.id === currentRowId
       );
 
       if (currentFieldIndex < fields.length - 1) {
-        // Move to next field in same cell
         setEditableCell({
           rowIndex: currentRowOriginalIndex,
           column: `${fields[currentFieldIndex + 1]}-${colIndex}`,
         });
-      } else if (
-        colIndex <
-        data[currentRowOriginalIndex].attendance.length - 1
-      ) {
-        // Move to first field of next column
+      } else if (colIndex < attendanceData[currentRowOriginalIndex].attendance.length - 1) {
         setEditableCell({
           rowIndex: currentRowOriginalIndex,
           column: `${fields[0]}-${colIndex + 1}`,
         });
       } else if (rowIndex < filteredData.length - 1) {
-        // Move to first field of first column of next row
         const nextRowId = filteredData[rowIndex + 1].id;
-        const nextRowOriginalIndex = data.findIndex(
+        const nextRowOriginalIndex = attendanceData.findIndex(
           (item) => item.id === nextRowId
         );
         setEditableCell({
@@ -251,100 +131,46 @@ function AttendancePage() {
     } else if (e.key === "Escape") {
       e.preventDefault();
       setEditableCell(null); // Cancel editing
-    } else if (e.key === "ArrowUp" && rowIndex > 0) {
-      e.preventDefault();
-      const filteredData = getFilteredData();
-      const currentRowId = filteredData[rowIndex].id;
-      const prevRowId = filteredData[rowIndex - 1].id;
-      const prevRowOriginalIndex = data.findIndex(
-        (item) => item.id === prevRowId
-      );
-      setEditableCell({ rowIndex: prevRowOriginalIndex, column });
-    } else if (
-      e.key === "ArrowDown" &&
-      rowIndex < getFilteredData().length - 1
-    ) {
-      e.preventDefault();
-      const filteredData = getFilteredData();
-      const currentRowId = filteredData[rowIndex].id;
-      const nextRowId = filteredData[rowIndex + 1].id;
-      const nextRowOriginalIndex = data.findIndex(
-        (item) => item.id === nextRowId
-      );
-      setEditableCell({ rowIndex: nextRowOriginalIndex, column });
-    } else if (e.key === "ArrowLeft" && colIndex > 0) {
-      e.preventDefault();
-      const filteredData = getFilteredData();
-      const currentRowId = filteredData[rowIndex].id;
-      const currentRowOriginalIndex = data.findIndex(
-        (item) => item.id === currentRowId
-      );
-      setEditableCell({
-        rowIndex: currentRowOriginalIndex,
-        column: `${field}-${colIndex - 1}`,
-      });
-    } else if (
-      e.key === "ArrowRight" &&
-      colIndex < data[rowIndex].attendance.length - 1
-    ) {
-      e.preventDefault();
-      const filteredData = getFilteredData();
-      const currentRowId = filteredData[rowIndex].id;
-      const currentRowOriginalIndex = data.findIndex(
-        (item) => item.id === currentRowId
-      );
-      setEditableCell({
-        rowIndex: currentRowOriginalIndex,
-        column: `${field}-${colIndex + 1}`,
-      });
     }
   };
 
   // Filter and sort the data
   const getFilteredData = () => {
-    let filteredData = [...data];
+    let filteredData = [...attendanceData];
 
-    // Apply text filter across all fields
     if (filterText) {
       const searchTerm = filterText.toLowerCase();
       filteredData = filteredData.filter((item) => {
-        // Check all text fields
         const textMatch =
           item.name.toLowerCase().includes(searchTerm) ||
           item.punchCode.toLowerCase().includes(searchTerm) ||
           item.department.toLowerCase().includes(searchTerm) ||
           item.designation.toLowerCase().includes(searchTerm);
 
-        // Check attendance data
         const attendanceMatch = item.attendance.some(
           (att) =>
-            att.netHR.toLowerCase().includes(searchTerm) ||
-            att.otHR.toLowerCase().includes(searchTerm) ||
-            att.dnShift.toLowerCase().includes(searchTerm) ||
-            att.date.toLowerCase().includes(searchTerm) ||
-            att.day.toLowerCase().includes(searchTerm)
+            att.netHR?.toLowerCase().includes(searchTerm) ||
+            att.otHR?.toLowerCase().includes(searchTerm) ||
+            att.dnShift?.toLowerCase().includes(searchTerm)
         );
 
         return textMatch || attendanceMatch;
       });
     }
 
-    // Apply shift filter
     if (view !== "all") {
       filteredData = filteredData.filter((item) =>
         item.attendance.some(
-          (att) => att.dnShift.toLowerCase() === view.toLowerCase()
+          (att) => att.dnShift?.toLowerCase() === view.toLowerCase()
         )
       );
     }
 
-    // Apply sorting to any field including attendance data
     if (sortConfig.key) {
       filteredData.sort((a, b) => {
         let aValue = a[sortConfig.key];
         let bValue = b[sortConfig.key];
 
-        // Handle sorting for attendance fields
         if (sortConfig.key.startsWith("attendance.")) {
           const field = sortConfig.key.split(".")[1];
           aValue = a.attendance[0]?.[field] || "";
@@ -375,17 +201,13 @@ function AttendancePage() {
 
   // Handle save changes
   const handleSaveChanges = () => {
-    // Here you would typically make an API call to save the changes
-    console.log("Saving changes:", data);
+    if (!isAdmin) {
+      attendanceData.forEach(employee => {
+        send("lockUserAttendance", { date: employee.attendance[0].attendance_date, user: "user" });
+      });
+    }
     setHasChanges(false);
   };
-
-  // Load mock data on initial render
-  useEffect(() => {
-    setData(mockData);
-  }, []);
-
-  const filteredData = getFilteredData();
 
   const headerRef = useRef(null);
   const dataContainerRef = useRef(null);
@@ -416,79 +238,47 @@ function AttendancePage() {
     };
   }, []);
 
-  const downloadReport = () => {
-    console.log("Downloading Final file...");
-  };
+  // Show loading state
+  if (!attendanceData.length) {
+    return (
+      <div className="attendance-page">
+        <div className="attendance-container">
+          <div className="loading-state" style={{ textAlign: "center", padding: "40px" }}>
+            Loading attendance data...
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (!attendanceData) {
+    return (
+      <div className="attendance-page">
+        <div className="attendance-container">
+          <div className="error-state" style={{ textAlign: "center", padding: "40px", color: "red" }}>
+            Error loading data.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const filteredData = getFilteredData(); // Define filteredData correctly here
 
   return (
     <div className="attendance-page">
       <div className="attendance-container">
-        {/* Controls Section */}
-        <div className="attendance-controls">
-          <div>
-            <input
-              type="text"
-              placeholder="Search across all fields..."
-              value={filterText}
-              onChange={(e) => setFilterText(e.target.value)}
-              className="attendencepage-search-input"
-              style={{
-                padding: "8px 12px",
-                borderRadius: "4px",
-                border: "1px solid var(--gray-300)",
-                marginRight: "12px",
-                width: "240px",
-              }}
-            />
-            <select
-              value={view}
-              onChange={(e) => setView(e.target.value)}
-              style={{
-                padding: "8px 12px",
-                borderRadius: "4px",
-                border: "1px solid var(--gray-300)",
-                background: "white",
-              }}
-            >
-              <option value="all">All Shifts</option>
-              <option value="day">Day Shift</option>
-              <option value="night">Night Shift</option>
-            </select>
-          </div>
-          <div className="button-group" style={{ display: "flex", gap: "12px" }}>
-            {isAdmin && (
-              <>
-                <button className="control-button" onClick={addNewDay}>
-                  Add New Day
-                </button>
-                <button
-                  className="control-button secondary"
-                  onClick={addNewEmployee}
-                >
-                  Add Employee
-                </button>
-                <button
-                  className="control-button secondary"
-                  onClick={downloadReport}
-                >
-                  Download Report
-                </button>
-              </>
-            )}
-          {/* Save Changes Button */}
-        {hasChanges && (
-          
-            <button
-            className="control-button secondary"
-            onClick={handleSaveChanges}
-            >
-              Save Changes
-            </button>
-        )}
-          </div>
-        </div>
-
-        {/* Header Section */}
+        <AttendencePageSearchFilters
+          filterText={filterText}
+          setFilterText={setFilterText}
+          view={view}
+          setView={setView}
+          hasChanges={hasChanges}
+          handleSaveChanges={handleSaveChanges}
+          isAdmin={isAdmin}
+        />
+        
         <div className="header-wrapper" ref={headerRef}>
           {filteredData.length > 0 && filteredData[0].attendance && (
             <AttendanceHeader
@@ -496,11 +286,12 @@ function AttendancePage() {
               onSort={handleSort}
               sortConfig={sortConfig}
               fixedColumns={fixedColumns}
+              onLock={handleLockAttendance}
+              onUnlock={handleUnlockAttendance}
             />
           )}
         </div>
 
-        {/* Empty State */}
         {filteredData.length === 0 && (
           <div
             style={{
@@ -517,22 +308,27 @@ function AttendancePage() {
           </div>
         )}
 
-        {/* Data Container */}
         <div className="data-container" ref={dataContainerRef}>
           {filteredData.map((row, rowIndex) => (
             <DataRow
               key={row.id}
               row={row}
-              rowIndex={data.findIndex((item) => item.id === row.id)}
+              rowIndex={attendanceData.findIndex((item) => item.id === row.id)}
               hoveredRow={hoveredRow}
               setHoveredRow={setHoveredRow}
               editableCell={editableCell}
               setEditableCell={setEditableCell}
-              data={data}
+              data={attendanceData}
               setData={(newData) => {
-                setData(newData);
+                const changedRow = newData.find((item, idx) => 
+                  JSON.stringify(item) !== JSON.stringify(attendanceData[idx])
+                );
+                if (changedRow) {
+                  send("updateAttendance", { employeeId: changedRow.id, updatedEmployee: changedRow });
+                }
                 setHasChanges(true);
               }}
+              onCellUpdate={handleCellDataUpdate}
               isAdmin={isAdmin}
               onKeyDown={onKeyDown}
               dataContainerRef={dataContainerRef}

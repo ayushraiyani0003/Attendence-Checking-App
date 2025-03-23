@@ -10,7 +10,7 @@ const LoginForm = ({ onLogin }) => {
 
 const handleSubmit = (e) => {
   e.preventDefault();
-  console.log('Login attempt with in form username:', username, 'and password:', password);
+  // console.log('Login attempt with in form username:', username, 'and password:', password);
   onLogin( username, password )
     .then(() => {
       setUsername('');

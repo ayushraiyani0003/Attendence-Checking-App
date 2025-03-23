@@ -1,14 +1,18 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useContext } from "react";
 import LockIcon from "@mui/icons-material/Lock";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
 import LockUnlockPopup from "./lockUnlockPopup";
+import { AuthContext } from "../../context/AuthContext";
+import { useWebSocket } from "../../hooks/useWebSocket";  // Use WebSocket hook
 
 function AttendanceHeader({ columns, onSort, sortConfig }) {
+    const { userRole, groupName } = useContext(AuthContext); // Access user role and group from context
+    const { ws, send } = useWebSocket();  // WebSocket hook to send messages
     const [popupOpen, setPopupOpen] = useState(false);
     const [selectedDate, setSelectedDate] = useState(null);
     const [popupPosition, setPopupPosition] = useState({ left: 0 });
     const headerRef = useRef(null);
-    
+
     const [sampleUsers, setSampleUsers] = useState([
         { name: "John Doe", role: "Manager" },
         { name: "Jane Smith", role: "Team Lead" },
@@ -31,15 +35,15 @@ function AttendanceHeader({ columns, onSort, sortConfig }) {
 
     const handleLockClick = (e, attendance) => {
         e.stopPropagation(); // Prevent event bubbling
-        
+
         // Calculate position of the popup
         const columnElement = e.currentTarget;
         const columnRect = columnElement.getBoundingClientRect();
         const headerRect = headerRef.current.getBoundingClientRect();
-        
+
         // Position popup at the center of the clicked column
         const leftPosition = columnRect.left + (columnRect.width / 2);
-        
+
         setPopupPosition({ left: leftPosition });
         setSelectedDate(attendance.date);
         setPopupOpen(true);
@@ -51,11 +55,13 @@ function AttendanceHeader({ columns, onSort, sortConfig }) {
 
     const handleLock = () => {
         console.log(`Locking attendance for ${selectedDate}`);
+        send("lockAttendance", { date: selectedDate, status: "locked" });
         setPopupOpen(false);
     };
 
     const handleUnlock = () => {
         console.log(`Unlocking attendance for ${selectedDate}`);
+        send("unlockAttendance", { date: selectedDate, status: "unlocked" });
         setPopupOpen(false);
     };
 
