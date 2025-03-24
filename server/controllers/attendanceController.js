@@ -78,7 +78,6 @@ const generateDailyAttendance = async () => {
           
           try {
             await redisClient.set(redisKey, JSON.stringify(attendanceData), {
-              EX: 3600 // Set expiration to 1 hour
             });
             console.log(`Updated Redis for key ${redisKey} with employee ${employeeId}`);
           } catch (redisSetError) {

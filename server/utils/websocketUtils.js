@@ -17,6 +17,8 @@ module.exports = {
       ws.on('message', async (message) => {
         const data = JSON.parse(message);
         console.log(data);
+        
+        console.log(data);
         const userRole = data.user.userRole;
         // month: 'Mar 2025',
         const { year, month } = convertMonthToYearMonthFormat(data.month);
@@ -34,7 +36,7 @@ module.exports = {
         console.log("Redis attendance data:", redisAttendanceData);
 
         // Compare Redis and MySQL data
-        const finalAttendanceData = await redisMysqlAttendanceCompare(employees,redisAttendanceData, mysqlAttendanceData);
+        const finalAttendanceData = await redisMysqlAttendanceCompare(employees,redisAttendanceData, mysqlAttendanceData, data.group);
         console.log("Final attendance data:", finalAttendanceData.attendance);
 
         const lockStatusData = await getLockStatusDataForMonthAndGroup(data.group, month, year);

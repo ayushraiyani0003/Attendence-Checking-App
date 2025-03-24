@@ -1,4 +1,4 @@
-async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysqlAttendanceData) {
+async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysqlAttendanceData, groups) {
     try {
       console.log("Redis data:", JSON.stringify(redisAttendanceData, null, 2));
       
@@ -54,6 +54,9 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
         
         console.log(`Processing MySQL data for employee_id: ${employee_id}, date: ${attendance_date}, group: ${reporting_group}`);
   
+        // Check if reporting_group is undefined and set a default if needed
+        const group = reporting_group || 'default';  // Use 'default' if group is not provided
+  
         // Find the employee details by matching employee_id
         const employeeDetails = employees.find((emp) => emp.employee_id === employee_id);
         if (!employeeDetails) {
@@ -97,12 +100,11 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
         
         let redisDataFound = false;
         
-        // Try different date formats and group names
+        // Try different date formats and check for all group names in the 'groups' array
         const possibleDates = [formattedDate, isoFormattedDate];
-        const possibleGroups = [reporting_group, 'yes']; // Add 'yes' as it appears in your example
         
         for (const dateFormat of possibleDates) {
-          for (const groupName of possibleGroups) {
+          for (const groupName of groups) {
             // Check if Redis data exists for this date, group, and employee_id
             if (
               redisAttendanceLookup[dateFormat] && 
@@ -140,7 +142,6 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
       // Return the final result
       return {
         action: 'attendanceData',
-        userRole: 'admin', // Example role of the user
         attendance: finalAttendanceData,
       };
     } catch (error) {
