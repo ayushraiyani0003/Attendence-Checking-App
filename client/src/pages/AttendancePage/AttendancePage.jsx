@@ -24,6 +24,8 @@ function AttendancePage({ user, monthYear }) {
 
   const isAdmin = user.role === "admin"; // Determine if user is admin
   console.log("user role"+user);
+
+
   
   const fixedColumns = [
     { key: "punchCode", label: "Punch Code" },
@@ -69,6 +71,10 @@ function AttendancePage({ user, monthYear }) {
       if (data.action === "attendanceData") {
         setAttendanceData(data.attendance); // Set the fetched attendance data
         setLockStatusData(data.lockStatus); // Set the lock status data
+
+        console.log(data.attendance);
+        console.log(data.lockStatus);
+        
       }
 
       // If it's an update to an attendance row, update the data
