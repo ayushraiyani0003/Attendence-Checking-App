@@ -80,7 +80,7 @@ const CustomDropdown = ({ options, defaultValue, onChange }) => {
 };
 
 // Updated CustomHeader component with current month centered
-function CustomHeader({ toggleSidebar, user }) {
+function CustomHeader({ toggleSidebar, user, onSearch, onMonthChange }) {
   // Function to generate date list
   function generateDateList(startDate, endYear) {
     const dateOptions = [];
@@ -91,7 +91,6 @@ function CustomHeader({ toggleSidebar, user }) {
     
     while (currentYear <= endYear) {
       dateOptions.push(`${months[currentMonthIndex]} ${currentYear}`);
-      // Move to the next month
       currentMonthIndex++;
       if (currentMonthIndex >= months.length) {
         currentMonthIndex = 0;
@@ -101,7 +100,6 @@ function CustomHeader({ toggleSidebar, user }) {
     return dateOptions;
   }
 
-  // Get current month and year
   const getCurrentMonthYear = () => {
     const now = new Date();
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -111,10 +109,22 @@ function CustomHeader({ toggleSidebar, user }) {
   const dateOptions = generateDateList("Dec 2024", 2030);
   const currentMonthYear = getCurrentMonthYear();
   
-  // Find the closest option to current month/year
   const defaultValue = dateOptions.includes(currentMonthYear) 
     ? currentMonthYear 
     : dateOptions[0];
+
+  const [searchText, setSearchText] = useState('');
+  
+  // Update search text state on input change
+  const handleSearchChange = (event) => {
+    setSearchText(event.target.value);
+    if (onSearch) onSearch(event.target.value);  // Pass search text to parent
+  };
+
+  // Handle month change
+  const handleMonthChange = (selected) => {
+    if (onMonthChange) onMonthChange(selected);  // Pass selected month/year to parent
+  };
 
   return (
     <header className="custom-header">
@@ -124,13 +134,19 @@ function CustomHeader({ toggleSidebar, user }) {
           <div className="line"></div>
           <div className="line"></div>
         </div>
-        <input type="text" className="search-box" placeholder="sunchaser / HR" />
+        <input
+          type="text"
+          className="search-box"
+          placeholder="sunchaser / HR"
+          value={searchText}
+          onChange={handleSearchChange}
+        />
       </div>
       <div className="header-right">
         <CustomDropdown 
           options={dateOptions} 
           defaultValue={defaultValue} 
-          onChange={(selected) => console.log("Selected:", selected)} 
+          onChange={handleMonthChange} 
         />
         <div className="profile-info">
           <div className="name-designation">

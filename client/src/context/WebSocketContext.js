@@ -1,48 +1,56 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useState, useEffect } from "react";
 
-// WebSocket Context
-const WebSocketContext = createContext();
+// Create WebSocket Context
+export const WebSocketContext = createContext();
 
-// WebSocketProvider to wrap around the app
-export const WebSocketProvider = ({ children }) => {
+const WebSocketProvider = ({ children }) => {
   const [ws, setWs] = useState(null);
 
   useEffect(() => {
-    const socket = new WebSocket("ws://192.168.10.132:5003"); // Change this URL to your actual server URL
-    socket.onopen = () => {
-      console.log("WebSocket connection established");
+    const webSocket = new WebSocket("ws://192.168.10.132:5003"); // Make sure this is correct URL
+    setWs(webSocket);
+
+    // Handle WebSocket open event
+    webSocket.onopen = () => {
+      console.log("WebSocket connection established.");
     };
 
-    socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      console.log("Received message: ", data);
+    // Handle WebSocket message event
+    webSocket.onmessage = (message) => {
+      console.log("Received WebSocket message:", message);
     };
 
-    socket.onclose = () => {
-      console.log("WebSocket connection closed");
+    // Handle WebSocket error event
+    webSocket.onerror = (error) => {
+      console.error("WebSocket error:", error);
     };
 
-    setWs(socket);
+    // Handle WebSocket close event
+    webSocket.onclose = () => {
+      console.log("WebSocket connection closed.");
+    };
 
+    // Cleanup WebSocket connection on component unmount
     return () => {
-      socket.close();
+      if (webSocket) {
+        webSocket.close();
+      }
     };
   }, []);
 
-  const sendMessage = (message) => {
+  const send = (message) => {
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify(message));
+    } else {
+      console.error("WebSocket is not open");
     }
   };
 
   return (
-    <WebSocketContext.Provider value={{ ws, sendMessage }}>
+    <WebSocketContext.Provider value={{ ws, send }}>
       {children}
     </WebSocketContext.Provider>
   );
 };
 
-// Custom hook to access WebSocket context
-export const useWebSocket = () => {
-  return useContext(WebSocketContext);
-};
+export default WebSocketProvider;

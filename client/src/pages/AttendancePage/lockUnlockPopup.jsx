@@ -57,7 +57,7 @@ function LockUnlockPopup({
     // Prepare options for the dropdown
     const userOptions = usersRequiringApproval.map(user => ({
         value: user.name,
-        label: `${user.name} - ${user.role}`
+        label: `${user.name} - ${user.user_role}`
     }));
 
     const handleUserChange = (selectedOption) => {

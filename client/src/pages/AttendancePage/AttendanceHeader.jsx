@@ -4,27 +4,16 @@ import LockOpenIcon from "@mui/icons-material/LockOpen";
 import LockUnlockPopup from "./lockUnlockPopup";
 import { AuthContext } from "../../context/AuthContext";
 import { useWebSocket } from "../../hooks/useWebSocket";  // Use WebSocket hook
+import { useUsers } from "../../hooks/userList";
 
 function AttendanceHeader({ columns, onSort, sortConfig }) {
     const { userRole, groupName } = useContext(AuthContext); // Access user role and group from context
     const { ws, send } = useWebSocket();  // WebSocket hook to send messages
+    const { users } = useUsers();  // Fetch reporting groups using the useSettings hook
     const [popupOpen, setPopupOpen] = useState(false);
     const [selectedDate, setSelectedDate] = useState(null);
     const [popupPosition, setPopupPosition] = useState({ left: 0 });
     const headerRef = useRef(null);
-
-    const [sampleUsers, setSampleUsers] = useState([
-        { name: "John Doe", role: "Manager" },
-        { name: "Jane Smith", role: "Team Lead" },
-        { name: "Robert Brown", role: "HR Admin" },
-        { name: "Emily Davis", role: "Software Engineer" },
-        { name: "Michael Johnson", role: "Marketing Specialist" },
-        { name: "Sarah Wilson", role: "Financial Analyst" },
-        { name: "David Lee", role: "Data Scientist" },
-        { name: "Laura Taylor", role: "Product Owner" },
-        { name: "James Anderson", role: "UX Designer" },
-        { name: "Linda Thomas", role: "DevOps Engineer" }
-    ]);
 
     const renderSortIcon = (key) => {
         if (sortConfig && sortConfig.key === key) {
@@ -129,7 +118,7 @@ function AttendanceHeader({ columns, onSort, sortConfig }) {
                 onClose={handlePopupClose}
                 onLock={handleLock}
                 onUnlock={handleUnlock}
-                usersRequiringApproval={sampleUsers}
+                usersRequiringApproval={users}
                 date={selectedDate}
                 position={popupPosition}
             />

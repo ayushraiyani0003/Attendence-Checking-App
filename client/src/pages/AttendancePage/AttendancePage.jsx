@@ -1,9 +1,10 @@
+// components/AttendancePage/AttendancePage.jsx
 import React, { useState, useEffect, useRef } from "react";
 import "./AttendancePage.css";
 import AttendanceHeader from "./AttendanceHeader";
 import AttendencePageSearchFilters from "./AttendencePageSearchFilters";
 import DataRow from "./DataRow";
-import { useWebSocket } from "../../hooks/useWebSocket"; // Import the WebSocket hook
+import { useWebSocket } from "../../hooks/useWebSocket"; // Import WebSocket hook
 
 function AttendancePage({ user, monthYear }) {
   const [hoveredRow, setHoveredRow] = useState(null);
@@ -16,11 +17,14 @@ function AttendancePage({ user, monthYear }) {
   const [view, setView] = useState("all"); // 'all', 'day', 'night'
   const [hasChanges, setHasChanges] = useState(false); // Track if there are unsaved changes
   const [attendanceData, setAttendanceData] = useState([]); // For storing attendance data
+  const [lockStatusData, setLockStatusData] = useState([]); // For storing lock status data
+  const [isWebSocketOpen, setIsWebSocketOpen] = useState(false); // WebSocket open state
 
   const { ws, send } = useWebSocket(); // WebSocket hook to send messages
 
-  const isAdmin = user.userRole === "admin"; // Determine if user is admin
-
+  const isAdmin = user.role === "admin"; // Determine if user is admin
+  console.log("user role"+user);
+  
   const fixedColumns = [
     { key: "punchCode", label: "Punch Code" },
     { key: "name", label: "Name" },
@@ -28,16 +32,34 @@ function AttendancePage({ user, monthYear }) {
     { key: "department", label: "Department" },
   ];
 
+  console.log("month year" + monthYear);
+
   // Fetch initial attendance data when component mounts
   useEffect(() => {
-    const currentMonth = new Date().toISOString().slice(0, 7);
-    // Send WebSocket request to fetch attendance data for the user's group and the selected month
-    send("getAttendance", { group: user.userReportingGroup, month: currentMonth });
-  }, [user.userReportingGroup]);
+    if (ws && isWebSocketOpen) {
+      send({
+        action: "getAttendance",
+        group: user.userReportingGroup,
+        month: monthYear,
+        user: user
+      });
+    }
+  }, [user.userReportingGroup, monthYear, isWebSocketOpen, ws, send]);
 
-  // Handle WebSocket messages to update attendance data
   useEffect(() => {
     if (!ws) return;
+
+    // When the WebSocket connection is established
+    ws.onopen = () => {
+      setIsWebSocketOpen(true);
+      console.log("WebSocket connection established.");
+    };
+
+    // When the WebSocket connection is closed
+    ws.onclose = () => {
+      setIsWebSocketOpen(false);
+      console.log("WebSocket connection closed.");
+    };
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
@@ -46,6 +68,7 @@ function AttendancePage({ user, monthYear }) {
       // If it's attendance data, update the state
       if (data.action === "attendanceData") {
         setAttendanceData(data.attendance); // Set the fetched attendance data
+        setLockStatusData(data.lockStatus); // Set the lock status data
       }
 
       // If it's an update to an attendance row, update the data
@@ -68,15 +91,18 @@ function AttendancePage({ user, monthYear }) {
         );
       }
     };
-  }, [ws]);
 
-  // Handle WebSocket "lock" and "unlock" actions
+    ws.onerror = (error) => {
+      console.error("WebSocket error:", error);
+    };
+  }, [ws, isWebSocketOpen]);
+
   const handleLockAttendance = (date) => {
-    send("lockAttendance", { date: date, status: "locked" });
+    send({ action: "lockAttendance", date, status: "locked" });
   };
 
   const handleUnlockAttendance = (date) => {
-    send("unlockAttendance", { date: date, status: "unlocked" });
+    send({ action: "unlockAttendance", date, status: "unlocked" });
   };
 
   // Handle Cell Data Update
@@ -84,8 +110,7 @@ function AttendancePage({ user, monthYear }) {
     const updatedEmployee = { ...attendanceData[rowIndex] };
     updatedEmployee.attendance[columnIndex][field] = value;
 
-    // Use the WebSocket send function to send the updated data
-    send("updateAttendance", { employeeId: updatedEmployee.id, updatedEmployee });
+    send({ action: "updateAttendance", employeeId: updatedEmployee.id, updatedEmployee });
     setHasChanges(true);
   };
 
@@ -134,7 +159,6 @@ function AttendancePage({ user, monthYear }) {
     }
   };
 
-  // Filter and sort the data
   const getFilteredData = () => {
     let filteredData = [...attendanceData];
 
@@ -190,7 +214,6 @@ function AttendancePage({ user, monthYear }) {
     return filteredData;
   };
 
-  // Handle sort
   const handleSort = (key) => {
     let direction = "ascending";
     if (sortConfig.key === key && sortConfig.direction === "ascending") {
@@ -199,7 +222,6 @@ function AttendancePage({ user, monthYear }) {
     setSortConfig({ key, direction });
   };
 
-  // Handle save changes
   const handleSaveChanges = () => {
     if (!isAdmin) {
       attendanceData.forEach(employee => {
@@ -212,33 +234,29 @@ function AttendancePage({ user, monthYear }) {
   const headerRef = useRef(null);
   const dataContainerRef = useRef(null);
 
-  // Synchronize scrolling between header and data container
   useEffect(() => {
     const headerWrapper = headerRef.current;
     const dataContainer = dataContainerRef.current;
-    
+
     if (!headerWrapper || !dataContainer) return;
-    
+
     const handleDataScroll = () => {
       headerWrapper.scrollLeft = dataContainer.scrollLeft;
     };
-    
+
     const handleHeaderScroll = () => {
       dataContainer.scrollLeft = headerWrapper.scrollLeft;
     };
-    
-    // Add scroll event listeners
+
     dataContainer.addEventListener("scroll", handleDataScroll);
     headerWrapper.addEventListener("scroll", handleHeaderScroll);
-    
-    // Clean up event listeners
+
     return () => {
       dataContainer.removeEventListener("scroll", handleDataScroll);
       headerWrapper.removeEventListener("scroll", handleHeaderScroll);
     };
   }, []);
 
-  // Show loading state
   if (!attendanceData.length) {
     return (
       <div className="attendance-page">
@@ -251,7 +269,6 @@ function AttendancePage({ user, monthYear }) {
     );
   }
 
-  // Show error state
   if (!attendanceData) {
     return (
       <div className="attendance-page">
@@ -264,7 +281,10 @@ function AttendancePage({ user, monthYear }) {
     );
   }
 
-  const filteredData = getFilteredData(); // Define filteredData correctly here
+  const filteredData = getFilteredData();
+
+  console.log(filteredData);
+  console.log(lockStatusData);
 
   return (
     <div className="attendance-page">
@@ -278,7 +298,6 @@ function AttendancePage({ user, monthYear }) {
           handleSaveChanges={handleSaveChanges}
           isAdmin={isAdmin}
         />
-        
         <div className="header-wrapper" ref={headerRef}>
           {filteredData.length > 0 && filteredData[0].attendance && (
             <AttendanceHeader

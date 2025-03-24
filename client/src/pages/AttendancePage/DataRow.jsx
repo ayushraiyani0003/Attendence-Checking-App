@@ -12,12 +12,18 @@ function DataRow({
   isAdmin,
   onKeyDown,
 }) {
+
+
+  console.log(isAdmin);
+  
+  // Handle edit action - Make cell editable
   const handleEdit = (column) => {
     if (isAdmin) {
       setEditableCell({ rowIndex, column });
     }
   };
 
+  // Handle input change (updating the cell value)
   const handleChange = (e, rowIndex, column) => {
     const updatedData = [...data];
     const [field, index] = column.split("-");
@@ -31,15 +37,18 @@ function DataRow({
       }
     }
 
+    // Update the specific field in the attendance data
     updatedData[rowIndex].attendance[index][field] = value;
-    setData(updatedData);
+    setData(updatedData); // Update the state with the new value
   };
 
+  // Handle blur event when input loses focus
   const handleBlur = (rowIndex, column) => {
     const updatedData = [...data];
     const [field, index] = column.split("-");
     const value = updatedData[rowIndex].attendance[index][field];
 
+    // If it's a numeric field, format the value
     if (field === "netHR" || field === "otHR") {
       if (!isNaN(parseFloat(value))) {
         updatedData[rowIndex].attendance[index][field] =
@@ -48,13 +57,14 @@ function DataRow({
       }
     }
 
+    // Reset the editable cell state
     setEditableCell(null);
   };
 
-  // Define the getShiftClass function
+  // Define the getShiftClass function to handle different shifts (Day/Night)
   const getShiftClass = (shift) => {
-    if (shift === "Day") return "dnShift-Day"; // Class for Day shift
-    if (shift === "Night") return "dnShift-Night"; // Class for Night shift
+    if (shift === "D") return "dnShift-Day"; // Class for Day shift
+    if (shift === "N") return "dnShift-Night"; // Class for Night shift
     return ""; // Default case, if shift is neither 'Day' nor 'Night'
   };
 
@@ -85,27 +95,27 @@ function DataRow({
                 className += ` ${getShiftClass(cellValue)}`;
               }
               if (isEditable) {
-                className += " editable";
+                className += " editable"; // Add 'editable' class if the cell is editable
               }
 
               return (
                 <div
                   key={field}
                   className={className}
-                  onClick={() => handleEdit(`${field}-${index}`)}
+                  onClick={() => handleEdit(`${field}-${index}`)} // Trigger edit when clicked
                 >
                   {isEditable ? (
                     <input
                       type="text"
-                      value={cellValue}
+                      value={cellValue} // Bind the input value to the cell's value
                       onChange={(e) =>
-                        handleChange(e, rowIndex, `${field}-${index}`)
+                        handleChange(e, rowIndex, `${field}-${index}`) // Handle change
                       }
-                      onBlur={() => handleBlur(rowIndex, `${field}-${index}`)}
+                      onBlur={() => handleBlur(rowIndex, `${field}-${index}`)} // Handle blur
                       onKeyDown={(e) =>
-                        onKeyDown(e, rowIndex, `${field}-${index}`)
+                        onKeyDown(e, rowIndex, `${field}-${index}`) // Handle keydown
                       }
-                      autoFocus
+                      autoFocus // Focus the input field on click
                     />
                   ) : (
                     <div>

@@ -1,25 +1,29 @@
-const attendanceService = require('../services/attendanceService');
-const { notifyClients } = require('../utils/notification');
+const { Employee, Attendance } = require("../models"); // Assuming you have exported models for Employee and Attendance
 
-async function getAttendance(req, res) {
-  const { group, month } = req.query;
-  const attendanceData = await attendanceService.getAttendanceData(group, month);
-  res.json({ attendance: attendanceData });
-}
+// Function to generate daily attendance for all employees
+const generateDailyAttendance = async () => {
+  try {
+    // Get the current date
+    const currentDate = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
 
-async function editAttendance(req, res) {
-  const { employee_id, group, month, date, status } = req.body;
-  const updatedAttendance = await attendanceService.updateAttendance(employee_id, group, month, date, status);
-  
-  // Send updated attendance to all connected clients
-  notifyClients(req.app.get('wss'), 'attendanceUpdated', {
-    employee_id,
-    group,
-    status: updatedAttendance.status,
-    date
-  });
-  
-  res.json({ message: 'Attendance updated successfully', updatedAttendance });
-}
+    // Get all employees
+    const employees = await Employee.findAll();
 
-module.exports = { getAttendance, editAttendance };
+    // Loop through each employee and create an attendance record
+    for (const employee of employees) {
+      await Attendance.create({
+        employee_id: employee.employee_id,
+        attendance_date: currentDate,
+        shift_type: 'D', // Default or update this as needed
+        network_hours: 0, // Default or update based on your requirement
+        overtime_hours: 0, // Default or update based on your requirement
+      });
+    }
+
+    console.log('Attendance records generated for all employees!');
+  } catch (error) {
+    console.error('Error generating daily attendance:', error);
+  }
+};
+
+module.exports = { generateDailyAttendance };
