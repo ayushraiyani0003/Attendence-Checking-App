@@ -13,6 +13,7 @@ import EmployeePage from "./pages/EmployeePage/EmployeePage";
 import SettingsPage from "./pages/SettingPage/SettingPage";
 import UploadPage from "./pages/UploadPage/UploadPage";
 import UserListPage from "./pages/UserListPage/UserListPage";
+import DashboardPage from "./pages/DashboardPage/DashboardPage";
 import LogInPage from "./pages/LogInPage/LogInPage";
 import { AuthContext, AuthProvider } from "./context/AuthContext";
 import { pageRedirect } from "./utils/constants";
@@ -28,7 +29,7 @@ const App = () => {
   const [selectedMonthYear, setSelectedMonthYear] = useState(); // State for selected month/year
   const navigate = useNavigate();
   const { isAuthenticated, login, logout, user } = useContext(AuthContext);
-  
+
   useEffect(() => {
     const currentDate = new Date();
     const options = { year: 'numeric', month: 'short' }; // 'short' gives the abbreviated month
@@ -105,6 +106,14 @@ const App = () => {
                     <WebSocketProvider>
                     <AttendencePage user={user} monthYear={selectedMonthYear}/>
                     </WebSocketProvider>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute isAuthenticated={isAuthenticated}>
+                      <DashboardPage />
                   </ProtectedRoute>
                 }
               />
