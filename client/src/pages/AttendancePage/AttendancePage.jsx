@@ -19,6 +19,7 @@ function AttendancePage({ user, monthYear }) {
   const [attendanceData, setAttendanceData] = useState([]); // For storing attendance data
   const [lockStatusData, setLockStatusData] = useState([]); // For storing lock status data
   const [isWebSocketOpen, setIsWebSocketOpen] = useState(false); // WebSocket open state
+  const [showMetrics, setShowMetrics] = useState(true); // Default to showing metrics
 
   const { ws, send } = useWebSocket(); // WebSocket hook to send messages
 
@@ -303,6 +304,9 @@ function AttendancePage({ user, monthYear }) {
           hasChanges={hasChanges}
           handleSaveChanges={handleSaveChanges}
           isAdmin={isAdmin}
+          showMetrics={showMetrics}         // Add this new prop
+  setShowMetrics={setShowMetrics}   // Add this new prop
+
         />
         <div className="header-wrapper" ref={headerRef}>
           {filteredData.length > 0 && filteredData[0].attendance && (

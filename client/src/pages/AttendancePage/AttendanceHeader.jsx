@@ -14,6 +14,9 @@ function AttendanceHeader({ columns, onSort, sortConfig }) {
     const [selectedDate, setSelectedDate] = useState(null);
     const [popupPosition, setPopupPosition] = useState({ left: 0 });
     const headerRef = useRef(null);
+    
+    // Check if user is an admin
+    const isAdmin = userRole === "admin";
 
     const renderSortIcon = (key) => {
         if (sortConfig && sortConfig.key === key) {
@@ -24,6 +27,9 @@ function AttendanceHeader({ columns, onSort, sortConfig }) {
 
     const handleLockClick = (e, attendance) => {
         e.stopPropagation(); // Prevent event bubbling
+        
+        // Only proceed if user is Admin
+        if (!isAdmin) return;
 
         // Calculate position of the popup
         const columnElement = e.currentTarget;
@@ -39,16 +45,25 @@ function AttendanceHeader({ columns, onSort, sortConfig }) {
     };
 
     const handlePopupClose = () => {
+        // Only proceed if user is Admin
+        if (!isAdmin) return;
+        
         setPopupOpen(false);
     };
 
     const handleLock = () => {
+        // Only proceed if user is Admin
+        if (!isAdmin) return;
+        
         console.log(`Locking attendance for ${selectedDate}`);
         send("lockAttendance", { date: selectedDate, status: "locked" });
         setPopupOpen(false);
     };
 
     const handleUnlock = () => {
+        // Only proceed if user is Admin
+        if (!isAdmin) return;
+        
         console.log(`Unlocking attendance for ${selectedDate}`);
         send("unlockAttendance", { date: selectedDate, status: "unlocked" });
         setPopupOpen(false);
@@ -96,6 +111,7 @@ function AttendanceHeader({ columns, onSort, sortConfig }) {
                             key={index} 
                             className="header-cell attendance-header-cell"
                             onClick={(e) => handleLockClick(e, attendance)}
+                            style={{ cursor: isAdmin ? "pointer" : "default" }}
                         >
                             <div className="attendance-header-date-title-container">
                                 {attendance.date} ({attendance.day})
@@ -112,16 +128,18 @@ function AttendanceHeader({ columns, onSort, sortConfig }) {
                 </div>
             </div>
 
-            {/* Popup component */}
-            <LockUnlockPopup 
-                isOpen={popupOpen} 
-                onClose={handlePopupClose}
-                onLock={handleLock}
-                onUnlock={handleUnlock}
-                usersRequiringApproval={users}
-                date={selectedDate}
-                position={popupPosition}
-            />
+            {/* Popup component - Only render if user is Admin */}
+            {isAdmin && (
+                <LockUnlockPopup 
+                    isOpen={popupOpen} 
+                    onClose={handlePopupClose}
+                    onLock={handleLock}
+                    onUnlock={handleUnlock}
+                    usersRequiringApproval={users}
+                    date={selectedDate}
+                    position={popupPosition}
+                />
+            )}
         </>
     );
 }
