@@ -9,14 +9,15 @@ const { getRedisAttendanceData, updateRedisAttendanceData, deleteRedisGroupKeys 
 const { redisMysqlAttendanceCompare } = require('./redisMysqlAttendenceCompare');
 const { getLockStatusDataForMonthAndGroup } = require('../services/groupAttendenceLockServices');
 
-// WebSocket initialization function
 function initWebSocket(server) {
   const wss = new WebSocket.Server({ server });
 
   wss.on('connection', (ws) => {
+    ws.server = wss;
     console.log('A client connected to WebSocket');
 
     ws.on('message', async (message) => {
+
       try {
         const data = JSON.parse(message);
         console.log('Received data:', data);
@@ -188,31 +189,59 @@ async function handleAttendanceUpdate(ws, data) {
 }
 
 async function saveDataRedisToMysql(ws, data) {
-  // console.log("data");
-  // console.log(data);
-  // {
-  //   action: 'saveDataRedisToMysql',
-  //   monthYear: 'Mar 2025',
-  //   user: {
-  //     id: 9,
-  //     username: 'apraiyani97',
-  //     role: 'user',
-  //     name: 'Ayush raiyani',
-  //     userReportingGroup: [ 'kyu' ]
-  //   }
-  // }
   const { year, month } = convertMonthToYearMonthFormat(data.monthYear);
-
-  // Fetch attendance data from Redis
-  const redisAttendanceData = await getRedisAttendanceData(year, month, data.user.userReportingGroup);
-  console.log(redisAttendanceData);
-
-  // pass those data to mysqlDataSave.
-  await updateEmployeesDetailsFromRedis(redisAttendanceData, data.user, year, month);
-
-  // delete redis data for freeup the memory base on group only "because on group data submit all data is submit"  
-  deleteRedisGroupKeys(data.user.userReportingGroup, year, month);
+  
+  try {
+    // Fetch attendance data from Redis
+    const redisAttendanceData = await getRedisAttendanceData(year, month, data.user.userReportingGroup);
+    console.log(redisAttendanceData);
+    
+    // Save data to MySQL
+    await updateEmployeesDetailsFromRedis(redisAttendanceData, data.user, year, month);
+    
+    // Delete Redis data for the specific group
+    deleteRedisGroupKeys(data.user.userReportingGroup, year, month);
+    
+    // Broadcast updated data to all connected clients
+    const wss = ws.server; // Assuming the WebSocket server is attached to the WebSocket
+    wss.clients.forEach(async (client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        try {
+          // Prepare the data to send back to all clients
+          const broadcastData = {
+            action: 'dataUpdated',
+            year,
+            month,
+            userReportingGroup: data.user.userReportingGroup,
+            message: 'Data successfully saved and Redis cache cleared'
+          };
+          
+          client.send(JSON.stringify(broadcastData));
+        } catch (broadcastError) {
+          console.error('Error broadcasting to client:', broadcastError);
+        }
+      }
+    });
+    
+    // Optionally, send a success response to the original sender
+    ws.send(JSON.stringify({
+      action: 'saveDataRedisToMysql',
+      status: 'success',
+      year,
+      month
+    }));
+  } catch (error) {
+    console.error('Error in saveDataRedisToMysql:', error);
+    
+    // Send error response to the original sender
+    ws.send(JSON.stringify({
+      action: 'saveDataRedisToMysql',
+      status: 'error',
+      error: error.message
+    }));
+  }
 }
+
 
 // Correct module exports
 module.exports = {
