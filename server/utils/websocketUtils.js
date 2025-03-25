@@ -35,12 +35,13 @@ module.exports = {
         const redisAttendanceData = await getRedisAttendanceData(year, month, data.group);
         console.log("Redis attendance data:", redisAttendanceData);
 
-        // Compare Redis and MySQL data
-        const finalAttendanceData = await redisMysqlAttendanceCompare(employees,redisAttendanceData, mysqlAttendanceData, data.group);
-        console.log("Final attendance data:", finalAttendanceData.attendance);
-
         const lockStatusData = await getLockStatusDataForMonthAndGroup(data.group, month, year);
         console.log("Lock status data:", lockStatusData);
+
+        // Compare Redis and MySQL data
+        const finalAttendanceData = await redisMysqlAttendanceCompare(employees,redisAttendanceData, mysqlAttendanceData, data.group, lockStatusData);
+        console.log("Final attendance data:", finalAttendanceData.attendance);
+
 
 
         // Send the final attendance data back to the client
