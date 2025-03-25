@@ -73,6 +73,7 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
           id: employee_id,
           name: employeeDetails.name,
           punchCode: employeeDetails.punch_code,
+          reporting_group: employeeDetails.reporting_group,
           designation: employeeDetails.designation,
           department: employeeDetails.department,
           attendance: [],
