@@ -73,7 +73,10 @@ function AttendancePage({ user, monthYear }) {
 
         console.log(data.attendance);
         console.log(data.lockStatus);
-        
+        // check if any date has unlocked status the setHasChanges to true
+        const hasUnlockedDate = data.lockStatus.some(item => item.status === 'unlocked');
+        setHasChanges(hasUnlockedDate);
+
       }
 
       // If it's an update to an attendance row, update the data
@@ -335,7 +338,7 @@ function AttendancePage({ user, monthYear }) {
           isAdmin={isAdmin}
           showMetrics={showMetrics}         // Add this new prop
   setShowMetrics={setShowMetrics}   // Add this new prop
-
+  lockStatusData={lockStatusData}
         />
         <div className="header-wrapper" ref={headerRef}>
           {filteredData.length > 0 && filteredData[0].attendance && (

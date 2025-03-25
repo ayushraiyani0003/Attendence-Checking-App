@@ -10,8 +10,8 @@ function AttendencePageSearchFilters({
   handleSaveChanges,
   isAdmin,
   showMetrics,
-  setShowMetrics 
-}) {
+  setShowMetrics, 
+}) {  
   return (
     <div>
       <div className="attendance-controls">
