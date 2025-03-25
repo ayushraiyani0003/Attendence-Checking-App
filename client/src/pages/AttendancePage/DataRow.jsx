@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 function DataRow({
   row,
@@ -11,12 +11,18 @@ function DataRow({
   className,
 }) {
   const [editableCell, setEditableCell] = useState(null);
+  const [editValue, setEditValue] = useState({});
 
   // Handle edit action
   const handleEdit = (field, attendance, index) => {
     // Check if the specific attendance record is unlocked
     if (attendance.lock_status === "unlocked") {
       setEditableCell(`${field}-${index}`);
+      // Initialize edit value with current cell value
+      setEditValue(prev => ({
+        ...prev,
+        [`${field}-${index}`]: attendance[field]
+      }));
     } else {
       alert("Editing is not allowed. This record is locked.");
     }
@@ -24,7 +30,6 @@ function DataRow({
 
   // Handle input change
   const handleChange = (e, rowIndex, column, index) => {
-    const updatedData = [...data];
     let value = e.target.value;
 
     // Sanitize numeric input for netHR and otHR
@@ -36,26 +41,37 @@ function DataRow({
       }
     }
 
-    // Update the specific field
-    updatedData[rowIndex].attendance[index][column] = value;
-    setData(updatedData);
+    // Update edit value
+    setEditValue(prev => ({
+      ...prev,
+      [`${column}-${index}`]: value
+    }));
   };
 
   // Handle blur event
   const handleBlur = (rowIndex, column, index) => {
     const updatedData = [...data];
-    const value = updatedData[rowIndex].attendance[index][column];
+    const editKey = `${column}-${index}`;
+    const value = editValue[editKey];
 
     // Format numeric fields
     if (column === "netHR" || column === "otHR") {
       if (!isNaN(parseFloat(value))) {
-        updatedData[rowIndex].attendance[index][column] = 
-          parseFloat(value).toFixed(1);
-        setData(updatedData);
+        const formattedValue = parseFloat(value).toFixed(1);
+        updatedData[rowIndex].attendance[index][column] = formattedValue;
+        
+        // Update edit value with formatted value
+        setEditValue(prev => ({
+          ...prev,
+          [editKey]: formattedValue
+        }));
       }
+    } else {
+      // For non-numeric fields, update directly
+      updatedData[rowIndex].attendance[index][column] = value;
     }
 
-    // Reset editable cell
+    setData(updatedData);
     setEditableCell(null);
   };
 
@@ -83,10 +99,13 @@ function DataRow({
       <div className="scrollable-data-cells" id="body-scrollable">
         {row.attendance.map((attendance, index) => (
           <div key={index} className="date-cell">
-            {["netHR", "otHR", "dnShift", "lock_status"].map((field) => {
-              const isEditable = editableCell === `${field}-${index}`;
+            {["netHR", "otHR", "dnShift"].map((field) => {
+              const editKey = `${field}-${index}`;
+              const isEditable = editableCell === editKey;
               const cellValue = attendance[field];
-              console.log(cellValue);
+              const displayValue = isEditable 
+                ? (editValue[editKey] ?? cellValue)
+                : cellValue;
 
               let className = "sub-date-cell";
               if (field === "dnShift") {
@@ -95,9 +114,6 @@ function DataRow({
               if (isEditable) {
                 className += " editable";
               }
-
-              // Skip rendering lock_status as an editable field
-              if (field === "lock_status") return null;
 
               return (
                 <div
@@ -108,7 +124,7 @@ function DataRow({
                   {isEditable ? (
                     <input
                       type="text"
-                      value={cellValue}
+                      value={displayValue}
                       onChange={(e) =>
                         handleChange(e, rowIndex, field, index)
                       }
