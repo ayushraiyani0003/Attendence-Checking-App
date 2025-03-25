@@ -100,7 +100,77 @@ async function updateRedisAttendanceData(updateData) {
       throw error;
     }
   }
-  
+
+  // delete redis data for freeup the memory base on group only "because on group data submit all data is submit" 
+  async function deleteRedisGroupKeys(groups, year, month) {
+    try {
+        // Ensure groups is an array
+        const groupList = Array.isArray(groups) ? groups : [groups];
+
+        // Create date range for the specified month and year
+        const startDate = new Date(year, month - 1, 1); // First date of the month
+        const endDate = new Date(year, month, 0); // Last date of the month
+
+        // Array to store deletion promises for all groups
+        const deletionPromises = [];
+
+        // Loop through all groups
+        for (const group of groupList) {
+            // Loop through all the days of the month
+            for (let day = startDate.getDate(); day <= endDate.getDate(); day++) {
+                // Format the date to match Redis key format (YYYY-MM-DD)
+                const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const key = `attendance:${group}:${date}`;
+
+                // Add deletion promise to array
+                deletionPromises.push(
+                    redisClient.del(key)
+                        .then(() => ({ key, status: 'success' }))
+                        .catch(err => ({ key, status: 'failed', error: err }))
+                );
+            }
+        }
+
+        // Wait for all deletion operations to complete
+        const deletionResults = await Promise.allSettled(deletionPromises);
+
+        // Organize results by group
+        const groupResults = {};
+        groupList.forEach(group => {
+            groupResults[group] = {
+                successfulDeletions: 0,
+                failedDeletions: 0,
+                failedKeys: []
+            };
+        });
+
+        // Process results
+        deletionResults.forEach(result => {
+            if (result.status === 'fulfilled') {
+                const { key, status } = result.value;
+                const group = key.split(':')[1];
+                
+                if (status === 'success') {
+                    groupResults[group].successfulDeletions++;
+                } else {
+                    groupResults[group].failedDeletions++;
+                    groupResults[group].failedKeys.push(key);
+                }
+            }
+        });
+
+        return {
+            success: true,
+            year,
+            month,
+            groupResults
+        };
+    } catch (error) {
+        console.error('Error in deleteRedisGroupKeys:', error);
+        throw error;
+    }
+}
+
   // Helper function to format date
   function formatDate(dateString) {
     // Handle different date formats
@@ -116,4 +186,4 @@ async function updateRedisAttendanceData(updateData) {
     return `${year}-${month}-${day}`;
   }
 
-module.exports = { getRedisAttendanceData,updateRedisAttendanceData };
+module.exports = { getRedisAttendanceData,updateRedisAttendanceData,deleteRedisGroupKeys  };
