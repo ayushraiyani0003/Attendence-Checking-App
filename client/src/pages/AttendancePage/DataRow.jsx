@@ -18,9 +18,8 @@ function DataRow({
 
   // Determine if the user can edit based on lock status and user role
   const canEdit = (attendance) => {
-    const isAdmin = user.role === "admin";
     const isUnlocked = attendance.lock_status === "unlocked";
-    return isAdmin || isUnlocked;
+    return isUnlocked;
   };
 
   // Handle edit action
