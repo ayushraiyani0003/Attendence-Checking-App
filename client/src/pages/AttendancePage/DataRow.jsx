@@ -8,15 +8,24 @@ function DataRow({
   data,
   setData,
   onKeyDown,
+  onCellUpdate, // Add this prop for direct cell update
+  user,
+  lockStatusData,
   className,
 }) {
   const [editableCell, setEditableCell] = useState(null);
   const [editValue, setEditValue] = useState({});
 
+  // Determine if the user can edit based on lock status and user role
+  const canEdit = (attendance) => {
+    const isAdmin = user.role === "admin";
+    const isUnlocked = attendance.lock_status === "unlocked";
+    return isAdmin || isUnlocked;
+  };
+
   // Handle edit action
   const handleEdit = (field, attendance, index) => {
-    // Check if the specific attendance record is unlocked
-    if (attendance.lock_status === "unlocked") {
+    if (canEdit(attendance)) {
       setEditableCell(`${field}-${index}`);
       // Initialize edit value with current cell value
       setEditValue(prev => ({
@@ -50,28 +59,21 @@ function DataRow({
 
   // Handle blur event
   const handleBlur = (rowIndex, column, index) => {
-    const updatedData = [...data];
     const editKey = `${column}-${index}`;
     const value = editValue[editKey];
 
     // Format numeric fields
+    let formattedValue = value;
     if (column === "netHR" || column === "otHR") {
       if (!isNaN(parseFloat(value))) {
-        const formattedValue = parseFloat(value).toFixed(1);
-        updatedData[rowIndex].attendance[index][column] = formattedValue;
-        
-        // Update edit value with formatted value
-        setEditValue(prev => ({
-          ...prev,
-          [editKey]: formattedValue
-        }));
+        formattedValue = parseFloat(value).toFixed(1);
       }
-    } else {
-      // For non-numeric fields, update directly
-      updatedData[rowIndex].attendance[index][column] = value;
     }
 
-    setData(updatedData);
+    // Directly call the WebSocket update function
+    onCellUpdate(rowIndex, index, column, formattedValue);
+
+    // Reset edit state
     setEditableCell(null);
   };
 
@@ -140,7 +142,7 @@ function DataRow({
                       (cellValue === "Day" || cellValue === "Night")
                         ? cellValue.charAt(0)
                         : cellValue}
-                    </div>
+                </div>
                   )}
                 </div>
               );

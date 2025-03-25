@@ -26,8 +26,6 @@ function AttendancePage({ user, monthYear }) {
   const isAdmin = user.role === "admin"; // Determine if user is admin
   console.log("user role"+user);
 
-
-  
   const fixedColumns = [
     { key: "punchCode", label: "Punch Code" },
     { key: "name", label: "Name" },
@@ -115,10 +113,41 @@ function AttendancePage({ user, monthYear }) {
   // Handle Cell Data Update
   const handleCellDataUpdate = (rowIndex, columnIndex, field, value) => {
     const updatedEmployee = { ...attendanceData[rowIndex] };
-    updatedEmployee.attendance[columnIndex][field] = value;
-
-    send({ action: "updateAttendance", employeeId: updatedEmployee.id, updatedEmployee });
-    setHasChanges(true);
+    const originalValue = updatedEmployee.attendance[columnIndex][field];
+  
+    // Only send update if the value has actually changed
+    if (originalValue !== value) {
+      // Prepare minimal payload with only necessary information
+      const updatePayload = {
+        action: "updateAttendance",
+        employeeId: updatedEmployee.id,
+        punchCode: updatedEmployee.punchCode,
+        name: updatedEmployee.name,
+        reportGroup: updatedEmployee.reporting_group,
+        editDate: updatedEmployee.attendance[columnIndex].date,
+        field: field, // Specific field being updated
+        newValue: value,
+        oldValue: originalValue
+      };
+  
+      // Update local state
+      updatedEmployee.attendance[columnIndex][field] = value;
+      
+      // Send minimal update via WebSocket
+      send(updatePayload);
+  
+      console.log(updatePayload);
+      
+      // Set has changes to true
+      setHasChanges(true);
+  
+      // Optionally update the local state
+      setAttendanceData(prevData => 
+        prevData.map((employee, index) => 
+          index === rowIndex ? updatedEmployee : employee
+        )
+      );
+    }
   };
 
   // Handle keyboard navigation
