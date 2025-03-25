@@ -262,11 +262,15 @@ function AttendancePage({ user, monthYear }) {
   };
 
   const handleSaveChanges = () => {
-    if (!isAdmin) {
-      attendanceData.forEach(employee => {
-        send("lockUserAttendance", { date: employee.attendance[0].attendance_date, user: "user" });
-      });
-    }
+    const savePayload = {
+      action: "saveDataRedisToMysql",
+      monthYear: monthYear,  // The month and year
+      user:user
+    };
+  
+    // Send the payload via WebSocket
+    send(savePayload);  
+
     setHasChanges(false);
   };
 
