@@ -417,6 +417,11 @@
   color: var(--secondary-color);
   font-weight: 500;
 }
+.dnShift-AfterNoon {
+  background-color: #ffcc9977;
+  color: var(--after-noon);
+  font-weight: 500;
+}
 
 /* Control buttons */
 .attendance-controls {

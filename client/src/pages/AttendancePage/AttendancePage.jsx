@@ -357,8 +357,9 @@ function AttendancePage({ user, monthYear }) {
                 }
                 setHasChanges(true);
               }}
+              lockStatusData={lockStatusData}
+              user={user}
               onCellUpdate={handleCellDataUpdate}
-              isAdmin={isAdmin}
               onKeyDown={onKeyDown}
               dataContainerRef={dataContainerRef}
             />
