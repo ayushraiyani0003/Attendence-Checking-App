@@ -51,6 +51,9 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
       // Loop through each employee's attendance data from MySQL
       for (const employee of mysqlAttendanceData) {
         const { employee_id, attendance_date, shift_type, network_hours, overtime_hours, reporting_group } = employee;
+
+        console.log("employe in redit compare data : ", employee);
+        
         
         console.log(`Processing MySQL data for employee_id: ${employee_id}, date: ${attendance_date}, group: ${reporting_group}`);
   
@@ -121,7 +124,7 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
                 netHR: redisData.network_hours || attendanceRecord.netHR,
                 otHR: redisData.overtime_hours || attendanceRecord.otHR,
                 dnShift: redisData.shift_type || attendanceRecord.dnShift,
-                lock_status: 'locked', // Assuming locked when Redis data is available
+                lock_status: 'unlocked', // Assuming locked when Redis data is available
               };
               
               redisDataFound = true;

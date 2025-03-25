@@ -9,9 +9,11 @@ const generateDailyAttendance = async () => {
       return;
     }
 
-    // Get the current date
-    const currentDate = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
-    console.log(`Generating attendance for date: ${currentDate}`);
+    // Get yesterday's date
+    const currentDate = new Date();
+    currentDate.setDate(currentDate.getDate() - 1); // Subtract one day
+    const formattedDate = currentDate.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+    console.log(`Generating attendance for date: ${formattedDate}`);
 
     // Get all employees
     const employees = await Employee.findAll();
@@ -24,14 +26,14 @@ const generateDailyAttendance = async () => {
         const reportingGroup = employee.reporting_group || 'default';
         
         // Prepare the Redis key for the group and date
-        const redisKey = `attendance:${reportingGroup}:${currentDate}`;
+        const redisKey = `attendance:${reportingGroup}:${formattedDate}`;
         console.log(`Processing employee ${employeeId} for group ${reportingGroup}`);
 
         // 1. Check MySQL database
         const existingAttendance = await Attendance.findOne({
           where: {
             employee_id: employeeId,
-            attendance_date: currentDate,
+            attendance_date: formattedDate,
           },
         });
         
@@ -69,7 +71,7 @@ const generateDailyAttendance = async () => {
           console.log(`Adding employee ${employeeId} to Redis`);
           const newRedisRecord = {
             employee_id: employeeId,
-            attendance_date: currentDate,
+            attendance_date: formattedDate,
             shift_type: existingAttendance.shift_type,
             network_hours: existingAttendance.network_hours,
             overtime_hours: existingAttendance.overtime_hours,
@@ -93,7 +95,7 @@ const generateDailyAttendance = async () => {
           
           await Attendance.create({
             employee_id: employeeId,
-            attendance_date: currentDate,
+            attendance_date: formattedDate,
             shift_type: redisRecord.shift_type || 'D',
             network_hours: redisRecord.network_hours || 0,
             overtime_hours: redisRecord.overtime_hours || 0,
@@ -109,7 +111,7 @@ const generateDailyAttendance = async () => {
           // Create in MySQL
           await Attendance.create({
             employee_id: employeeId,
-            attendance_date: currentDate,
+            attendance_date: formattedDate,
             shift_type: 'D',
             network_hours: 0,
             overtime_hours: 0,
@@ -118,7 +120,7 @@ const generateDailyAttendance = async () => {
           // Add to Redis
           attendanceData.push({
             employee_id: employeeId,
-            attendance_date: currentDate,
+            attendance_date: formattedDate,
             shift_type: 'D',
             network_hours: 0,
             overtime_hours: 0,
