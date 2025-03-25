@@ -127,9 +127,7 @@ const generateDailyAttendance = async () => {
           });
           
           try {
-            await redisClient.set(redisKey, JSON.stringify(attendanceData), {
-              EX: 3600 // Set expiration to 1 hour
-            });
+            await redisClient.set(redisKey, JSON.stringify(attendanceData), {});
             console.log(`Updated Redis for key ${redisKey} with new employee ${employeeId}`);
           } catch (redisSetError) {
             console.error(`Failed to update Redis for key ${redisKey}:`, redisSetError);
