@@ -9,11 +9,18 @@ const generateDailyAttendance = async () => {
       return;
     }
 
-    // Get yesterday's date
+    // Get yesterday's date in Indian Standard Time (IST)
     const currentDate = new Date();
-    currentDate.setDate(currentDate.getDate() - 1); // Subtract one day
-    const formattedDate = currentDate.toISOString().split('T')[0]; // Format: YYYY-MM-DD
+    currentDate.setHours(currentDate.getHours() - 5); // Adjust for IST offset (UTC + 5 hours)
+    currentDate.setMinutes(currentDate.getMinutes() - 30); // Adjust for IST offset (UTC + 5 hours 30 minutes)
+
+    // Subtract one day
+    currentDate.setDate(currentDate.getDate() - 1);
+
+    // Format date as YYYY-MM-DD
+    const formattedDate = currentDate.toISOString().split('T')[0];
     console.log(`Generating attendance for date: ${formattedDate}`);
+
 
     // Get all employees
     const employees = await Employee.findAll();
@@ -24,7 +31,7 @@ const generateDailyAttendance = async () => {
       try {
         const employeeId = employee.employee_id;
         const reportingGroup = employee.reporting_group || 'default';
-        
+
         // Prepare the Redis key for the group and date
         const redisKey = `attendance:${reportingGroup}:${formattedDate}`;
         console.log(`Processing employee ${employeeId} for group ${reportingGroup}`);
@@ -36,11 +43,11 @@ const generateDailyAttendance = async () => {
             attendance_date: formattedDate,
           },
         });
-        
+
         // 2. Check Redis database
         let attendanceData = [];
         let redisHasRecord = false;
-        
+
         try {
           const cachedData = await redisClient.get(redisKey);
           if (cachedData) {
@@ -54,18 +61,18 @@ const generateDailyAttendance = async () => {
         } catch (redisError) {
           console.error(`Error retrieving data from Redis for key ${redisKey}:`, redisError);
         }
-        
+
         // 3. Handle all four possible cases
         const mysqlHasRecord = !!existingAttendance;
-        
+
         console.log(`Status for employee ${employeeId}: MySQL=${mysqlHasRecord}, Redis=${redisHasRecord}`);
-        
+
         // Case 1: Both have records - do nothing
         if (mysqlHasRecord && redisHasRecord) {
           console.log(`Attendance already exists in both databases for employee ${employeeId}`);
           continue;
         }
-        
+
         // Case 2: MySQL has record but Redis doesn't - add to Redis
         if (mysqlHasRecord && !redisHasRecord) {
           console.log(`Adding employee ${employeeId} to Redis`);
@@ -77,7 +84,7 @@ const generateDailyAttendance = async () => {
             overtime_hours: existingAttendance.overtime_hours,
           };
           attendanceData.push(newRedisRecord);
-          
+
           try {
             await redisClient.set(redisKey, JSON.stringify(attendanceData), {
             });
@@ -87,12 +94,12 @@ const generateDailyAttendance = async () => {
           }
           continue;
         }
-        
+
         // Case 3: Redis has record but MySQL doesn't - add to MySQL
         if (!mysqlHasRecord && redisHasRecord) {
           console.log(`Adding employee ${employeeId} to MySQL`);
           const redisRecord = attendanceData.find(record => record.employee_id === employeeId);
-          
+
           await Attendance.create({
             employee_id: employeeId,
             attendance_date: formattedDate,
@@ -103,11 +110,11 @@ const generateDailyAttendance = async () => {
           console.log(`Added employee ${employeeId} to MySQL`);
           continue;
         }
-        
+
         // Case 4: Neither has record - add to both
         if (!mysqlHasRecord && !redisHasRecord) {
           console.log(`Adding employee ${employeeId} to both databases`);
-          
+
           // Create in MySQL
           await Attendance.create({
             employee_id: employeeId,
@@ -116,7 +123,7 @@ const generateDailyAttendance = async () => {
             network_hours: 0,
             overtime_hours: 0,
           });
-          
+
           // Add to Redis
           attendanceData.push({
             employee_id: employeeId,
@@ -125,7 +132,7 @@ const generateDailyAttendance = async () => {
             network_hours: 0,
             overtime_hours: 0,
           });
-          
+
           try {
             await redisClient.set(redisKey, JSON.stringify(attendanceData), {});
             console.log(`Updated Redis for key ${redisKey} with new employee ${employeeId}`);

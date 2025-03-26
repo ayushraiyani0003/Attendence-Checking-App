@@ -171,6 +171,148 @@ async function updateRedisAttendanceData(updateData) {
     }
 }
 
+// make a function for check is date awailable or not. "checkDataAvailableINRedis"
+async function checkDataAvailableInRedis(date, reportingGroups) {
+    try {
+        // Ensure reportingGroups is an array
+        const groupList = Array.isArray(reportingGroups) ? reportingGroups : [reportingGroups];
+
+        // Validate date input
+        const checkDate = new Date(date);
+        if (isNaN(checkDate.getTime())) {
+            throw new Error('Invalid date provided');
+        }
+
+        // Format the date to match Redis key format (YYYY-MM-DD)
+        const formattedDate = `${checkDate.getFullYear()}-${String(checkDate.getMonth() + 1).padStart(2, '0')}-${String(checkDate.getDate()).padStart(2, '0')}`;
+
+        // Array to store checking promises for all groups
+        const checkPromises = groupList.map(group => {
+            const key = `attendance:${group}:${formattedDate}`;
+            
+            // Check if the key exists in Redis
+            return redisClient.exists(key)
+                .then(exists => ({
+                    group,
+                    key,
+                    exists: exists === 1
+                }))
+                .catch(error => ({
+                    group,
+                    key,
+                    exists: false,
+                    error: error.message
+                }));
+        });
+
+        // Wait for all checking operations to complete
+        const checkResults = await Promise.all(checkPromises);
+
+        // Organize results
+        const dataAvailability = {
+            date: formattedDate,
+            groups: {}
+        };
+
+        checkResults.forEach(result => {
+            dataAvailability.groups[result.group] = {
+                key: result.key,
+                available: result.exists,
+                error: result.error || null
+            };
+        });
+
+        // Check if data is available for all groups
+        const allGroupsHaveData = checkResults.every(result => result.exists);
+
+        return {
+            success: true,
+            allGroupsHaveData,
+            ...dataAvailability
+        };
+    } catch (error) {
+        console.error('Error in checkDataAvailableInRedis:', error);
+        throw error;
+    }
+}
+
+//make a redis key for those data just like others. makeAttendenceKeyRedis
+const makeAttendenceKeyRedis = (mysqlAttendanceData) => {
+    try {
+      // Validate input
+      console.log(mysqlAttendanceData);
+      
+      if (!mysqlAttendanceData || !mysqlAttendanceData.date || !mysqlAttendanceData.records) {
+        console.log('Invalid attendance data structure');
+        return null;
+      }
+  
+      // Create a mapping of reporting groups to their attendance records
+      const groupedAttendance = {};
+  
+      // Group records by reporting group
+      mysqlAttendanceData.records.forEach(record => {
+        const group = record.reporting_group || 'default';
+        if (!groupedAttendance[group]) {
+          groupedAttendance[group] = [];
+        }
+        groupedAttendance[group].push(record);
+      });
+  
+      // Generate Redis keys for each reporting group
+      const redisKeys = Object.entries(groupedAttendance).map(([group, records]) => {
+        const redisKey = `attendance:${group}:${mysqlAttendanceData.date}`;
+        
+        // Prepare the data for Redis storage
+        const redisData = records.map(record => ({
+          employee_id: record.employee_id,
+          attendance_date: record.attendance_date,
+          shift_type: record.shift_type || 'D',
+          network_hours: record.network_hours || 0,
+          overtime_hours: record.overtime_hours || 0
+        }));
+  
+        return {
+          key: redisKey,
+          data: redisData
+        };
+      });
+  
+      return redisKeys;
+    } catch (error) {
+      console.error('Error in makeAttendenceKeyRedis:', error);
+      return null;
+    }
+  };
+  
+  // Example usage function
+  const storeAttendanceInRedis = async ( mysqlAttendanceData) => {
+    try {
+      // Generate Redis keys and data
+      const redisKeyData = makeAttendenceKeyRedis(mysqlAttendanceData);
+  
+      if (!redisKeyData) {
+        console.log('No Redis key data generated');
+        return false;
+      }
+  
+      // Store each group's attendance in Redis
+      for (const entry of redisKeyData) {
+        try {
+          await redisClient.set(entry.key, JSON.stringify(entry.data));
+          console.log(`Stored attendance for key: ${entry.key}`);
+        } catch (redisError) {
+          console.error(`Error storing data for key ${entry.key}:`, redisError);
+        }
+      }
+  
+      return true;
+    } catch (error) {
+      console.error('Error storing attendance in Redis:', error);
+      return false;
+    }
+  };
+
   // Helper function to format date
   function formatDate(dateString) {
     // Handle different date formats
@@ -186,4 +328,6 @@ async function updateRedisAttendanceData(updateData) {
     return `${year}-${month}-${day}`;
   }
 
-module.exports = { getRedisAttendanceData,updateRedisAttendanceData,deleteRedisGroupKeys  };
+module.exports = { getRedisAttendanceData,updateRedisAttendanceData,deleteRedisGroupKeys ,checkDataAvailableInRedis,makeAttendenceKeyRedis,
+    storeAttendanceInRedis 
+   };

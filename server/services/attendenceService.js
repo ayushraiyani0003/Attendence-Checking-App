@@ -179,4 +179,81 @@ async function updateEmployeesDetailsFromRedis(redisAttendanceData, user, year, 
   }
 }
 
-module.exports = { getEmployeesByGroup, getEmployeesAttendanceByMonthAndGroup, updateEmployeesDetailsFromRedis };
+// data fetch from mysql attendence data only using the redporting_group and date
+async function getAttendanceSelectedGroupDateMysql(reportingGroups, attendanceDate) {
+  try {
+    // Ensure reportingGroups is an array
+    const groupList = Array.isArray(reportingGroups) ? reportingGroups : [reportingGroups];
+
+    // Validate date input
+    const validatedDate = new Date(attendanceDate);
+    if (isNaN(validatedDate.getTime())) {
+      throw new Error('Invalid date provided');
+    }
+
+    // Format the date to match MySQL date format (YYYY-MM-DD)
+    const formattedDate = validatedDate.toISOString().split('T')[0];
+
+    // First, fetch employees in the specified reporting groups
+    const employees = await Employee.findAll({
+      where: {
+        reporting_group: {
+          [Op.in]: groupList
+        }
+      },
+      attributes: ['employee_id', 'name', 'reporting_group']
+    });
+
+    // Extract employee IDs
+    const employeeIds = employees.map(emp => emp.employee_id);
+
+    // Then, fetch attendance records for these employees
+    const attendanceRecords = await Attendance.findAll({
+      where: {
+        employee_id: {
+          [Op.in]: employeeIds
+        },
+        attendance_date: formattedDate
+      },
+      attributes: [
+        'attendance_id', 
+        'employee_id', 
+        'attendance_date', 
+        'shift_type', 
+        'network_hours', 
+        'overtime_hours'
+      ]
+    });
+
+    // Create a map of employees for quick lookup
+    const employeeMap = employees.reduce((map, emp) => {
+      map[emp.employee_id] = emp;
+      return map;
+    }, {});
+
+    // Transform the records to include employee details
+    const transformedRecords = attendanceRecords.map(record => {
+      const employee = employeeMap[record.employee_id];
+      return {
+        ...record.toJSON(),
+        reporting_group: employee ? employee.reporting_group : null,
+        employee_name: employee ? employee.name : 'Unknown'
+      };
+    });
+
+    // Return the formatted result
+    return {
+      date: formattedDate,
+      groups: groupList,
+      totalRecords: transformedRecords.length,
+      records: transformedRecords
+    };
+  } catch (error) {
+    console.error("Error fetching attendance records:", error);
+    throw error;
+  }
+}
+
+
+
+module.exports = { getEmployeesByGroup, getEmployeesAttendanceByMonthAndGroup, updateEmployeesDetailsFromRedis, getAttendanceSelectedGroupDateMysql };

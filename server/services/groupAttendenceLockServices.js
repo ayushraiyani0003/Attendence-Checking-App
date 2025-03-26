@@ -52,6 +52,46 @@ async function getLockStatusDataForMonthAndGroup(groups, month, year) {
   }
 }
 
+async function setStatusFromDateGroup(groups, date, status) {
+  try {
+    // Ensure the date is in the correct format
+    const formattedDate = moment(date).format('YYYY-MM-DD');
+
+    // Bulk update for all specified groups and the specific date
+    const [updatedRows] = await AttendanceDateLockStatus.update(
+      { status: status }, // New status to set
+      {
+        where: {
+          attendance_date: formattedDate,
+          reporting_group_name: {
+            [Op.in]: groups
+          }
+        }
+      }
+    );
+
+    // If no rows exist, create them
+    const recordsToCreate = groups.map(group => ({
+      attendance_date: formattedDate,
+      reporting_group_name: group,
+      status: status
+    }));
+
+    // Bulk create for any missing records
+    await AttendanceDateLockStatus.bulkCreate(recordsToCreate, {
+      ignoreDuplicates: true
+    });
+
+    return {
+      updatedRows: updatedRows,
+      totalRecordsProcessed: groups.length
+    };
+  } catch (error) {
+    console.error('Error setting status for date and group:', error);
+    throw error;
+  }
+}
+
 module.exports = {
-  getLockStatusDataForMonthAndGroup,
+  getLockStatusDataForMonthAndGroup,setStatusFromDateGroup
 };
