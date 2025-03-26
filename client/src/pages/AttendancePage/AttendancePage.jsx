@@ -20,6 +20,7 @@ function AttendancePage({ user, monthYear }) {
   const [lockStatusData, setLockStatusData] = useState([]); // For storing lock status data
   const [isWebSocketOpen, setIsWebSocketOpen] = useState(false); // WebSocket open state
   const [showMetrics, setShowMetrics] = useState(true); // Default to showing metrics
+  const [popupOpen, setPopupOpen] = useState(false);
 
   const { ws, send } = useWebSocket(); // WebSocket hook to send messages
 
@@ -300,6 +301,48 @@ function AttendancePage({ user, monthYear }) {
     };
   }, []);
 
+
+  const handleLock = (reportingGroup, date) => {
+    // Only proceed if user is Admin
+    if (!isAdmin) return;
+    
+    console.log(`Locking attendance for ${reportingGroup}, ${date}, ${user}`);
+    
+    const payload = {
+      action: "lockUnlockStatusToggle",
+      group: reportingGroup,
+      date: date,
+      user: user,
+      status: "locked"
+    };
+
+    // Send the payload via WebSocket
+    send(payload);
+
+    setPopupOpen(false);
+};
+
+const handleUnlock = (reportingGroup, date) => {
+    // Only proceed if user is Admin
+    if (!isAdmin) return;
+    
+    console.log(`Unlocking attendance for ${reportingGroup}, ${user}`);
+    
+    const payload = {
+      action: "lockUnlockStatusToggle",
+      group: reportingGroup, // Assuming selectedDate is the group, if not, replace this
+      date: date,
+      user: user,
+      status: "unlocked"
+    };
+
+    // Send the payload via WebSocket
+    send(payload);
+
+    setPopupOpen(false);
+};
+
+
   if (!attendanceData.length) {
     return (
       <div className="attendance-page">
@@ -351,8 +394,10 @@ function AttendancePage({ user, monthYear }) {
               onSort={handleSort}
               sortConfig={sortConfig}
               fixedColumns={fixedColumns}
-              onLock={handleLockAttendance}
-              onUnlock={handleUnlockAttendance}
+              handleLock={handleLock}
+              handleUnlock={handleUnlock}
+              popupOpen={popupOpen}
+              setPopupOpen={setPopupOpen}
             />
           )}
         </div>

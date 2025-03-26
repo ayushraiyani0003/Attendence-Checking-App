@@ -56,8 +56,8 @@ function LockUnlockPopup({
 
     // Prepare options for the dropdown
     const userOptions = usersRequiringApproval.map(user => ({
-        value: user.name,
-        label: `${user.name} - ${user.user_role}`
+        value: user.reporting_group,
+        label: `${user.name} - ${user.user_role} -- ${user.reporting_group}`
     }));
 
     const handleUserChange = (selectedOption) => {
@@ -140,7 +140,7 @@ function LockUnlockPopup({
                 <div className="action-buttons" style={{ display: "flex", justifyContent: "space-between" }}>
                     <button
                         className="unlock-button"
-                        onClick={() => onUnlock(selectedUser?.value)}
+                        onClick={() => onUnlock(selectedUser?.value, date)}
                         disabled={!selectedUser}
                         style={{
                             padding: "10px 15px",
@@ -156,7 +156,7 @@ function LockUnlockPopup({
                     </button>
                     <button
                         className="lock-button"
-                        onClick={() => onLock(selectedUser?.value)}
+                        onClick={() => onLock(selectedUser?.value, date)}
                         disabled={!selectedUser}
                         style={{
                             padding: "10px 15px",

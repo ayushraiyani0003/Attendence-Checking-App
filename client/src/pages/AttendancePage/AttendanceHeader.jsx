@@ -6,11 +6,10 @@ import { AuthContext } from "../../context/AuthContext";
 import { useWebSocket } from "../../hooks/useWebSocket";  // Use WebSocket hook
 import { useUsers } from "../../hooks/userList";
 
-function AttendanceHeader({ columns, onSort, sortConfig }) {
+function AttendanceHeader({ columns, onSort, sortConfig, handleLock, handleUnlock, popupOpen, setPopupOpen }) {
     const { userRole, groupName } = useContext(AuthContext); // Access user role and group from context
     const { ws, send } = useWebSocket();  // WebSocket hook to send messages
     const { users } = useUsers();  // Fetch reporting groups using the useSettings hook
-    const [popupOpen, setPopupOpen] = useState(false);
     const [selectedDate, setSelectedDate] = useState(null);
     const [popupPosition, setPopupPosition] = useState({ left: 0 });
     const headerRef = useRef(null);
@@ -51,23 +50,6 @@ function AttendanceHeader({ columns, onSort, sortConfig }) {
         setPopupOpen(false);
     };
 
-    const handleLock = () => {
-        // Only proceed if user is Admin
-        if (!isAdmin) return;
-        
-        console.log(`Locking attendance for ${selectedDate}`);
-        send("lockAttendance", { date: selectedDate, status: "locked" });
-        setPopupOpen(false);
-    };
-
-    const handleUnlock = () => {
-        // Only proceed if user is Admin
-        if (!isAdmin) return;
-        
-        console.log(`Unlocking attendance for ${selectedDate}`);
-        send("unlockAttendance", { date: selectedDate, status: "unlocked" });
-        setPopupOpen(false);
-    };
 
     return (
         <>
