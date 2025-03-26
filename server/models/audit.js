@@ -19,7 +19,7 @@ module.exports = (sequelize) => {
         allowNull: true,
       },
       changed_by: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING(255),
         allowNull: true,
       },
       changed_at: {
