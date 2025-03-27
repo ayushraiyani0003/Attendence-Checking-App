@@ -16,6 +16,13 @@ function LockUnlockPopup({
     const [selectedUser, setSelectedUser] = useState(null);
     const popupRef = useRef(null);  // Ref to the popup container
 
+    // Reset selectedUser when popup opens
+    useEffect(() => {
+        if (isOpen) {
+            setSelectedUser(null);
+        }
+    }, [isOpen]);
+
     // Add the event listener when the popup is open
     useEffect(() => {
         if (!isOpen) return;  // If popup is closed, no need to add event listener

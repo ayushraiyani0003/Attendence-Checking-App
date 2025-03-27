@@ -54,7 +54,18 @@ function AttendancePage({ user, monthYear }) {
     // When the WebSocket connection is established
     ws.onopen = () => {
       setIsWebSocketOpen(true);
+      ws.send(JSON.stringify({
+        action: 'setUserInfo',
+        user: {
+          userRole: user.role,
+          userReportingGroup: user.userReportingGroup,
+          name: user.name,
+          id: user.id
+        }
+      }));
       console.log("WebSocket connection established.");
+
+  return ws;
     };
 
     // When the WebSocket connection is closed
@@ -67,52 +78,99 @@ function AttendancePage({ user, monthYear }) {
       const data = JSON.parse(event.data);
       console.log("Received WebSocket message: ", data);
 
-      // If it's attendance data, update the state
-      if (data.action === "attendanceData") {
-        setAttendanceData(data.attendance); // Set the fetched attendance data
-        setLockStatusData(data.lockStatus); // Set the lock status data
+      // Handle different types of broadcast messages
+      switch (data.action || data.type) {
+        case "attendanceData":
+          setAttendanceData(data.attendance); 
+          setLockStatusData(data.lockStatus);
 
-        console.log(data.attendance);
-        console.log(data.lockStatus);
-        // check if any date has unlocked status the setHasChanges to true
-        const hasUnlockedDate = data.lockStatus.some(item => item.status === 'unlocked');
-        setHasChanges(hasUnlockedDate);
+          // Check if any date has unlocked status
+          const hasUnlockedDate = data.lockStatus.some(item => item.status === 'unlocked');
+          setHasChanges(hasUnlockedDate);
+          break;
 
-      }
+        case "attendanceUpdated":
+          // Update specific employee's attendance
+          setAttendanceData((prevData) =>
+            prevData.map((row) =>
+              row.id === data.updateDetails.employeeId 
+                ? { 
+                    ...row, 
+                    attendance: row.attendance.map(att => 
+                      att.date === data.updateDetails.editDate 
+                        ? { 
+                            ...att, 
+                            [data.updateDetails.field]: data.updateDetails.newValue 
+                          } 
+                        : att
+                    )
+                  } 
+                : row
+            )
+          );
+          break;
 
-      // If it's an update to an attendance row, update the data
-      if (data.action === "attendanceUpdated") {
-        setAttendanceData((prevData) =>
-          prevData.map((row) =>
-            row.id === data.attendance.id ? data.attendance : row
-          )
-        );
-      }
+        case "lockUnlockStatusChanged":
+          // Handle lock/unlock status changes
+          if (data.status === 'unlocked') {
+            setAttendanceData((prevData) =>
+              prevData.map((row) => ({
+                ...row,
+                attendance: row.attendance.map(att => ({
+                  ...att,
+                  isLocked: false
+                }))
+              }))
+            );
+            setHasChanges(true);
+          } else if (data.status === 'locked') {
+            setAttendanceData((prevData) =>
+              prevData.map((row) => ({
+                ...row,
+                attendance: row.attendance.map(att => ({
+                  ...att,
+                  isLocked: true
+                }))
+              }))
+            );
+            setHasChanges(false);
+          }
+          break;
 
-      // If it's a lock/unlock action, handle accordingly
-      if (data.action === "attendanceLockStatus") {
-        setAttendanceData((prevData) =>
-          prevData.map((row) =>
-            row.attendance_date === data.date
-              ? { ...row, isLocked: data.status === "locked" }
-              : row
-          )
-        );
+        case "dataUpdated":
+          // Optional: Handle general data update broadcasts
+          console.log("Data updated for group:", data.userReportingGroup);
+          break;
+
+        case "attendanceLockStatus":
+          setAttendanceData((prevData) =>
+            prevData.map((row) =>
+              row.attendance_date === data.date
+                ? { ...row, isLocked: data.status === "locked" }
+                : row
+            )
+          );
+          break;
+
+        default:
+          console.warn("Unhandled WebSocket message type:", data);
       }
     };
 
     ws.onerror = (error) => {
       console.error("WebSocket error:", error);
     };
+
+    // Cleanup function
+    return () => {
+      if (ws) {
+        ws.onopen = null;
+        ws.onclose = null;
+        ws.onmessage = null;
+        ws.onerror = null;
+      }
+    };
   }, [ws, isWebSocketOpen]);
-
-  const handleLockAttendance = (date) => {
-    send({ action: "lockAttendance", date, status: "locked" });
-  };
-
-  const handleUnlockAttendance = (date) => {
-    send({ action: "unlockAttendance", date, status: "unlocked" });
-  };
 
   // Handle Cell Data Update
   const handleCellDataUpdate = (rowIndex, columnIndex, field, value) => {
@@ -129,7 +187,7 @@ function AttendancePage({ user, monthYear }) {
         action: "updateAttendance",
         employeeId: updatedEmployee.id,
         punchCode: updatedEmployee.punchCode,
-        name: user.name,
+        user: user,
         reportGroup: updatedEmployee.reporting_group,
         editDate: updatedEmployee.attendance[columnIndex].date,
         field: field, // Specific field being updated
