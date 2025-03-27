@@ -25,7 +25,6 @@ function AttendancePage({ user, monthYear }) {
   const { ws, send } = useWebSocket(); // WebSocket hook to send messages
 
   const isAdmin = user.role === "admin"; // Determine if user is admin
-  console.log("user role"+user);
 
   const fixedColumns = [
     { key: "punchCode", label: "Punch Code" },
@@ -33,8 +32,6 @@ function AttendancePage({ user, monthYear }) {
     { key: "designation", label: "Designation" },
     { key: "department", label: "Department" },
   ];
-
-  console.log("month year" + monthYear);
 
   // Fetch initial attendance data when component mounts
   useEffect(() => {
@@ -63,7 +60,6 @@ function AttendancePage({ user, monthYear }) {
           id: user.id
         }
       }));
-      console.log("WebSocket connection established.");
 
   return ws;
     };
@@ -71,12 +67,10 @@ function AttendancePage({ user, monthYear }) {
     // When the WebSocket connection is closed
     ws.onclose = () => {
       setIsWebSocketOpen(false);
-      console.log("WebSocket connection closed.");
     };
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      console.log("Received WebSocket message: ", data);
 
       // Handle different types of broadcast messages
       switch (data.action || data.type) {
@@ -139,7 +133,6 @@ function AttendancePage({ user, monthYear }) {
 
         case "dataUpdated":
           // Optional: Handle general data update broadcasts
-          console.log("Data updated for group:", data.userReportingGroup);
           break;
 
         case "attendanceLockStatus":
@@ -176,9 +169,6 @@ function AttendancePage({ user, monthYear }) {
   const handleCellDataUpdate = (rowIndex, columnIndex, field, value) => {
     const updatedEmployee = { ...attendanceData[rowIndex] };
     const originalValue = updatedEmployee.attendance[columnIndex][field];
-
-    console.log(updatedEmployee);
-    
   
     // Only send update if the value has actually changed
     if (originalValue !== value) {
@@ -201,8 +191,6 @@ function AttendancePage({ user, monthYear }) {
       // Send minimal update via WebSocket
       send(updatePayload);
   
-      console.log(updatePayload);
-      
       // Set has changes to true
       setHasChanges(true);
   
@@ -366,9 +354,7 @@ function AttendancePage({ user, monthYear }) {
   const handleLock = (reportingGroup, date) => {
     // Only proceed if user is Admin
     if (!isAdmin) return;
-    
-    console.log(`Locking attendance for ${reportingGroup}, ${date}, ${user}`);
-    
+      
     const payload = {
       action: "lockUnlockStatusToggle",
       group: reportingGroup,
@@ -386,9 +372,7 @@ function AttendancePage({ user, monthYear }) {
 const handleUnlock = (reportingGroup, date) => {
     // Only proceed if user is Admin
     if (!isAdmin) return;
-    
-    console.log(`Unlocking attendance for ${reportingGroup}, ${user}`);
-    
+      
     const payload = {
       action: "lockUnlockStatusToggle",
       group: reportingGroup, // Assuming selectedDate is the group, if not, replace this
@@ -429,9 +413,6 @@ const handleUnlock = (reportingGroup, date) => {
   }
 
   const filteredData = getFilteredData();
-
-  console.log(filteredData);
-  console.log(lockStatusData);
 
   return (
     <div className="attendance-page">

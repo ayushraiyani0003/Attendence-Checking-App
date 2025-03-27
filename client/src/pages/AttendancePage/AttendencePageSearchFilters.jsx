@@ -1,6 +1,6 @@
 import React from 'react'
 
-function AttendencePageSearchFilters({ 
+function AttendencePageSearchFilters({
   filterText,
   setFilterText,
   view,
@@ -10,8 +10,8 @@ function AttendencePageSearchFilters({
   handleSaveChanges,
   isAdmin,
   showMetrics,
-  setShowMetrics, 
-}) {  
+  setShowMetrics,
+}) {
   return (
     <div>
       <div className="attendance-controls">
@@ -30,7 +30,7 @@ function AttendencePageSearchFilters({
               width: "240px",
             }}
           />
-          <select
+          {isAdmin ? <select
             value={view}
             onChange={(e) => setView(e.target.value)}
             style={{
@@ -44,6 +44,7 @@ function AttendencePageSearchFilters({
             <option value="day">Day Shift</option>
             <option value="night">Night Shift</option>
           </select>
+            : null}
         </div>
         <div className="button-group" style={{ display: "flex", gap: "12px", alignItems: "center" }}>
           {isAdmin && (
@@ -52,7 +53,7 @@ function AttendencePageSearchFilters({
                 <span style={{ marginRight: "8px" }}>
                   {showMetrics ? "Hide Metrics" : "Show Metrics"}
                 </span>
-                <label 
+                <label
                   className="toggle-switch"
                   style={{
                     position: "relative",
