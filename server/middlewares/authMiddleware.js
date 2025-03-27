@@ -39,6 +39,8 @@ const authenticateJWT = (req, res, next) => {
 // Middleware to ensure the user is an admin
 const isAdmin = (req, res, next) => {
   if (req.user && req.user.role === 'admin') {
+    // console.log(req.user);
+    
     next();  // If the user is an admin, proceed
   } else {
     return res.status(403).json({ message: 'Access Denied: You do not have admin privileges' });

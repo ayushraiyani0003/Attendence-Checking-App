@@ -13,7 +13,7 @@ const server = http.createServer(app);
 // CORS settings
 app.use(cors({
   origin: true,
-  methods: ['GET', 'POST'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
 }));
 
