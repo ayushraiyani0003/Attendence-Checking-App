@@ -118,6 +118,9 @@ function AttendancePage({ user, monthYear }) {
   const handleCellDataUpdate = (rowIndex, columnIndex, field, value) => {
     const updatedEmployee = { ...attendanceData[rowIndex] };
     const originalValue = updatedEmployee.attendance[columnIndex][field];
+
+    console.log(updatedEmployee);
+    
   
     // Only send update if the value has actually changed
     if (originalValue !== value) {
@@ -126,7 +129,7 @@ function AttendancePage({ user, monthYear }) {
         action: "updateAttendance",
         employeeId: updatedEmployee.id,
         punchCode: updatedEmployee.punchCode,
-        name: updatedEmployee.name,
+        name: user.name,
         reportGroup: updatedEmployee.reporting_group,
         editDate: updatedEmployee.attendance[columnIndex].date,
         field: field, // Specific field being updated
