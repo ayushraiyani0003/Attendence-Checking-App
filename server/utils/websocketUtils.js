@@ -6,7 +6,7 @@ const {
   getAttendanceSelectedGroupDateMysql
 } = require("../services/attendenceService");
 const { convertMonthToYearMonthFormat } = require("./quickFunction");
-const { getRedisAttendanceData, updateRedisAttendanceData, deleteRedisGroupKeys, checkDataAvailableInRedis,storeAttendanceInRedis} = require('./getRedisAttendenceData');
+const { getRedisAttendanceData, updateRedisAttendanceData, deleteRedisGroupKeys, checkDataAvailableInRedis,storeAttendanceInRedis, getSelectedDateRedisData,deleteRedisGroupKeysForSelectedDate} = require('./getRedisAttendenceData');
 const { redisMysqlAttendanceCompare } = require('./redisMysqlAttendenceCompare');
 const { getLockStatusDataForMonthAndGroup,setStatusFromDateGroup } = require('../services/groupAttendenceLockServices');
 
@@ -202,7 +202,7 @@ async function saveDataRedisToMysql(ws, data) {
     console.log(redisAttendanceData);
 
     // Save data to MySQL
-    await updateEmployeesDetailsFromRedis(redisAttendanceData, data.user, year, month);
+    await updateEmployeesDetailsFromRedis(redisAttendanceData, data.user);
 
     // Delete Redis data for the specific group
     deleteRedisGroupKeys(data.user.userReportingGroup, year, month);
@@ -259,6 +259,8 @@ async function lockUnlockStatusToggle(ws, data) {
 
     // Ensure group is an array
     const groupList = Array.isArray(group) ? group : [group];
+    // if ststus is unlocked then run this command
+    if (status === 'unlocked') {
 
     // Check data availability in Redis
     const availableStatus = await checkDataAvailableInRedis(formattedDateString, groupList);
@@ -327,12 +329,8 @@ async function lockUnlockStatusToggle(ws, data) {
       return;
     }
 
-    // Log the generated Redis keys for debugging
-
-    // Additional processing can be added here (e.g., saving to Redis)
-    // For example:
-    // await saveToRedis(redisKeys);
-    const result = await setStatusFromDateGroup(group, formattedDateString, "unlocked")
+ 
+    const result = await setStatusFromDateGroup(group, formattedDateString, "unlocked", user)
     // Send success response
     ws.send(JSON.stringify({
       type: 'lockUnlockStatus',
@@ -341,6 +339,25 @@ async function lockUnlockStatusToggle(ws, data) {
       groups: unavailableGroups,
       redisKeys: redisKeys
     }));
+
+
+  } else {
+    // save all data in db for those group and set the lock status to lock
+
+    const redisAttendanceData = await getSelectedDateRedisData(date, group);
+    console.log(redisAttendanceData);
+
+    // Save data to MySQL
+    await updateEmployeesDetailsFromRedis(redisAttendanceData, data.user);
+
+    // delete the data from redis
+    const deleteRedisKey =  await deleteRedisGroupKeysForSelectedDate(date, group);
+    console.log(deleteRedisKey);
+    
+
+    // change the status to lock in db 
+    const result = await setStatusFromDateGroup(group, formattedDateString, "locked", user)
+  }
 
   } catch (error) {
     console.error('Error in lockUnlockStatusToggle:', error);

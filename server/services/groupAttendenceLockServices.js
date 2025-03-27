@@ -52,35 +52,36 @@ async function getLockStatusDataForMonthAndGroup(groups, month, year) {
   }
 }
 
-async function setStatusFromDateGroup(groups, date, status) {
+// Function to set status from date and group
+async function setStatusFromDateGroup(groups, date, status, user) {
   try {
     // Ensure the date is in the correct format
     const formattedDate = moment(date).format('YYYY-MM-DD');
 
+    // Log to verify the values being passed
+    console.log('Formatted Date:', formattedDate);
+    console.log('Groups:', groups);
+
     // Bulk update for all specified groups and the specific date
     const [updatedRows] = await AttendanceDateLockStatus.update(
-      { status: status }, // New status to set
+      { 
+        status: status,      // New status to set
+        locked_by: user.username  // Locking the record by the user
+      },
       {
         where: {
           attendance_date: formattedDate,
           reporting_group_name: {
-            [Op.in]: groups
+            [Op.in]: groups // Ensure the values match correctly
           }
         }
       }
     );
 
-    // If no rows exist, create them
-    const recordsToCreate = groups.map(group => ({
-      attendance_date: formattedDate,
-      reporting_group_name: group,
-      status: status
-    }));
-
-    // Bulk create for any missing records
-    await AttendanceDateLockStatus.bulkCreate(recordsToCreate, {
-      ignoreDuplicates: true
-    });
+    // If no rows were updated, log this or handle it as needed
+    if (updatedRows === 0) {
+      console.log('No records updated, no new records created.');
+    }
 
     return {
       updatedRows: updatedRows,
@@ -91,6 +92,9 @@ async function setStatusFromDateGroup(groups, date, status) {
     throw error;
   }
 }
+
+
+
 
 module.exports = {
   getLockStatusDataForMonthAndGroup,setStatusFromDateGroup

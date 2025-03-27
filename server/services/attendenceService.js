@@ -71,7 +71,7 @@ async function getEmployeesAttendanceByMonthAndGroup(groups, year, month) {
 }
 
 // get all employe details for selected dates from redis for update the data.
-async function updateEmployeesDetailsFromRedis(redisAttendanceData, user, year, month) {
+async function updateEmployeesDetailsFromRedis(redisAttendanceData, user) {
   try {
     // Prepare to store audit logs
     const auditLogs = [];
