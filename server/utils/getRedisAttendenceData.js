@@ -405,22 +405,71 @@ async function deleteRedisGroupKeysForSelectedDate(selectedDate, groups) {
     }
 }
 
-// Helper function to format date
-function formatDate(dateString) {
-    // Handle different date formats
-    const parts = dateString.split('/');
-    if (parts.length !== 3) {
-        throw new Error('Invalid date format. Use DD/MM/YYYY');
+// get all attendence from redis group wise and date wise
+// Function to fetch all attendance data, group-wise and date-wise, from Redis
+async function getAllAttendenceDataFromRedis() {
+    try {
+        // Use Redis SCAN to get all keys matching the pattern 'attendance:*'
+        const keys = await redisClient.keys('attendance:*');
+        
+        if (keys.length === 0) {
+            console.log('No attendance data found in Redis');
+            return [];
+        }
+
+        // Initialize an array to store all attendance data
+        const allAttendanceData = [];
+
+        // Iterate over all keys and fetch the corresponding attendance data
+        for (const key of keys) {
+            // Retrieve the attendance data for each key
+            const existingData = await redisClient.get(key);
+
+            if (existingData) {
+                // Parse the JSON data
+                const attendanceRecords = JSON.parse(existingData);
+                // Store the data in the result array with the key as reference
+                allAttendanceData.push({
+                    key,
+                    attendance: attendanceRecords
+                });
+            }
+        }
+
+        return allAttendanceData;
+    } catch (error) {
+        console.error('Error fetching attendance data from Redis:', error);
+        throw error;
     }
-
-    const day = parts[0].padStart(2, '0');
-    const month = parts[1].padStart(2, '0');
-    const year = parts[2];
-
-    return `${year}-${month}-${day}`;
 }
 
+
+// Helper function to format date to YYYY-MM-DD
+function formatDate(dateString) {
+    // Check if already in YYYY-MM-DD format
+    const isoFormatRegex = /^\d{4}-\d{2}-\d{2}$/;
+    if (isoFormatRegex.test(dateString)) {
+        return dateString; // Return as-is if already in correct format
+    }
+
+    // Handle DD/MM/YYYY format
+    const slashFormatParts = dateString.split('/');
+    if (slashFormatParts.length === 3) {
+        const [day, month, year] = slashFormatParts;
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+
+    // Handle other potential formats (add more as needed)
+    const dashFormatParts = dateString.split('-');
+    if (dashFormatParts.length === 3) {
+        // Might be in DD-MM-YYYY format
+        const [day, month, year] = dashFormatParts;
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+
+    throw new Error(`Invalid date format: "${dateString}". Use DD/MM/YYYY or YYYY-MM-DD`);
+}
 module.exports = {
     getRedisAttendanceData, updateRedisAttendanceData, deleteRedisGroupKeys, checkDataAvailableInRedis, makeAttendenceKeyRedis,
-    storeAttendanceInRedis, getSelectedDateRedisData, deleteRedisGroupKeysForSelectedDate
+    storeAttendanceInRedis, getSelectedDateRedisData, deleteRedisGroupKeysForSelectedDate, getAllAttendenceDataFromRedis
 };

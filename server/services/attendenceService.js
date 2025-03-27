@@ -254,6 +254,146 @@ async function getAttendanceSelectedGroupDateMysql(reportingGroups, attendanceDa
   }
 }
 
+// update the attandence from redis to mysql but only need redis data.
+async function updateAttendanceFromRedisBySystumn(redisAttendanceData) {
+  try {
+    // Prepare to store audit logs
+    const auditLogs = [];
+    const groupsToLock = new Set();
+    let totalCheckedRecords = 0;
+    let totalUpdatedRecords = 0;
+
+    // Detailed logging of input data
+    console.log('Total Redis Groups:', redisAttendanceData.length);
+    console.log('Redis Attendance Data:', JSON.stringify(redisAttendanceData, null, 2));
+
+    // Iterate through each group's data in Redis
+    for (const redisGroup of redisAttendanceData) {
+      // Extract the group and date from the key (format: attendance:groupName:date)
+      const [_, groupName, attendanceDate] = redisGroup.key.split(':');
+      
+      // Add group and date to lock tracking
+      groupsToLock.add({ groupName, attendanceDate });
+
+      // Extract attendance records from the Redis group
+      const attendanceRecords = redisGroup.attendance;
+
+      console.log(`Processing Group: ${groupName}, Date: ${attendanceDate}`);
+      console.log(`Number of Records in this Group: ${attendanceRecords.length}`);
+
+      // Process each attendance record
+      for (const redisRecord of attendanceRecords) {
+        totalCheckedRecords++;
+
+        // Log the current record being processed
+        console.log('Processing Record:', JSON.stringify(redisRecord, null, 2));
+
+        // Ensure redisRecord is an object and has necessary properties
+        if (typeof redisRecord !== 'object' || !redisRecord.employee_id) {
+          console.warn(`Skipping invalid record in group ${groupName}:`, redisRecord);
+          continue;
+        }
+
+        // Find existing MySQL record
+        const existingRecord = await Attendance.findOne({ 
+          where: { 
+            employee_id: redisRecord.employee_id, 
+            attendance_date: attendanceDate 
+          } 
+        });
+
+        // Log existing record status
+        console.log('Existing Record:', existingRecord ? 'Found' : 'Not Found');
+
+        // Check if the record needs updating (fields comparison)
+        const needsUpdate = !existingRecord || 
+          (existingRecord.shift_type !== redisRecord.shift_type) || 
+          (existingRecord.network_hours !== redisRecord.network_hours) || 
+          (existingRecord.overtime_hours !== redisRecord.overtime_hours);
+
+        console.log('Needs Update:', needsUpdate);
+
+        if (needsUpdate) {
+          // Prepare audit log
+          const auditLog = {
+            table_name: 'Attendance',
+            action: existingRecord ? 'UPDATE' : 'CREATE',
+            changed_by: 'system',
+            old_data: existingRecord ? {
+              shift_type: existingRecord.shift_type,
+              network_hours: existingRecord.network_hours,
+              overtime_hours: existingRecord.overtime_hours
+            } : null,
+            new_data: {
+              shift_type: redisRecord.shift_type,
+              network_hours: redisRecord.network_hours,
+              overtime_hours: redisRecord.overtime_hours
+            }
+          };
+
+          // Update or create record in MySQL
+          if (existingRecord) {
+            await existingRecord.update({
+              shift_type: redisRecord.shift_type,
+              network_hours: redisRecord.network_hours,
+              overtime_hours: redisRecord.overtime_hours
+            });
+          } else {
+            await Attendance.create({
+              employee_id: redisRecord.employee_id,
+              attendance_date: attendanceDate,
+              shift_type: redisRecord.shift_type,
+              network_hours: redisRecord.network_hours,
+              overtime_hours: redisRecord.overtime_hours
+            });
+          }
+
+          // Add to audit logs
+          auditLogs.push(auditLog);
+          totalUpdatedRecords++;
+        }
+      }
+    }
+
+    // Update lock status for all unique groups and dates
+    const lockPromises = Array.from(groupsToLock).map(({ groupName, attendanceDate }) => 
+      AttendanceDateLockStatus.update(
+        { 
+          status: 'locked', 
+          locked_by: 'system' 
+        },
+        { 
+          where: { 
+            reporting_group_name: groupName,
+            attendance_date: attendanceDate
+          } 
+        }
+      )
+    );
+    await Promise.all(lockPromises);
+
+    // Bulk create audit logs if any
+    if (auditLogs.length > 0) {
+      await Audit.bulkCreate(auditLogs);
+    }
+
+    console.log(`Total Checked Records: ${totalCheckedRecords}`);
+    console.log(`Total Updated Records: ${totalUpdatedRecords}`);
+
+    return { 
+      success: true, 
+      checkedRecords: totalCheckedRecords,
+      updatedRecords: totalUpdatedRecords,
+      auditLogs: auditLogs.length
+    };
+  } catch (error) {
+    console.error('Error updating employees details:', error);
+    return { 
+      success: false, 
+      error: error.message 
+    };
+  }
+}
 
 
-module.exports = { getEmployeesByGroup, getEmployeesAttendanceByMonthAndGroup, updateEmployeesDetailsFromRedis, getAttendanceSelectedGroupDateMysql };
+module.exports = { getEmployeesByGroup, getEmployeesAttendanceByMonthAndGroup, updateEmployeesDetailsFromRedis, getAttendanceSelectedGroupDateMysql,updateAttendanceFromRedisBySystumn };
