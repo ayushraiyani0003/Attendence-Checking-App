@@ -7,11 +7,12 @@ function DataRow({
   setHoveredRow,
   data,
   setData,
-  onKeyDown,
-  onCellUpdate, // Add this prop for direct cell update
+  onCellUpdate,
   user,
   lockStatusData,
   className,
+  getFilteredData,
+  attendanceData,
 }) {
   const [editableCell, setEditableCell] = useState(null);
   const [editValue, setEditValue] = useState({});
@@ -56,26 +57,121 @@ function DataRow({
     }));
   };
 
-  // Handle blur event
-  const handleBlur = (rowIndex, column, index) => {
-    const editKey = `${column}-${index}`;
-    const value = editValue[editKey];
-
-    // Format numeric fields
-    let formattedValue = value;
-    if (column === "netHR" || column === "otHR") {
-      if (!isNaN(parseFloat(value))) {
-        formattedValue = parseFloat(value).toFixed(1);
+  // Format value for update
+  const formatValue = (value, column) => {
+    if ((column === "netHR" || column === "otHR")) {
+      // Parsing logic to handle different input scenarios
+      const parsedFloat = parseFloat(value);
+      
+      // If input is a valid number
+      if (!isNaN(parsedFloat)) {
+        // Remove trailing zeros and decimal point if no significant digits after decimal
+        return parsedFloat % 1 === 0 
+          ? parseInt(parsedFloat) 
+          : parsedFloat;
       }
     }
-
-    // Directly call the WebSocket update function
-    onCellUpdate(rowIndex, index, column, formattedValue);
-
-    // Reset edit state
-    setEditableCell(null);
+    return value;
   };
 
+  // Key down handler with intelligent update
+  const onKeyDown = (e, rowIndex, column, currentCellInfo) => {
+    if (e.key === "Tab") {
+      e.preventDefault();
+
+      // Parse column and index
+      const [currentField, currentColIndex] = column.split("-");
+      const colIndex = parseInt(currentColIndex);
+
+      // Get current edit value for this cell
+      const editKey = `${column}`;
+      const currentValue = editValue[editKey] || currentCellInfo.originalValue;
+
+      // Only update if the value has actually changed
+      const hasValueChanged = currentValue !== currentCellInfo.originalValue;
+      
+      if (hasValueChanged) {
+        // Format and update the value via WebSocket
+        const formattedValue = formatValue(currentValue, currentField);
+        onCellUpdate(rowIndex, colIndex, currentField, formattedValue);
+      }
+
+      // Define the order of fields
+      const fields = ["netHR", "otHR", "dnShift"];
+      
+      // Determine the full data source
+      const fullData = attendanceData || data;
+      const filteredData = getFilteredData ? getFilteredData() : data;
+
+      // Function to find the next cell to focus
+      const findNextCell = (currentRowIndex, currentField, currentColIndex) => {
+        const currentFieldIndex = fields.indexOf(currentField);
+        
+        // Try to move to the next field in the same column
+        if (currentFieldIndex < fields.length - 1) {
+          return {
+            rowIndex: currentRowIndex,
+            column: `${fields[currentFieldIndex + 1]}-${currentColIndex}`
+          };
+        }
+        
+        // If at the last field, try to move to the next column
+        if (currentColIndex < fullData[currentRowIndex].attendance.length - 1) {
+          return {
+            rowIndex: currentRowIndex,
+            column: `${fields[0]}-${currentColIndex + 1}`
+          };
+        }
+        
+        // If at the last column, try to move to the next row
+        if (rowIndex < filteredData.length - 1) {
+          const nextRowId = filteredData[rowIndex + 1].id;
+          const nextRowOriginalIndex = fullData.findIndex(
+            (item) => item.id === nextRowId
+          );
+          return {
+            rowIndex: nextRowOriginalIndex,
+            column: `${fields[0]}-0`
+          };
+        }
+        
+        // If no more cells, return null
+        return null;
+      };
+
+      // Find the next cell to focus
+      const nextCell = findNextCell(rowIndex, currentField, colIndex);
+
+      if (nextCell) {
+        // Update the editable cell to the next cell
+        setEditableCell(`${nextCell.column}`);
+      }
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      // Parse column and index
+      const [currentField, currentColIndex] = column.split("-");
+      const colIndex = parseInt(currentColIndex);
+
+      // Get current edit value for this cell
+      const editKey = `${column}`;
+      const currentValue = editValue[editKey] || currentCellInfo.originalValue;
+
+      // Only update if the value has actually changed
+      const hasValueChanged = currentValue !== currentCellInfo.originalValue;
+      
+      if (hasValueChanged) {
+        // Format and update the value via WebSocket
+        const formattedValue = formatValue(currentValue, currentField);
+        onCellUpdate(rowIndex, colIndex, currentField, formattedValue);
+      }
+
+      setEditableCell(null); // Save and exit editing
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setEditableCell(null); // Cancel editing
+    }
+  };
+  
   // Define the getShiftClass function to handle different shifts (Day/Night)
   const getShiftClass = (shift) => {
     if (shift === "D") return "dnShift-Day";
@@ -129,9 +225,9 @@ function DataRow({
                       onChange={(e) =>
                         handleChange(e, rowIndex, field, index)
                       }
-                      onBlur={() => handleBlur(rowIndex, field, index)}
+                      // onBlur={() => handleBlur(rowIndex, field, index, cellValue)}
                       onKeyDown={(e) =>
-                        onKeyDown(e, rowIndex, `${field}-${index}`)
+                        onKeyDown(e, rowIndex, `${field}-${index}`, { field, index })
                       }
                       autoFocus
                     />
@@ -141,7 +237,7 @@ function DataRow({
                       (cellValue === "Day" || cellValue === "Night")
                         ? cellValue.charAt(0)
                         : cellValue}
-                </div>
+                    </div>
                   )}
                 </div>
               );

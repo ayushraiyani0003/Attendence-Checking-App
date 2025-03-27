@@ -204,50 +204,7 @@ function AttendancePage({ user, monthYear }) {
   };
 
   // Handle keyboard navigation
-  const onKeyDown = (e, rowIndex, column) => {
-    if (!column) return;
-    const [field, columnIndex] = column.split("-");
-    const colIndex = parseInt(columnIndex);
-
-    if (e.key === "Tab") {
-      e.preventDefault();
-      const fields = ["netHR", "otHR", "dnShift"];
-      const currentFieldIndex = fields.indexOf(field);
-      const filteredData = getFilteredData();
-      const currentRowId = filteredData[rowIndex].id;
-      const currentRowOriginalIndex = attendanceData.findIndex(
-        (item) => item.id === currentRowId
-      );
-
-      if (currentFieldIndex < fields.length - 1) {
-        setEditableCell({
-          rowIndex: currentRowOriginalIndex,
-          column: `${fields[currentFieldIndex + 1]}-${colIndex}`,
-        });
-      } else if (colIndex < attendanceData[currentRowOriginalIndex].attendance.length - 1) {
-        setEditableCell({
-          rowIndex: currentRowOriginalIndex,
-          column: `${fields[0]}-${colIndex + 1}`,
-        });
-      } else if (rowIndex < filteredData.length - 1) {
-        const nextRowId = filteredData[rowIndex + 1].id;
-        const nextRowOriginalIndex = attendanceData.findIndex(
-          (item) => item.id === nextRowId
-        );
-        setEditableCell({
-          rowIndex: nextRowOriginalIndex,
-          column: `${fields[0]}-0`,
-        });
-      }
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      setEditableCell(null); // Save and exit editing
-    } else if (e.key === "Escape") {
-      e.preventDefault();
-      setEditableCell(null); // Cancel editing
-    }
-  };
-
+  
   const getFilteredData = () => {
     let filteredData = [...attendanceData];
 
@@ -483,8 +440,9 @@ const handleUnlock = (reportingGroup, date) => {
               lockStatusData={lockStatusData}
               user={user}
               onCellUpdate={handleCellDataUpdate}
-              onKeyDown={onKeyDown}
+              getFilteredData={getFilteredData}
               dataContainerRef={dataContainerRef}
+              attendanceData={attendanceData}
             />
           ))}
         </div>
