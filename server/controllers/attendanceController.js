@@ -9,18 +9,19 @@ const generateDailyAttendance = async () => {
       return;
     }
 
-    // Get yesterday's date in Indian Standard Time (IST)
+    // Get current UTC time
     const currentDate = new Date();
-    currentDate.setHours(currentDate.getHours() - 5); // Adjust for IST offset (UTC + 5 hours)
-    currentDate.setMinutes(currentDate.getMinutes() - 30); // Adjust for IST offset (UTC + 5 hours 30 minutes)
 
-    // Subtract one day
-    currentDate.setDate(currentDate.getDate() - 1);
+    // Convert UTC time to IST by adding 5 hours and 30 minutes (IST = UTC + 5:30)
+    const istOffset = 5.5 * 60 * 60 * 1000; // 5 hours 30 minutes in milliseconds
+    const istDate = new Date(currentDate.getTime() + istOffset);
+
+    // Subtract one day from the IST date to get yesterday's date
+    istDate.setDate(istDate.getDate() - 1);
 
     // Format date as YYYY-MM-DD
-    const formattedDate = currentDate.toISOString().split('T')[0];
+    const formattedDate = istDate.toISOString().split('T')[0];
     console.log(`Generating attendance for date: ${formattedDate}`);
-
 
     // Get all employees
     const employees = await Employee.findAll();
@@ -86,8 +87,7 @@ const generateDailyAttendance = async () => {
           attendanceData.push(newRedisRecord);
 
           try {
-            await redisClient.set(redisKey, JSON.stringify(attendanceData), {
-            });
+            await redisClient.set(redisKey, JSON.stringify(attendanceData), {});
             console.log(`Updated Redis for key ${redisKey} with employee ${employeeId}`);
           } catch (redisSetError) {
             console.error(`Failed to update Redis for key ${redisKey}:`, redisSetError);
