@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 
 function DataRow({
   row,
@@ -16,6 +16,46 @@ function DataRow({
 }) {
   const [editableCell, setEditableCell] = useState(null);
   const [editValue, setEditValue] = useState({});
+  const inputRef = useRef(null);
+
+  // Add effect to handle clicks outside the input
+  useEffect(() => {
+    // Only add listener if an input is currently active
+    if (editableCell) {
+      const handleClickOutside = (event) => {
+        // Check if the click is outside the input
+        if (inputRef.current && !inputRef.current.contains(event.target)) {
+          // Parse column and index
+          const [currentField, currentColIndex] = editableCell.split("-");
+          const colIndex = parseInt(currentColIndex);
+
+          // Get current edit value for this cell
+          const editKey = `${editableCell}`;
+          const currentValue = editValue[editKey] || row.attendance[colIndex][currentField];
+
+          // Only update if the value has actually changed
+          const hasValueChanged = currentValue !== row.attendance[colIndex][currentField];
+          
+          if (hasValueChanged) {
+            // Format and update the value via WebSocket
+            const formattedValue = formatValue(currentValue, currentField);
+            onCellUpdate(rowIndex, colIndex, currentField, formattedValue);
+          }
+
+          // Clear the editable cell
+          setEditableCell(null);
+        }
+      };
+
+      // Add click listener to document
+      document.addEventListener('mousedown', handleClickOutside);
+
+      // Cleanup listener
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [editableCell, editValue, row, rowIndex, onCellUpdate]);
 
   // Determine if the user can edit based on lock status and user role
   const canEdit = (attendance) => {
@@ -171,7 +211,7 @@ function DataRow({
       setEditableCell(null); // Cancel editing
     }
   };
-  
+
   // Define the getShiftClass function to handle different shifts (Day/Night)
   const getShiftClass = (shift) => {
     if (shift === "D") return "dnShift-Day";
@@ -220,14 +260,14 @@ function DataRow({
                 >
                   {isEditable ? (
                     <input
+                      ref={inputRef}
                       type="text"
                       value={displayValue}
                       onChange={(e) =>
                         handleChange(e, rowIndex, field, index)
                       }
-                      // onBlur={() => handleBlur(rowIndex, field, index, cellValue)}
                       onKeyDown={(e) =>
-                        onKeyDown(e, rowIndex, `${field}-${index}`, { field, index })
+                        onKeyDown(e, rowIndex, `${field}-${index}`, { field, index, originalValue: cellValue })
                       }
                       autoFocus
                     />

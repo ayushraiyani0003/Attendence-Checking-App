@@ -102,7 +102,7 @@ function AttendanceHeader({ columns, onSort, sortConfig, handleLock, handleUnloc
                             <div className="date-header">
                                 <div className="sub-header-cell">Net HR</div>
                                 <div className="sub-header-cell">OT HR</div>
-                                <div className="sub-header-cell">D/N</div>
+                                <div className="sub-header-cell">D/A/N</div>
                             </div>
                             <div />
                         </div>
