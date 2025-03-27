@@ -274,7 +274,7 @@ async function saveDataRedisToMysql(ws, data, broadcastToClients) {
 
   try {
     // Ensure only admin can save data
-    if (data.user.userRole !== 'admin') {
+    if (data.user.role !== 'admin') {
       throw new Error('Unauthorized to save attendance data');
     }
 
