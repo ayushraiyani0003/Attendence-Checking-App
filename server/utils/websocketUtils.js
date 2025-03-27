@@ -6,22 +6,72 @@ const {
   getAttendanceSelectedGroupDateMysql
 } = require("../services/attendenceService");
 const { convertMonthToYearMonthFormat } = require("./quickFunction");
-const { getRedisAttendanceData, updateRedisAttendanceData, deleteRedisGroupKeys, checkDataAvailableInRedis,storeAttendanceInRedis, getSelectedDateRedisData,deleteRedisGroupKeysForSelectedDate} = require('./getRedisAttendenceData');
+const { 
+  getRedisAttendanceData, 
+  updateRedisAttendanceData, 
+  deleteRedisGroupKeys, 
+  checkDataAvailableInRedis,
+  storeAttendanceInRedis, 
+  getSelectedDateRedisData,
+  deleteRedisGroupKeysForSelectedDate
+} = require('./getRedisAttendenceData');
 const { redisMysqlAttendanceCompare } = require('./redisMysqlAttendenceCompare');
-const { getLockStatusDataForMonthAndGroup,setStatusFromDateGroup } = require('../services/groupAttendenceLockServices');
+const { getLockStatusDataForMonthAndGroup, setStatusFromDateGroup } = require('../services/groupAttendenceLockServices');
 
 function initWebSocket(server) {
   const wss = new WebSocket.Server({ server });
+  
+  // Store client connections with their role and group
+  const clients = new Set();
 
   wss.on('connection', (ws) => {
     ws.server = wss;
     console.log('A client connected to WebSocket');
 
-    ws.on('message', async (message) => {
+    // Store client connection details
+    const clientInfo = {
+      socket: ws,
+      userRole: null,
+      userGroup: null
+    };
+    clients.add(clientInfo);
 
+    // Broadcast function to send updates to relevant clients
+    const broadcastToClients = (broadcastData, sourceSocket = null) => {
+      clients.forEach((clientInfo) => {
+        const client = clientInfo.socket;
+        
+        // Only send to open sockets and clients with matching group or with admin/manager role
+        if (
+          client.readyState === WebSocket.OPEN && 
+          (
+            clientInfo.userRole === 'admin' || 
+            clientInfo.userRole === 'manager' || 
+            clientInfo.userGroup === broadcastData.userReportingGroup
+          )
+        ) {
+          // Skip sending to the source socket to prevent duplicate messages
+          if (client !== sourceSocket) {
+            try {
+              client.send(JSON.stringify(broadcastData));
+            } catch (error) {
+              console.error('Error broadcasting to client:', error);
+            }
+          }
+        }
+      });
+    };
+
+    ws.on('message', async (message) => {
       try {
         const data = JSON.parse(message);
         console.log('Received data:', data);
+
+        // Store user role and group for this connection
+        if (data.user && data.user.userRole && data.user.userReportingGroup) {
+          clientInfo.userRole = data.user.userRole;
+          clientInfo.userGroup = data.user.userReportingGroup;
+        }
 
         // Handle different actions dynamically
         switch (data.action) {
@@ -30,15 +80,15 @@ function initWebSocket(server) {
             break;
 
           case 'updateAttendance':
-            await handleAttendanceUpdate(ws, data);
+            await handleAttendanceUpdate(ws, data, broadcastToClients);
             break;
 
           case 'saveDataRedisToMysql':
-            await saveDataRedisToMysql(ws, data);
+            await saveDataRedisToMysql(ws, data, broadcastToClients);
             break;
 
           case 'lockUnlockStatusToggle':
-            await lockUnlockStatusToggle(ws, data);
+            await lockUnlockStatusToggle(ws, data, broadcastToClients);
             break;
 
           // Add more cases for different actions
@@ -60,12 +110,16 @@ function initWebSocket(server) {
 
     ws.on('close', () => {
       console.log('A client disconnected');
+      // Remove the client from the tracked connections
+      clients.delete(clientInfo);
     });
 
     ws.on('error', (error) => {
       console.error('WebSocket error:', error);
     });
   });
+
+  return wss;
 }
 
 // Function to handle attendance data retrieval
@@ -113,7 +167,7 @@ async function handleAttendanceDataRetrieval(ws, data) {
 }
 
 // Function to handle attendance update
-async function handleAttendanceUpdate(ws, data) {
+async function handleAttendanceUpdate(ws, data, broadcastToClients) {
   try {
     // Validate required fields with more comprehensive checks
     const requiredFields = [
@@ -151,16 +205,19 @@ async function handleAttendanceUpdate(ws, data) {
     // Call service to update attendance in Redis
     const updateResult = await updateRedisAttendanceData(updatePayload);
 
-    // Log the update for audit purposes
-    console.log('Attendance Update:', {
-      employeeId: data.employeeId,
-      field: data.field,
-      newValue: data.newValue,
-      group: data.reportGroup,
-      updatedBy: data.name
-    });
+    // Broadcast update to all relevant clients
+    broadcastToClients({
+      action: 'attendanceUpdated',
+      userReportingGroup: data.reportGroup,
+      updateDetails: {
+        employeeId: data.employeeId,
+        field: data.field,
+        newValue: data.newValue,
+        updatedBy: data.name
+      }
+    }, ws);
 
-    // Send update confirmation
+    // Send success response to the original sender
     ws.send(JSON.stringify({
       action: 'attendanceUpdateResult',
       success: true,
@@ -193,7 +250,7 @@ async function handleAttendanceUpdate(ws, data) {
   }
 }
 
-async function saveDataRedisToMysql(ws, data) {
+async function saveDataRedisToMysql(ws, data, broadcastToClients) {
   const { year, month } = convertMonthToYearMonthFormat(data.monthYear);
 
   try {
@@ -207,28 +264,16 @@ async function saveDataRedisToMysql(ws, data) {
     // Delete Redis data for the specific group
     deleteRedisGroupKeys(data.user.userReportingGroup, year, month);
 
-    // Broadcast updated data to all connected clients
-    const wss = ws.server; // Assuming the WebSocket server is attached to the WebSocket
-    wss.clients.forEach(async (client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        try {
-          // Prepare the data to send back to all clients
-          const broadcastData = {
-            action: 'dataUpdated',
-            year,
-            month,
-            userReportingGroup: data.user.userReportingGroup,
-            message: 'Data successfully saved and Redis cache cleared'
-          };
+    // Broadcast updated data to all relevant clients
+    broadcastToClients({
+      action: 'dataUpdated',
+      year,
+      month,
+      userReportingGroup: data.user.userReportingGroup,
+      message: 'Data successfully saved and Redis cache cleared'
+    }, ws);
 
-          client.send(JSON.stringify(broadcastData));
-        } catch (broadcastError) {
-          console.error('Error broadcasting to client:', broadcastError);
-        }
-      }
-    });
-
-    // Optionally, send a success response to the original sender
+    // Send success response to the original sender
     ws.send(JSON.stringify({
       action: 'saveDataRedisToMysql',
       status: 'success',
@@ -247,7 +292,7 @@ async function saveDataRedisToMysql(ws, data) {
   }
 }
 
-async function lockUnlockStatusToggle(ws, data) {
+async function lockUnlockStatusToggle(ws, data, broadcastToClients) {
   try {
     // Extract group, date, user, and status from the received data
     const { group, date, user, status } = data;
@@ -259,125 +304,133 @@ async function lockUnlockStatusToggle(ws, data) {
 
     // Ensure group is an array
     const groupList = Array.isArray(group) ? group : [group];
-    // if ststus is unlocked then run this command
-    if (status === 'unlocked') {
-
-    // Check data availability in Redis
-    const availableStatus = await checkDataAvailableInRedis(formattedDateString, groupList);
-
-    // Check if all groups are already available
-    const allGroupsAlreadyAvailable = Object.values(availableStatus.groups).every(
-      groupStatus => groupStatus.available
-    );
-
-    // If all groups are already available, send a message
-    if (allGroupsAlreadyAvailable) {
-      ws.send(JSON.stringify({
-        type: 'lockUnlockStatus',
-        message: 'All groups are already unlocked',
-        date: formattedDateString,
-        groups: groupList
-      }));
-      return;
-    }
-
-    // Identify groups that are not available in Redis
-    const unavailableGroups = groupList.filter(
-      groupName => !availableStatus.groups[groupName]?.available
-    );
-
-    // If no groups are unavailable, return
-    if (unavailableGroups.length === 0) {
-      ws.send(JSON.stringify({
-        type: 'lockUnlockStatus',
-        message: 'No groups need unlocking',
-        date: formattedDateString,
-        groups: groupList
-      }));
-      return;
-    }
-
-    // Fetch attendance data for unavailable groups
-    const mysqlAttendanceData = await getAttendanceSelectedGroupDateMysql(
-      unavailableGroups,
-      formattedDateString
-    );
-
-    // Validate mysqlAttendanceData before processing
-    if (!mysqlAttendanceData || !mysqlAttendanceData.records || mysqlAttendanceData.records.length === 0) {
-      ws.send(JSON.stringify({
-        type: 'lockUnlockStatus',
-        message: 'No attendance data found',
-        date: formattedDateString,
-        groups: unavailableGroups
-      }));
-      return;
-    }
-
-    // Make Redis keys for the attendance data
-    const redisKeys = storeAttendanceInRedis(mysqlAttendanceData);
-    console.log('Generated Redis Keys:', mysqlAttendanceData);
-
-    // Validate redisKeys before further processing
-    if (!redisKeys || redisKeys.length === 0) {
-      ws.send(JSON.stringify({
-        type: 'lockUnlockStatus',
-        error: 'Failed to generate Redis keys',
-        date: formattedDateString,
-        groups: unavailableGroups
-      }));
-      return;
-    }
-
- 
-    const result = await setStatusFromDateGroup(group, formattedDateString, "unlocked", user)
-    // Send success response
-    ws.send(JSON.stringify({
-      type: 'lockUnlockStatus',
-      message: 'Successfully processed attendance data',
-      date: formattedDateString,
-      groups: unavailableGroups,
-      redisKeys: redisKeys
-    }));
-
-
-  } else {
-    // save all data in db for those group and set the lock status to lock
-
-    const redisAttendanceData = await getSelectedDateRedisData(date, group);
-    console.log(redisAttendanceData);
-
-    // Save data to MySQL
-    await updateEmployeesDetailsFromRedis(redisAttendanceData, data.user);
-
-    // delete the data from redis
-    const deleteRedisKey =  await deleteRedisGroupKeysForSelectedDate(date, group);
-    console.log(deleteRedisKey);
     
+    if (status === 'unlocked') {
+      // Check data availability in Redis
+      const availableStatus = await checkDataAvailableInRedis(formattedDateString, groupList);
 
-    // change the status to lock in db 
-    const result = await setStatusFromDateGroup(group, formattedDateString, "locked", user)
-  }
+      // Check if all groups are already available
+      const allGroupsAlreadyAvailable = Object.values(availableStatus.groups).every(
+        groupStatus => groupStatus.available
+      );
 
+      if (allGroupsAlreadyAvailable) {
+        ws.send(JSON.stringify({
+          type: 'lockUnlockStatus',
+          message: 'All groups are already unlocked',
+          date: formattedDateString,
+          groups: groupList
+        }));
+        return;
+      }
+
+      // Identify groups that are not available in Redis
+      const unavailableGroups = groupList.filter(
+        groupName => !availableStatus.groups[groupName]?.available
+      );
+
+      if (unavailableGroups.length === 0) {
+        ws.send(JSON.stringify({
+          type: 'lockUnlockStatus',
+          message: 'No groups need unlocking',
+          date: formattedDateString,
+          groups: groupList
+        }));
+        return;
+      }
+
+      // Fetch attendance data for unavailable groups
+      const mysqlAttendanceData = await getAttendanceSelectedGroupDateMysql(
+        unavailableGroups,
+        formattedDateString
+      );
+
+      // Validate mysqlAttendanceData before processing
+      if (!mysqlAttendanceData || !mysqlAttendanceData.records || mysqlAttendanceData.records.length === 0) {
+        ws.send(JSON.stringify({
+          type: 'lockUnlockStatus',
+          message: 'No attendance data found',
+          date: formattedDateString,
+          groups: unavailableGroups
+        }));
+        return;
+      }
+
+      // Make Redis keys for the attendance data
+      const redisKeys = storeAttendanceInRedis(mysqlAttendanceData);
+      console.log('Generated Redis Keys:', mysqlAttendanceData);
+
+      // Validate redisKeys before further processing
+      if (!redisKeys || redisKeys.length === 0) {
+        ws.send(JSON.stringify({
+          type: 'lockUnlockStatus',
+          error: 'Failed to generate Redis keys',
+          date: formattedDateString,
+          groups: unavailableGroups
+        }));
+        return;
+      }
+
+      const result = await setStatusFromDateGroup(group, formattedDateString, "unlocked", user);
+      
+      // Broadcast lock status change
+      broadcastToClients({
+        type: 'lockUnlockStatusChanged',
+        date: formattedDateString,
+        groups: unavailableGroups,
+        status: 'unlocked',
+        changedBy: user.name
+      }, ws);
+
+      // Send success response
+      ws.send(JSON.stringify({
+        type: 'lockUnlockStatus',
+        message: 'Successfully processed attendance data',
+        date: formattedDateString,
+        groups: unavailableGroups,
+        redisKeys: redisKeys
+      }));
+    } else {
+      // save all data in db for those group and set the lock status to lock
+      const redisAttendanceData = await getSelectedDateRedisData(date, group);
+      console.log(redisAttendanceData);
+
+      // Save data to MySQL
+      await updateEmployeesDetailsFromRedis(redisAttendanceData, data.user);
+
+      // delete the data from redis
+      const deleteRedisKey = await deleteRedisGroupKeysForSelectedDate(date, group);
+      console.log(deleteRedisKey);
+
+      // change the status to lock in db 
+      const result = await setStatusFromDateGroup(group, formattedDateString, "locked", user);
+
+      // Broadcast lock status change
+      broadcastToClients({
+        type: 'lockUnlockStatusChanged',
+        date: formattedDateString,
+        groups: groupList,
+        status: 'locked',
+        changedBy: user.name
+      }, ws);
+    }
   } catch (error) {
     console.error('Error in lockUnlockStatusToggle:', error);
     
     // Send detailed error message to client
     ws.send(JSON.stringify({
       type: 'lockUnlockStatus',
-      error: 'Failed to unlock groups',
+      error: 'Failed to unlock/lock groups',
       details: error.message,
       stack: error.stack // Optional: only include in development
     }));
   }
 }
-//update the status to unlock for those date and group in table in db
-//realtime change the status in other connected users
-
 
 // Correct module exports
 module.exports = {
   initWebSocket,
   handleAttendanceUpdate,
   saveDataRedisToMysql,
+  lockUnlockStatusToggle
 };
