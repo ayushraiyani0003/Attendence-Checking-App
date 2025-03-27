@@ -6,12 +6,12 @@ const {
   getAttendanceSelectedGroupDateMysql
 } = require("../services/attendenceService");
 const { convertMonthToYearMonthFormat } = require("./quickFunction");
-const { 
-  getRedisAttendanceData, 
-  updateRedisAttendanceData, 
-  deleteRedisGroupKeys, 
+const {
+  getRedisAttendanceData,
+  updateRedisAttendanceData,
+  deleteRedisGroupKeys,
   checkDataAvailableInRedis,
-  storeAttendanceInRedis, 
+  storeAttendanceInRedis,
   getSelectedDateRedisData,
   deleteRedisGroupKeysForSelectedDate
 } = require('./getRedisAttendenceData');
@@ -20,7 +20,7 @@ const { getLockStatusDataForMonthAndGroup, setStatusFromDateGroup } = require('.
 
 function initWebSocket(server) {
   const wss = new WebSocket.Server({ server });
-  
+
   // Store client connections with their role and group
   const clients = new Set();
 
@@ -32,32 +32,30 @@ function initWebSocket(server) {
     const clientInfo = {
       socket: ws,
       userRole: null,
-      userGroup: null
+      userGroup: null,
+      userName: null
     };
     clients.add(clientInfo);
 
-    // Broadcast function to send updates to relevant clients
+    // Enhanced Broadcast function to send updates based on user roles and groups
     const broadcastToClients = (broadcastData, sourceSocket = null) => {
-      clients.forEach((clientInfo) => {
-        const client = clientInfo.socket;
-        
-        // Only send to open sockets and clients with matching group or with admin/manager role
-        if (
-          client.readyState === WebSocket.OPEN && 
-          (
-            clientInfo.userRole === 'admin' || 
-            clientInfo.userRole === 'manager' || 
-            clientInfo.userGroup === broadcastData.userReportingGroup
-          )
-        ) {
-          // Skip sending to the source socket to prevent duplicate messages
-          if (client !== sourceSocket) {
-            try {
-              client.send(JSON.stringify(broadcastData));
-            } catch (error) {
-              console.error('Error broadcasting to client:', error);
-            }
+      clients.forEach((targetClientInfo) => {
+        try {
+          // Determine if the client should receive the broadcast
+          const shouldReceive = 
+            // Admin receives all updates
+            targetClientInfo.userRole === 'admin' || 
+            // Users receive updates only for their specific group
+            (targetClientInfo.userRole === 'user' && 
+             targetClientInfo.userGroup === broadcastData.userReportingGroup);
+
+          // Send data if conditions are met and not sending to the source socket
+          if (shouldReceive && targetClientInfo.socket !== sourceSocket) {
+            console.log(`Sending broadcast to ${targetClientInfo.userName} (${targetClientInfo.userRole})`);
+            targetClientInfo.socket.send(JSON.stringify(broadcastData));
           }
+        } catch (error) {
+          console.error('Error broadcasting to client:', error);
         }
       });
     };
@@ -71,6 +69,7 @@ function initWebSocket(server) {
         if (data.user && data.user.userRole && data.user.userReportingGroup) {
           clientInfo.userRole = data.user.userRole;
           clientInfo.userGroup = data.user.userReportingGroup;
+          clientInfo.userName = data.user.name;
         }
 
         // Handle different actions dynamically
@@ -91,7 +90,12 @@ function initWebSocket(server) {
             await lockUnlockStatusToggle(ws, data, broadcastToClients);
             break;
 
-          // Add more cases for different actions
+          case 'setUserInfo':
+            clientInfo.userRole = data.user.userRole;
+            clientInfo.userGroup = data.user.userReportingGroup;
+            clientInfo.userName = data.user.name;
+            break;
+
           default:
             console.warn('Unhandled action:', data.action);
             ws.send(JSON.stringify({
@@ -126,26 +130,30 @@ function initWebSocket(server) {
 async function handleAttendanceDataRetrieval(ws, data) {
   try {
     const { year, month } = convertMonthToYearMonthFormat(data.month);
-    const userRole = data.user.userRole;
+    const userRole = data.user.role;
+    const userGroup = data.user.userReportingGroup;
+
+    // If user is not admin, only allow access to their own group
+    const group = userRole === 'admin' ? data.group : userGroup;
 
     // Fetch employees in the selected group
-    const employees = await getEmployeesByGroup(data.group);
+    const employees = await getEmployeesByGroup(group);
 
     // Fetch attendance data from MySQL
-    const mysqlAttendanceData = await getEmployeesAttendanceByMonthAndGroup(data.group, year, month);
+    const mysqlAttendanceData = await getEmployeesAttendanceByMonthAndGroup(group, year, month);
 
     // Fetch attendance data from Redis
-    const redisAttendanceData = await getRedisAttendanceData(year, month, data.group);
+    const redisAttendanceData = await getRedisAttendanceData(year, month, group);
 
     // Get lock status
-    const lockStatusData = await getLockStatusDataForMonthAndGroup(data.group, month, year);
+    const lockStatusData = await getLockStatusDataForMonthAndGroup(group, month, year);
 
     // Compare Redis and MySQL data
     const finalAttendanceData = await redisMysqlAttendanceCompare(
       employees,
       redisAttendanceData,
       mysqlAttendanceData,
-      data.group,
+      group,
       lockStatusData
     );
 
@@ -187,6 +195,16 @@ async function handleAttendanceUpdate(ws, data, broadcastToClients) {
       throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
     }
 
+    // Normalize user reporting group
+    const userReportingGroup = Array.isArray(data.user.userReportingGroup) 
+      ? data.user.userReportingGroup[0] 
+      : data.user.userReportingGroup;
+
+    // Ensure only admin can update for other groups
+    if (data.user.role !== 'admin' && data.reportGroup !== userReportingGroup) {
+      throw new Error('Unauthorized to update attendance for this group');
+    }
+
     // Prepare update data
     const updatePayload = {
       employeeId: data.employeeId,
@@ -194,7 +212,7 @@ async function handleAttendanceUpdate(ws, data, broadcastToClients) {
       field: data.field,
       newValue: data.newValue,
       reportGroup: data.reportGroup,
-      name: data.name || 'Unknown User'
+      name: data.user.name || 'Unknown User'
     };
 
     // Optional: Add oldValue if provided
@@ -213,7 +231,7 @@ async function handleAttendanceUpdate(ws, data, broadcastToClients) {
         employeeId: data.employeeId,
         field: data.field,
         newValue: data.newValue,
-        updatedBy: data.name
+        updatedBy: data.user.name
       }
     }, ws);
 
@@ -250,13 +268,18 @@ async function handleAttendanceUpdate(ws, data, broadcastToClients) {
   }
 }
 
+// Function to save Redis data to MySQL
 async function saveDataRedisToMysql(ws, data, broadcastToClients) {
   const { year, month } = convertMonthToYearMonthFormat(data.monthYear);
 
   try {
+    // Ensure only admin can save data
+    if (data.user.userRole !== 'admin') {
+      throw new Error('Unauthorized to save attendance data');
+    }
+
     // Fetch attendance data from Redis
     const redisAttendanceData = await getRedisAttendanceData(year, month, data.user.userReportingGroup);
-    console.log(redisAttendanceData);
 
     // Save data to MySQL
     await updateEmployeesDetailsFromRedis(redisAttendanceData, data.user);
@@ -292,37 +315,31 @@ async function saveDataRedisToMysql(ws, data, broadcastToClients) {
   }
 }
 
+// Function to toggle lock/unlock status
 async function lockUnlockStatusToggle(ws, data, broadcastToClients) {
   try {
+    // Log the role for debugging
+    console.log('User Role:', data.user.role);
+    
+    // Ensure only admin can toggle lock status
+    if (data.user.role !== 'admin') {
+      console.error('Unauthorized attempt to change lock status by:', data.user.role);
+      throw new Error('Unauthorized to change lock status');
+    }
+
     // Extract group, date, user, and status from the received data
     const { group, date, user, status } = data;
 
     // Convert the date from "24/3/2025" to "2025-03-25"
     const [day, month, year] = date.split('/').map(part => parseInt(part, 10));
     const formattedDateString = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    console.log(formattedDateString); // Outputs: "2025-03-24"
 
     // Ensure group is an array
     const groupList = Array.isArray(group) ? group : [group];
-    
+
     if (status === 'unlocked') {
       // Check data availability in Redis
       const availableStatus = await checkDataAvailableInRedis(formattedDateString, groupList);
-
-      // Check if all groups are already available
-      const allGroupsAlreadyAvailable = Object.values(availableStatus.groups).every(
-        groupStatus => groupStatus.available
-      );
-
-      if (allGroupsAlreadyAvailable) {
-        ws.send(JSON.stringify({
-          type: 'lockUnlockStatus',
-          message: 'All groups are already unlocked',
-          date: formattedDateString,
-          groups: groupList
-        }));
-        return;
-      }
 
       // Identify groups that are not available in Redis
       const unavailableGroups = groupList.filter(
@@ -356,23 +373,12 @@ async function lockUnlockStatusToggle(ws, data, broadcastToClients) {
         return;
       }
 
-      // Make Redis keys for the attendance data
+      // Store attendance data in Redis
       const redisKeys = storeAttendanceInRedis(mysqlAttendanceData);
-      console.log('Generated Redis Keys:', mysqlAttendanceData);
 
-      // Validate redisKeys before further processing
-      if (!redisKeys || redisKeys.length === 0) {
-        ws.send(JSON.stringify({
-          type: 'lockUnlockStatus',
-          error: 'Failed to generate Redis keys',
-          date: formattedDateString,
-          groups: unavailableGroups
-        }));
-        return;
-      }
-
+      // Change status to unlocked in database
       const result = await setStatusFromDateGroup(group, formattedDateString, "unlocked", user);
-      
+
       // Broadcast lock status change
       broadcastToClients({
         type: 'lockUnlockStatusChanged',
@@ -391,18 +397,16 @@ async function lockUnlockStatusToggle(ws, data, broadcastToClients) {
         redisKeys: redisKeys
       }));
     } else {
-      // save all data in db for those group and set the lock status to lock
+      // Save all data in DB for those groups and set the lock status to lock
       const redisAttendanceData = await getSelectedDateRedisData(date, group);
-      console.log(redisAttendanceData);
 
       // Save data to MySQL
       await updateEmployeesDetailsFromRedis(redisAttendanceData, data.user);
 
-      // delete the data from redis
+      // Delete the data from Redis
       const deleteRedisKey = await deleteRedisGroupKeysForSelectedDate(date, group);
-      console.log(deleteRedisKey);
 
-      // change the status to lock in db 
+      // Change the status to lock in DB 
       const result = await setStatusFromDateGroup(group, formattedDateString, "locked", user);
 
       // Broadcast lock status change
@@ -416,16 +420,16 @@ async function lockUnlockStatusToggle(ws, data, broadcastToClients) {
     }
   } catch (error) {
     console.error('Error in lockUnlockStatusToggle:', error);
-    
+
     // Send detailed error message to client
     ws.send(JSON.stringify({
       type: 'lockUnlockStatus',
       error: 'Failed to unlock/lock groups',
-      details: error.message,
-      stack: error.stack // Optional: only include in development
+      details: error.message
     }));
   }
 }
+
 
 // Correct module exports
 module.exports = {
