@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from "react";
-
+const API_URL = process.env.REACT_APP_WS_URL;
 // Create WebSocket Context
 export const WebSocketContext = createContext();
 
@@ -7,7 +7,7 @@ const WebSocketProvider = ({ children }) => {
   const [ws, setWs] = useState(null);
 
   useEffect(() => {
-    const webSocket = new WebSocket("ws://192.168.10.132:5003"); // Make sure this is correct URL
+    const webSocket = new WebSocket(`ws://${API_URL}`); // Make sure this is correct URL
     setWs(webSocket);
 
     // Handle WebSocket open event

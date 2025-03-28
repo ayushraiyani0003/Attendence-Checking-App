@@ -1,5 +1,5 @@
 import axios from "axios";
-import { API_URL } from "../utils/constants"; // Import API URL
+const API_URL = process.env.REACT_APP_API_URL;
 
 // Create axios instance with default config
 const apiClient = axios.create({

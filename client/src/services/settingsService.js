@@ -1,5 +1,5 @@
 import axios from "axios";
-import { API_URL } from "../utils/constants";
+const API_URL = process.env.REACT_APP_API_URL;
 
 // Fetch all settings
 export const fetchSettings = async () => {

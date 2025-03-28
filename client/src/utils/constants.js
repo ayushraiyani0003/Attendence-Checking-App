@@ -1,7 +1,3 @@
-// src/utils/constants.js
-
-export const API_URL = "http://192.168.10.132:5003/api"; // change acoding to server ip
-
 // Define roles or any other constants you may need
 export const ROLES = {
   ADMIN: "admin",

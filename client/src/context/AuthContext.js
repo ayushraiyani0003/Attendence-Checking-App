@@ -1,11 +1,16 @@
 import React, { createContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import CustomLoader from "../assets/loader.svg";
-import { API_URL } from '../utils/constants';
+const API_URL = process.env.REACT_APP_API_URL;
+console.log(process.env); // Log all environment variables to see what's available
+console.log(process.env.REACT_APP_API_URL); // Specific check for your variable
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
+
+  console.log(API_URL);
+  
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);

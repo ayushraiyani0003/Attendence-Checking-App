@@ -1,5 +1,5 @@
 import axios from "axios";
-import { API_URL } from "../utils/constants";
+const API_URL = process.env.REACT_APP_API_URL;
 // Replace with your actual API URL
 
 export const getEmployees = async () => {
