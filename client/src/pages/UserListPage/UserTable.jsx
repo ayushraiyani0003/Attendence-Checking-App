@@ -49,7 +49,6 @@ function UserTable({ onEdit, onDelete, users, isLoading = false }) {
     page * rowsPerPage + rowsPerPage
   );
 
-  // Determine if a user is "active" based on last login (within 24 hours)
   const isUserActive = (lastLogin) => {
     if (!lastLogin) return false;
     const lastLoginDate = new Date(lastLogin);
@@ -57,7 +56,6 @@ function UserTable({ onEdit, onDelete, users, isLoading = false }) {
     return daysDifference < 1;
   };
   
-  // Placeholder rows for loading state
   const loadingRows = Array(rowsPerPage).fill(0).map((_, index) => (
     <TableRow key={`loading-${index}`}>
       {Array(10).fill(0).map((_, cellIndex) => (
@@ -71,10 +69,6 @@ function UserTable({ onEdit, onDelete, users, isLoading = false }) {
   return (
     <div>
       <Box sx={{ mb: 3 }}>
-        {/* <Typography variant="h5" sx={{ mb: 2, fontWeight: 600, color: '#1976d2' }}>
-          User Management
-        </Typography> */}
-        
         <TextField
           fullWidth
           variant="outlined"
@@ -149,10 +143,9 @@ function UserTable({ onEdit, onDelete, users, isLoading = false }) {
                     </TableCell>
                     <TableCell>
                       <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                        {user.reporting_group && user.reporting_group.map((dept, index) => (
+                        {user.user_role.toLowerCase().includes('admin') ? (
                           <Chip 
-                            key={index}
-                            label={dept}
+                            label="All Groups"
                             size="small"
                             sx={{ 
                               fontSize: '0.75rem',
@@ -162,7 +155,22 @@ function UserTable({ onEdit, onDelete, users, isLoading = false }) {
                               '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.12)' }
                             }}
                           />
-                        ))}
+                        ) : (
+                          user.reporting_group && user.reporting_group.map((dept, index) => (
+                            <Chip 
+                              key={index}
+                              label={dept}
+                              size="small"
+                              sx={{ 
+                                fontSize: '0.75rem',
+                                backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                                color: '#1976d2',
+                                fontWeight: 500,
+                                '&:hover': { backgroundColor: 'rgba(25, 118, 210, 0.12)' }
+                              }}
+                            />
+                          ))
+                        )}
                       </Box>
                     </TableCell>
                     <TableCell>
