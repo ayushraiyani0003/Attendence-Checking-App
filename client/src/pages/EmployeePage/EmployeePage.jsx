@@ -15,7 +15,7 @@ const EmployeePage = () => {
   const [searchText, setSearchText] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(12);
 
   const [form] = Form.useForm();
 
@@ -208,7 +208,7 @@ const EmployeePage = () => {
               total: filteredData.length,
               pageSize: pageSize,
               showSizeChanger: true,
-              pageSizeOptions: ['10', '20', '50', '100'],
+              pageSizeOptions: ['12', '25', '55', '100'],
               showTotal: (total) => `Total: ${total} employees`,
               onChange: (page, pageSize) => {},
               onShowSizeChange: handlePageSizeChange,
@@ -217,7 +217,7 @@ const EmployeePage = () => {
             }}
             rowKey="employee_id"
             bordered
-            scroll={{ x: 'max-content' }}
+            scroll={{ x: 'max-content' , y: 'auto' }}
             className="employee-table"
             size="small"
             summary={() => (
