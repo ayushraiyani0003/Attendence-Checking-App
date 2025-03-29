@@ -35,7 +35,7 @@ function DataRow({
 
           // Only update if the value has actually changed
           const hasValueChanged = currentValue !== row.attendance[colIndex][currentField];
-          
+
           if (hasValueChanged) {
             // Format and update the value via WebSocket
             const formattedValue = formatValue(currentValue, currentField);
@@ -102,12 +102,12 @@ function DataRow({
     if ((column === "netHR" || column === "otHR")) {
       // Parsing logic to handle different input scenarios
       const parsedFloat = parseFloat(value);
-      
+
       // If input is a valid number
       if (!isNaN(parsedFloat)) {
         // Remove trailing zeros and decimal point if no significant digits after decimal
-        return parsedFloat % 1 === 0 
-          ? parseInt(parsedFloat) 
+        return parsedFloat % 1 === 0
+          ? parseInt(parsedFloat)
           : parsedFloat;
       }
     }
@@ -129,7 +129,7 @@ function DataRow({
 
       // Only update if the value has actually changed
       const hasValueChanged = currentValue !== currentCellInfo.originalValue;
-      
+
       if (hasValueChanged) {
         // Format and update the value via WebSocket
         const formattedValue = formatValue(currentValue, currentField);
@@ -138,7 +138,7 @@ function DataRow({
 
       // Define the order of fields
       const fields = ["netHR", "otHR", "dnShift"];
-      
+
       // Determine the full data source
       const fullData = attendanceData || data;
       const filteredData = getFilteredData ? getFilteredData() : data;
@@ -146,7 +146,7 @@ function DataRow({
       // Function to find the next cell to focus
       const findNextCell = (currentRowIndex, currentField, currentColIndex) => {
         const currentFieldIndex = fields.indexOf(currentField);
-        
+
         // Try to move to the next field in the same column
         if (currentFieldIndex < fields.length - 1) {
           return {
@@ -154,7 +154,7 @@ function DataRow({
             column: `${fields[currentFieldIndex + 1]}-${currentColIndex}`
           };
         }
-        
+
         // If at the last field, try to move to the next column
         if (currentColIndex < fullData[currentRowIndex].attendance.length - 1) {
           return {
@@ -162,7 +162,7 @@ function DataRow({
             column: `${fields[0]}-${currentColIndex + 1}`
           };
         }
-        
+
         // If at the last column, try to move to the next row
         if (rowIndex < filteredData.length - 1) {
           const nextRowId = filteredData[rowIndex + 1].id;
@@ -174,7 +174,7 @@ function DataRow({
             column: `${fields[0]}-0`
           };
         }
-        
+
         // If no more cells, return null
         return null;
       };
@@ -198,7 +198,7 @@ function DataRow({
 
       // Only update if the value has actually changed
       const hasValueChanged = currentValue !== currentCellInfo.originalValue;
-      
+
       if (hasValueChanged) {
         // Format and update the value via WebSocket
         const formattedValue = formatValue(currentValue, currentField);
@@ -240,7 +240,7 @@ function DataRow({
               const editKey = `${field}-${index}`;
               const isEditable = editableCell === editKey;
               const cellValue = attendance[field];
-              const displayValue = isEditable 
+              const displayValue = isEditable
                 ? (editValue[editKey] ?? cellValue)
                 : cellValue;
 
@@ -274,7 +274,7 @@ function DataRow({
                   ) : (
                     <div>
                       {field === "dnShift" &&
-                      (cellValue === "Day" || cellValue === "Night")
+                        (cellValue === "Day" || cellValue === "Night")
                         ? cellValue.charAt(0)
                         : cellValue}
                     </div>
@@ -284,6 +284,17 @@ function DataRow({
             })}
           </div>
         ))}
+        <div className="total-data-cell">
+          <div
+            className="Disply-total-sub-data-cell"
+          >
+            <div className="sub-disply-total">Net HR</div>
+            <div className="sub-disply-total">OT HR</div>
+            <div className="sub-disply-total">D/A/N</div>
+            <div className="sub-disply-total">D/A/N</div>
+            <div className="sub-disply-total">D/A/N</div>
+          </div>
+        </div>
       </div>
     </div>
   );

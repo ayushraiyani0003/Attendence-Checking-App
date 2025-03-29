@@ -100,7 +100,7 @@
 .scrollable-columns {
   display: flex;
   flex-wrap: nowrap;
-  overflow-x: auto;
+  overflow-x: hidden;
 }
 .fixed-columns,
 .fixed-data-cells {
@@ -135,11 +135,11 @@
 }
 
 /* Scrollable columns container */
-#header-scrollable {
+/* #header-scrollable {
   display: flex;
   overflow-x: auto;
   flex-wrap: nowrap;
-}
+} */
 
 .data-container::-webkit-scrollbar {
   width: 8px; /* Width of the scrollbar */
@@ -220,6 +220,15 @@
   border-top: 1px solid rgba(255, 255, 255, 0.3);
   justify-content: space-between;
 }
+.total-data-header{
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 6px 0 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+  justify-content: space-between;
+}
 
 .sub-header-cell {
   flex: 1;
@@ -229,6 +238,16 @@
   white-space: nowrap;
   font-weight: 500;
   text-transform: uppercase;
+}
+.total-sub-header-cell{
+  flex: 1;
+  padding: 6px;
+  text-align: center;
+  font-size: 12px;
+  white-space: nowrap;
+  font-weight: 500;
+  text-transform: uppercase;
+  text-wrap: wrap;
 }
 
 /* Data Rows - Modified for synced scrolling */
@@ -349,6 +368,9 @@
   transition: var(--transition);
   border-radius: 4px;
 }
+.total-date-cell {
+  display: flex;
+}
 
 .date-cell:last-child {
   border-right: none;
@@ -359,6 +381,23 @@
   flex: 1;
   padding: 6px;
   margin: 0;
+  text-align: center;
+  font-size: 14px;
+  background-color: white;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  /* height: 12px; */
+  border: 1px solid transparent;
+  transition: var(--transition);
+}
+.Disply-total-sub-data-cell{
+  flex: 1;
+  padding: 6px 15px;
+  margin: 0;
+  gap: 22px;
   text-align: center;
   font-size: 14px;
   background-color: white;
@@ -386,7 +425,25 @@
   color: var(--primary-color);
   font-weight: 500;
 }
-
+.total-data-cell{
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  border: none;
+  background-color: transparent;
+  font-size: 14px;
+  text-align: center;
+  padding: 0;
+  margin: 0;
+  outline: none;
+  box-sizing: border-box;
+  color: var(--primary-color);
+  font-weight: 500;
+}
+.sub-disply-total{
+  padding: 5px;
+}
 /* Hover effect */
 .date-cell:hover {
   background-color: rgba(233, 236, 239, 0.8);
@@ -844,6 +901,10 @@ RESPONSIVE STYLES FOR ATTENDANCE APP
   .header-cell.attendance-header-cell {
     min-width: 200px;
     width: 200px;
+  }
+  .header-cell.total-attendance-header-cell{
+    min-width: 350px;
+    width: 350px;
   }
 
   .fixed-columns {
