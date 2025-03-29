@@ -1,44 +1,56 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Input, Button, Select, Space, Typography, Tag, Card, Divider, Tooltip, notification, Form, Modal } from 'antd';
 import { SearchOutlined, DownloadOutlined, UserOutlined, EditOutlined, DeleteOutlined, PlusOutlined, FilterOutlined } from '@ant-design/icons';
-import { useSettings } from '../../context/SettingsContext'; // Import useSettings hook
-import useEmployee from '../../hooks/useEmployee'; // Import employee hook
+import { useSettings } from '../../context/SettingsContext';
+import useEmployee from '../../hooks/useEmployee';
 import './EmployeePage.css';
 
 const { Title } = Typography;
 const { Option } = Select;
 
 const EmployeePage = () => {
-  // Fetch departments, designations, and reporting groups from the useSettings hook
   const { departments, designations, reportingGroups, loading: settingsLoading } = useSettings();
   const { employees, loading, addEmployee, editEmployee, removeEmployee } = useEmployee();
   const [filteredData, setFilteredData] = useState([]);
   const [searchText, setSearchText] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [pageSize, setPageSize] = useState(10);
 
   const [form] = Form.useForm();
 
-  // UseEffect to update filtered data when employees or searchText changes
+  // Improved search functionality to handle mixed types
   useEffect(() => {
-    const filtered = employees.filter(
-      (item) =>
-        item.name.toLowerCase().includes(searchText.toLowerCase()) ||
-        item.department.toLowerCase().includes(searchText.toLowerCase()) ||
-        item.designation.toLowerCase().includes(searchText.toLowerCase()) ||
-        item.punchCode.includes(searchText)
-    );
+    if (!employees.length) return;
+    
+    const lowerSearchText = searchText.toLowerCase();
+    const filtered = employees.filter(item => {
+      // Convert punch_code to string to handle mixed types
+      const punchCodeStr = String(item.punch_code);
+      
+      return (
+        (item.name && item.name.toLowerCase().includes(lowerSearchText)) ||
+        (item.department && item.department.toLowerCase().includes(lowerSearchText)) ||
+        (item.designation && item.designation.toLowerCase().includes(lowerSearchText)) ||
+        (item.reporting_group && item.reporting_group.toLowerCase().includes(lowerSearchText)) ||
+        (punchCodeStr && punchCodeStr.includes(lowerSearchText))
+      );
+    });
+    
     setFilteredData(filtered);
   }, [employees, searchText]);
-
-  console.log("employees", employees);
 
   const columns = [
     {
       title: 'Punch Code',
       dataIndex: 'punch_code',
       key: 'punch_code',
-      sorter: (a, b) => a.punchCode - b.punchCode,
+      sorter: (a, b) => {
+        // Handle mixed type sorting
+        const aVal = String(a.punch_code);
+        const bVal = String(b.punch_code);
+        return aVal.localeCompare(bVal);
+      },
       render: (text) => <span className="employee-page-punch-code">{text}</span>,
       width: 100,
     },
@@ -59,7 +71,7 @@ const EmployeePage = () => {
       title: 'Department',
       dataIndex: 'department',
       key: 'department',
-      filters: departments.map((dept) => ({ text: dept.name, value: dept.id })), // Use dept.name and dept.id
+      filters: departments.map((dept) => ({ text: dept.name, value: dept.name })),
       onFilter: (value, record) => record.department === value,
       render: (text) => <Tag>{text}</Tag>,
       width: 150,
@@ -68,7 +80,7 @@ const EmployeePage = () => {
       title: 'Designation',
       dataIndex: 'designation',
       key: 'designation',
-      filters: designations.map((desig) => ({ text: desig.designation_name, value: desig.designation_name })), // Use desig.name and desig.id
+      filters: designations.map((desig) => ({ text: desig.designation_name, value: desig.designation_name })),
       onFilter: (value, record) => record.designation === value,
       render: (text) => <span>{text}</span>,
       width: 150,
@@ -77,8 +89,8 @@ const EmployeePage = () => {
       title: 'Reporting Group',
       dataIndex: 'reporting_group',
       key: 'reporting_group',
-      filters: reportingGroups.map((group) => ({ text: group.groupname, value: group.groupname })), // Use group.name and group.id
-      onFilter: (value, record) => record.reportingGroup === value,
+      filters: reportingGroups.map((group) => ({ text: group.groupname, value: group.groupname })),
+      onFilter: (value, record) => record.reporting_group === value,
       render: (text) => {
         const shiftColors = {
           Morning: 'green',
@@ -94,9 +106,9 @@ const EmployeePage = () => {
       key: 'actions',
       render: (_, record) => (
         <Space size={4}>
-           <Tooltip title="Edit employee">
-        <Button type="primary" icon={<EditOutlined />} size="small" onClick={() => handleEditEmployee(record)} />
-      </Tooltip>
+          <Tooltip title="Edit employee">
+            <Button type="primary" icon={<EditOutlined />} size="small" onClick={() => handleEditEmployee(record)} />
+          </Tooltip>
           <Tooltip title="Delete employee">
             <Button danger icon={<DeleteOutlined />} size="small" onClick={() => removeEmployee(record.employee_id)} />
           </Tooltip>
@@ -112,38 +124,36 @@ const EmployeePage = () => {
   };
 
   const handleAddEmployee = () => {
-    setIsModalVisible(true); // Show the modal when the "+" button is clicked
+    setIsModalVisible(true);
   };
 
-const handleCancel = () => {
-  setIsModalVisible(false);
-  setSelectedEmployee(null); // Reset selected employee
-  form.resetFields(); // Clear form fields
-};
+  const handleCancel = () => {
+    setIsModalVisible(false);
+    setSelectedEmployee(null);
+    form.resetFields();
+  };
 
+  const handleSubmit = (values) => {
+    if (selectedEmployee) {
+      editEmployee(selectedEmployee.employee_id, values);
+    } else {
+      addEmployee(values);
+    }
 
-const handleSubmit = (values) => {
-  if (selectedEmployee) {
-    // If editing, update the employee
-    editEmployee(selectedEmployee.employee_id, values);
-  } else {
-    // If adding, create a new employee
-    addEmployee(values);
-  }
+    setIsModalVisible(false);
+    setSelectedEmployee(null);
+    form.resetFields();
+  };
 
-  setIsModalVisible(false); // Close modal
-  setSelectedEmployee(null); // Reset selected employee
-  form.resetFields(); // Clear the form
-};
+  const handleEditEmployee = (employee) => {
+    setSelectedEmployee(employee);
+    form.setFieldsValue(employee);
+    setIsModalVisible(true);
+  };
 
-
-const handleEditEmployee = (employee) => {
-  setSelectedEmployee(employee); // Store selected employee details
-  form.setFieldsValue(employee); // Pre-fill the form
-  setIsModalVisible(true); // Open modal
-};
-
-
+  const handlePageSizeChange = (current, size) => {
+    setPageSize(size);
+  };
 
   return (
     <div className="employee-page">
@@ -162,7 +172,7 @@ const handleEditEmployee = (employee) => {
           <div className="actions-container">
             <div className="search-section">
               <Input
-                placeholder="Search employees..."
+                placeholder="Search by name, department, designation, reporting group, or punch code..."
                 prefix={<SearchOutlined className="search-icon" />}
                 onChange={(e) => handleSearch(e.target.value)}
                 className="search-input"
@@ -196,13 +206,16 @@ const handleEditEmployee = (employee) => {
             loading={loading || settingsLoading}
             pagination={{
               total: filteredData.length,
-              pageSize: 10,
+              pageSize: pageSize,
               showSizeChanger: true,
+              pageSizeOptions: ['10', '20', '50', '100'],
               showTotal: (total) => `Total: ${total} employees`,
+              onChange: (page, pageSize) => {},
+              onShowSizeChange: handlePageSizeChange,
               className: 'custom-pagination',
               size: 'small',
             }}
-            rowKey="punch_code"
+            rowKey="employee_id"
             bordered
             scroll={{ x: 'max-content' }}
             className="employee-table"
@@ -220,12 +233,11 @@ const handleEditEmployee = (employee) => {
         </div>
       </Card>
 
-      {/* Modal for adding employee */}
       <Modal
-        title={selectedEmployee ? "Edit Employee" : "Add Employee"} // Change title dynamically
+        title={selectedEmployee ? "Edit Employee" : "Add Employee"}
         open={isModalVisible}
         onCancel={handleCancel}
-        footer={null} // Remove default footer buttons
+        footer={null}
         width={600}
       >
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
