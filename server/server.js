@@ -6,6 +6,7 @@ const cors = require('cors');
 const routes = require('./routes');
 const { initWebSocket } = require('./utils/websocketUtils');
 const sequelize = require('./config/db');
+const cronJobs = require('./utils/cronJobs');
 
 const app = express();
 const server = http.createServer(app);
