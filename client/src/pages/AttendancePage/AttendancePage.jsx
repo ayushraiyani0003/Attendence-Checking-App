@@ -278,27 +278,34 @@ function AttendancePage({ user, monthYear }) {
   const dataContainerRef = useRef(null);
 
   useEffect(() => {
+    // Wait for both refs to be populated and data to be loaded
     const headerWrapper = headerRef.current;
     const dataContainer = dataContainerRef.current;
-
-    if (!headerWrapper || !dataContainer) return;
-
+  
+    if (!headerWrapper || !dataContainer || !attendanceData.length) return;
+  
+    // Scroll handler functions
     const handleDataScroll = () => {
       headerWrapper.scrollLeft = dataContainer.scrollLeft;
     };
-
+  
     const handleHeaderScroll = () => {
       dataContainer.scrollLeft = headerWrapper.scrollLeft;
     };
-
+  
+    // Add the event listeners
     dataContainer.addEventListener("scroll", handleDataScroll);
     headerWrapper.addEventListener("scroll", handleHeaderScroll);
-
+  
+    // Cleanup function to remove event listeners
     return () => {
       dataContainer.removeEventListener("scroll", handleDataScroll);
       headerWrapper.removeEventListener("scroll", handleHeaderScroll);
     };
-  }, []);
+    
+    // Include dependencies that should trigger re-running this effect
+  }, [attendanceData, headerRef.current, dataContainerRef.current]);
+  
 
 
   const handleLock = (reportingGroup, date) => {
@@ -336,7 +343,6 @@ const handleUnlock = (reportingGroup, date) => {
 
     setPopupOpen(false);
 };
-
 
   if (!attendanceData.length) {
     return (
