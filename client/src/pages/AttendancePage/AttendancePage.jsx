@@ -217,14 +217,7 @@ function AttendancePage({ user, monthYear }) {
           item.department.toLowerCase().includes(searchTerm) ||
           item.designation.toLowerCase().includes(searchTerm);
 
-        const attendanceMatch = item.attendance.some(
-          (att) =>
-            att.netHR?.toLowerCase().includes(searchTerm) ||
-            att.otHR?.toLowerCase().includes(searchTerm) ||
-            att.dnShift?.toLowerCase().includes(searchTerm)
-        );
-
-        return textMatch || attendanceMatch;
+        return textMatch;
       });
     }
 
