@@ -63,7 +63,7 @@ function initWebSocket(server) {
     ws.on('message', async (message) => {
       try {
         const data = JSON.parse(message);
-        console.log('Received data:', data);
+        // console.log('Received data:', data);
 
         // Store user role and group for this connection
         if (data.user && data.user.userRole && data.user.userReportingGroup) {
@@ -113,7 +113,7 @@ function initWebSocket(server) {
     });
 
     ws.on('close', () => {
-      console.log('A client disconnected');
+      // console.log('A client disconnected');
       // Remove the client from the tracked connections
       clients.delete(clientInfo);
     });

@@ -6,7 +6,7 @@ const {updateAttendanceFromRedisBySystumn} = require("../services/attendenceServ
 
 // Cron job to generate attendance at 12:00 AM every day
 cron.schedule('0 0 0 * * *', () => {
-  console.log('Generating daily attendance...');
+  // console.log('Generating daily attendance...');
   try {
     generateDailyAttendance();
   } catch (error) {
@@ -28,14 +28,14 @@ cron.schedule('00 00 20 * * *', async () => {
 
     // Get all attendance data from Redis
     const redisAttData = await getAllAttendenceDataFromRedis();
-    console.log('Redis Attendance Data:', redisAttData);
+    // console.log('Redis Attendance Data:', redisAttData);
 
     // Call the function to update attendance data from Redis to MySQL
     const result = await updateAttendanceFromRedisBySystumn(redisAttData);
 
     // Handle success
     if (result.success) {
-      console.log(`${result.updatedRecords} records updated successfully.`);
+      // console.log(`${result.updatedRecords} records updated successfully.`);
       
       // Extract unique dates and groups
       redisAttData.forEach(item => {
@@ -52,8 +52,8 @@ cron.schedule('00 00 20 * * *', async () => {
         }
       });
 
-      console.log('All Dates:', allDates);
-      console.log('All Groups:', allGroups);
+      // console.log('All Dates:', allDates);
+      // console.log('All Groups:', allGroups);
 
       // Delete Redis keys for each date and group combination
       for (const date of allDates) {
