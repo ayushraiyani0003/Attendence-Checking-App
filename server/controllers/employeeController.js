@@ -11,7 +11,6 @@ const createEmployee = async (req, res) => {
   try {
     const { name, department, punch_code, designation, reporting_group } =
       req.body;
-    console.log(req.body);
 
     // Validate required fields
     if (

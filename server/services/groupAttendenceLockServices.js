@@ -5,7 +5,7 @@ const moment = require('moment');
 // Function to get lock status data based on month and group
 async function getLockStatusDataForMonthAndGroup(groups, month, year) {
 
-    console.log("Month: " + month);
+    // console.log("Month: " + month);
     
   try {
     // Fix the startDate format (e.g., 'Mar 2025' -> '2025-03-01')
@@ -59,8 +59,8 @@ async function setStatusFromDateGroup(groups, date, status, user) {
     const formattedDate = moment(date).format('YYYY-MM-DD');
 
     // Log to verify the values being passed
-    console.log('Formatted Date:', formattedDate);
-    console.log('Groups:', groups);
+    // console.log('Formatted Date:', formattedDate);
+    // console.log('Groups:', groups);
 
     // Bulk update for all specified groups and the specific date
     const [updatedRows] = await AttendanceDateLockStatus.update(
@@ -80,7 +80,7 @@ async function setStatusFromDateGroup(groups, date, status, user) {
 
     // If no rows were updated, log this or handle it as needed
     if (updatedRows === 0) {
-      console.log('No records updated, no new records created.');
+      console.error('No records updated, no new records created.');
     }
 
     return {

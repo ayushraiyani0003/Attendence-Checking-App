@@ -3,7 +3,7 @@ const { Employee } = require("../models"); // Import the Employee model
 // Service for creating a new employee
 const createEmployeeService = async (employeeData) => {
   try {
-    console.log("employeeData", employeeData);
+    // console.log("employeeData", employeeData);
 
     const newEmployee = await Employee.create(employeeData);
     return newEmployee;

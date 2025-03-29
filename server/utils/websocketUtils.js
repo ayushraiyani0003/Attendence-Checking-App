@@ -26,7 +26,7 @@ function initWebSocket(server) {
 
   wss.on('connection', (ws) => {
     ws.server = wss;
-    console.log('A client connected to WebSocket');
+    // console.log('A client connected to WebSocket');
 
     // Store client connection details
     const clientInfo = {
@@ -51,7 +51,7 @@ function initWebSocket(server) {
 
           // Send data if conditions are met and not sending to the source socket
           if (shouldReceive && targetClientInfo.socket !== sourceSocket) {
-            console.log(`Sending broadcast to ${targetClientInfo.userName} (${targetClientInfo.userRole})`);
+            // console.log(`Sending broadcast to ${targetClientInfo.userName} (${targetClientInfo.userRole})`);
             targetClientInfo.socket.send(JSON.stringify(broadcastData));
           }
         } catch (error) {
@@ -319,7 +319,7 @@ async function saveDataRedisToMysql(ws, data, broadcastToClients) {
 async function lockUnlockStatusToggle(ws, data, broadcastToClients) {
   try {
     // Log the role for debugging
-    console.log('User Role:', data.user.role);
+    // console.log('User Role:', data.user.role);
     
     // Ensure only admin can toggle lock status
     if (data.user.role !== 'admin') {

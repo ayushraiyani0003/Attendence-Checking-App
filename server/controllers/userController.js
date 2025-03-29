@@ -17,7 +17,7 @@ const getAllUsers = async (req, res) => {
   };
 
   const createUser = async (req, res) => {
-    console.log("createUser", req.body);  // Log the entire request body for debugging
+    // console.log("createUser", req.body);  // Log the entire request body for debugging
   
     const { username, name, phoneNo, department, designation, userRole, password, reportingGroup, isActive } = req.body;
   
@@ -53,7 +53,6 @@ const getAllUsers = async (req, res) => {
   
   // Controller to update a user
   const updateUser = async (req, res) => {
-    console.log("updateUser");
     const { id } = req.params;
     const { username, name, phoneNo, department, designation, userRole, password, reportingGroup } = req.body;
     try {

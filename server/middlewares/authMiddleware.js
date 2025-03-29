@@ -13,18 +13,18 @@ const authenticateJWT = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     if (authHeader && authHeader.startsWith('Bearer ')) {
       token = authHeader.substring(7); // Remove 'Bearer ' prefix
-      console.log('Found token in Authorization header');
+      // console.log('Found token in Authorization header');
     }
   }
 
   if (!token) {
-    console.log('No token provided');
+    // console.log('No token provided');
     return res.status(401).json({ message: 'Access denied. No token provided.' });
   }
 
   jwt.verify(token, JWT_SECRET_KEY, (err, user) => {
     if (err) {
-      console.log('Invalid or expired token');
+      // console.log('Invalid or expired token');
       return res.status(403).json({ message: 'Invalid or expired token. Please log in again.' });
     }
 

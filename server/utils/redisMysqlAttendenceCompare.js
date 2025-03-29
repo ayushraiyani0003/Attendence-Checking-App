@@ -11,7 +11,7 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
       // Parse the data string into JSON if it's a string
       const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
       
-      console.log(`Processing Redis data for date: ${date}, group: ${group}`);
+      // console.log(`Processing Redis data for date: ${date}, group: ${group}`);
       
       // Store data with multiple date formats to ensure matching
       const redisDate = new Date(date);
@@ -32,18 +32,18 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
         // Handle array of employee records by mapping them by employee_id
         if (Array.isArray(parsedData)) {
           parsedData.forEach(empData => {
-            console.log(`Adding employee ${empData.employee_id} data to lookup for date ${dateFormat}`);
+            // console.log(`Adding employee ${empData.employee_id} data to lookup for date ${dateFormat}`);
             redisAttendanceLookup[dateFormat][group][empData.employee_id] = empData;
           });
         } else {
           // If it's a single record
-          console.log(`Adding single employee ${parsedData.employee_id} data to lookup for date ${dateFormat}`);
+          // console.log(`Adding single employee ${parsedData.employee_id} data to lookup for date ${dateFormat}`);
           redisAttendanceLookup[dateFormat][group][parsedData.employee_id] = parsedData;
         }
       });
     });
     
-    console.log("Redis lookup data:", JSON.stringify(redisAttendanceLookup, null, 2));
+    // console.log("Redis lookup data:", JSON.stringify(redisAttendanceLookup, null, 2));
 
     // Prepare the final result to send
     const finalAttendanceData = [];
@@ -52,9 +52,9 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
     for (const employee of mysqlAttendanceData) {
       const { employee_id, attendance_date, shift_type, network_hours, overtime_hours, reporting_group } = employee;
 
-      console.log("Employee in Redis compare data: ", employee);
+      // console.log("Employee in Redis compare data: ", employee);
       
-      console.log(`Processing MySQL data for employee_id: ${employee_id}, date: ${attendance_date}, group: ${reporting_group}`);
+      // console.log(`Processing MySQL data for employee_id: ${employee_id}, date: ${attendance_date}, group: ${reporting_group}`);
 
       // Check if reporting_group is undefined and set a default if needed
       const group = reporting_group || 'default';  // Use 'default' if group is not provided
@@ -62,7 +62,7 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
       // Find the employee details by matching employee_id
       const employeeDetails = employees.find((emp) => emp.employee_id === employee_id);
       if (!employeeDetails) {
-        console.log(`Employee with ID ${employee_id} not found.`);
+        // console.log(`Employee with ID ${employee_id} not found.`);
         continue; // Skip if employee details are not found
       }
 
@@ -90,7 +90,7 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
       
       const dayOfWeek = attendanceDate.toLocaleString('en-us', { weekday: 'long' });
       
-      console.log(`Formatted date for comparison: ${formattedDate}, ISO: ${isoFormattedDate}`);
+      // console.log(`Formatted date for comparison: ${formattedDate}, ISO: ${isoFormattedDate}`);
 
       // Determine lock status dynamically
       const lockStatus = determineLockStatus(
@@ -122,7 +122,7 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
             redisAttendanceLookup[dateFormat][groupName][employee_id]
           ) {
             const redisData = redisAttendanceLookup[dateFormat][groupName][employee_id];
-            console.log(`Found Redis data for employee ${employee_id} on date ${dateFormat} in group ${groupName}:`, redisData);
+            // console.log(`Found Redis data for employee ${employee_id} on date ${dateFormat} in group ${groupName}:`, redisData);
             
             // Replace MySQL data with Redis data if available
             attendanceRecord = {
@@ -143,7 +143,7 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
       }
       
       if (!redisDataFound) {
-        console.log(`No Redis data found for employee ${employee_id} on date ${formattedDate}`);
+        // console.log(`No Redis data found for employee ${employee_id} on date ${formattedDate}`);
       }
 
       // Add attendance record to the employee's attendance array

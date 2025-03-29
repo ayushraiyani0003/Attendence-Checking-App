@@ -264,8 +264,8 @@ async function updateAttendanceFromRedisBySystumn(redisAttendanceData) {
     let totalUpdatedRecords = 0;
 
     // Detailed logging of input data
-    console.log('Total Redis Groups:', redisAttendanceData.length);
-    console.log('Redis Attendance Data:', JSON.stringify(redisAttendanceData, null, 2));
+    // console.log('Total Redis Groups:', redisAttendanceData.length);
+    // console.log('Redis Attendance Data:', JSON.stringify(redisAttendanceData, null, 2));
 
     // Iterate through each group's data in Redis
     for (const redisGroup of redisAttendanceData) {
@@ -278,15 +278,15 @@ async function updateAttendanceFromRedisBySystumn(redisAttendanceData) {
       // Extract attendance records from the Redis group
       const attendanceRecords = redisGroup.attendance;
 
-      console.log(`Processing Group: ${groupName}, Date: ${attendanceDate}`);
-      console.log(`Number of Records in this Group: ${attendanceRecords.length}`);
+      // console.log(`Processing Group: ${groupName}, Date: ${attendanceDate}`);
+      // console.log(`Number of Records in this Group: ${attendanceRecords.length}`);
 
       // Process each attendance record
       for (const redisRecord of attendanceRecords) {
         totalCheckedRecords++;
 
         // Log the current record being processed
-        console.log('Processing Record:', JSON.stringify(redisRecord, null, 2));
+        // console.log('Processing Record:', JSON.stringify(redisRecord, null, 2));
 
         // Ensure redisRecord is an object and has necessary properties
         if (typeof redisRecord !== 'object' || !redisRecord.employee_id) {
@@ -303,7 +303,7 @@ async function updateAttendanceFromRedisBySystumn(redisAttendanceData) {
         });
 
         // Log existing record status
-        console.log('Existing Record:', existingRecord ? 'Found' : 'Not Found');
+        // console.log('Existing Record:', existingRecord ? 'Found' : 'Not Found');
 
         // Check if the record needs updating (fields comparison)
         const needsUpdate = !existingRecord || 
@@ -311,7 +311,7 @@ async function updateAttendanceFromRedisBySystumn(redisAttendanceData) {
           (existingRecord.network_hours !== redisRecord.network_hours) || 
           (existingRecord.overtime_hours !== redisRecord.overtime_hours);
 
-        console.log('Needs Update:', needsUpdate);
+        // console.log('Needs Update:', needsUpdate);
 
         if (needsUpdate) {
           // Prepare audit log
@@ -377,8 +377,8 @@ async function updateAttendanceFromRedisBySystumn(redisAttendanceData) {
       await Audit.bulkCreate(auditLogs);
     }
 
-    console.log(`Total Checked Records: ${totalCheckedRecords}`);
-    console.log(`Total Updated Records: ${totalUpdatedRecords}`);
+    // console.log(`Total Checked Records: ${totalCheckedRecords}`);
+    // console.log(`Total Updated Records: ${totalUpdatedRecords}`);
 
     return { 
       success: true, 

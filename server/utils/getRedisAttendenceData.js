@@ -14,7 +14,7 @@ async function getRedisAttendanceData(year, month, groups) {
             const key = `attendance:${group}:${date}`;
 
             // Log the key for debugging
-            console.log(key);
+            // console.log(key);
 
             try {
                 // Await the Redis GET operation
@@ -88,7 +88,7 @@ async function updateRedisAttendanceData(updateData) {
         // Store the updated record back in Redis
         await redisClient.set(key, JSON.stringify(attendanceRecords));
 
-        console.log(`Updated Redis key ${key} for employee ${updateData.employeeId}`);
+        // console.log(`Updated Redis key ${key} for employee ${updateData.employeeId}`);
 
         return {
             success: true,
@@ -240,7 +240,7 @@ async function checkDataAvailableInRedis(date, reportingGroups) {
 const makeAttendenceKeyRedis = (mysqlAttendanceData) => {
     try {
         // Validate input
-        console.log(mysqlAttendanceData);
+        // console.log(mysqlAttendanceData);
 
         if (!mysqlAttendanceData || !mysqlAttendanceData.date || !mysqlAttendanceData.records) {
             console.log('Invalid attendance data structure');
@@ -292,7 +292,7 @@ const storeAttendanceInRedis = async (mysqlAttendanceData) => {
         const redisKeyData = makeAttendenceKeyRedis(mysqlAttendanceData);
 
         if (!redisKeyData) {
-            console.log('No Redis key data generated');
+            // console.log('No Redis key data generated');
             return false;
         }
 
@@ -300,7 +300,7 @@ const storeAttendanceInRedis = async (mysqlAttendanceData) => {
         for (const entry of redisKeyData) {
             try {
                 await redisClient.set(entry.key, JSON.stringify(entry.data));
-                console.log(`Stored attendance for key: ${entry.key}`);
+                // console.log(`Stored attendance for key: ${entry.key}`);
             } catch (redisError) {
                 console.error(`Error storing data for key ${entry.key}:`, redisError);
             }
@@ -325,7 +325,7 @@ const getSelectedDateRedisData = async (selectedDate, groups) => {
         const key = `attendance:${group}:${formattedDate}`;
 
         // Log the key for debugging
-        console.log(key);
+        // console.log(key);
 
         try {
             // Await the Redis GET operation
@@ -413,7 +413,7 @@ async function getAllAttendenceDataFromRedis() {
         const keys = await redisClient.keys('attendance:*');
         
         if (keys.length === 0) {
-            console.log('No attendance data found in Redis');
+            // console.log('No attendance data found in Redis');
             return [];
         }
 

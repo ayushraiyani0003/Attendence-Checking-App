@@ -11,8 +11,8 @@ const processMetricsFiles = async (networkFile, otFile, monthYear) => {
     const otData = await parseExcelFile(otFile);
 
     // Print headers for debugging
-    console.log("Network File Headers:", Object.keys(networkData[0]));
-    console.log("OT File Headers:", Object.keys(otData[0]));
+    // console.log("Network File Headers:", Object.keys(networkData[0]));
+    // console.log("OT File Headers:", Object.keys(otData[0]));
 
     // Calculate the number of days in the month
     const [year, month] = monthYear.split("-");
@@ -153,7 +153,7 @@ const processMetricsFiles = async (networkFile, otFile, monthYear) => {
           }
         });
 
-        console.log(`Found ${existingRecords.length} existing records for ${monthYear}`);
+        // console.log(`Found ${existingRecords.length} existing records for ${monthYear}`);
         
         // Create a map of existing records by metric_id for quick lookup
         const existingRecordsMap = {};
@@ -165,7 +165,7 @@ const processMetricsFiles = async (networkFile, otFile, monthYear) => {
         const batchSize = 5;
         
         // Log first record for debugging
-        console.log("Sample record to be processed:", JSON.stringify(metricsData[0], null, 2));
+        // console.log("Sample record to be processed:", JSON.stringify(metricsData[0], null, 2));
         
         // Process in batches
         for (let i = 0; i < metricsData.length; i += batchSize) {
@@ -177,7 +177,7 @@ const processMetricsFiles = async (networkFile, otFile, monthYear) => {
             
             if (existingRecord) {
               // Update existing record
-              console.log(`Updating existing record: ${record.metric_id}`);
+              // console.log(`Updating existing record: ${record.metric_id}`);
               return existingRecord.update({
                 network_hours: record.network_hours,
                 overtime_hours: record.overtime_hours,
@@ -185,14 +185,14 @@ const processMetricsFiles = async (networkFile, otFile, monthYear) => {
               });
             } else {
               // Create new record
-              console.log(`Creating new record: ${record.metric_id}`);
+              // console.log(`Creating new record: ${record.metric_id}`);
               return Metrics.create(record);
             }
           });
           
           const results = await Promise.all(promises);
           insertedData = insertedData.concat(results);
-          console.log(`Processed batch ${Math.floor(i/batchSize) + 1} of ${Math.ceil(metricsData.length/batchSize)}`);
+          // console.log(`Processed batch ${Math.floor(i/batchSize) + 1} of ${Math.ceil(metricsData.length/batchSize)}`);
         }
       } catch (dbError) {
         console.error("Database operation error:", dbError);

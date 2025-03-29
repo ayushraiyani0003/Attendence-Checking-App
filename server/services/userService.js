@@ -21,12 +21,12 @@ const getAllUsers = async () => {
 // Create a new user
 const createUser = async (userData) => {
   try {
-    console.log("userData: ", userData);
+    // console.log("userData: ", userData);
     const newUser = await User.create(userData);
-    console.log("newUser: ", newUser);
+    // console.log("newUser: ", newUser);
     return newUser;
   } catch (error) {
-    console.log("error: ", error);
+    console.error("error: ", error);
     throw new Error('Error creating user');
   }
 };
@@ -57,7 +57,7 @@ const deleteUser = async (id) => {
     await user.destroy();
     return user;
   } catch (error) {
-    console.log("error", error);
+    console.error("error", error);
     throw new Error('Error deleting user');
   }
 };

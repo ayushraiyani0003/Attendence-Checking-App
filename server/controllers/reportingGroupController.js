@@ -17,7 +17,7 @@ module.exports = {
       // Get yesterday's date (IST)
       istDate.setDate(istDate.getDate() - 1);
       const yesterday = istDate.toISOString().split('T')[0];
-      console.log(`Processing attendance lock status for yesterday's date: ${yesterday}`);
+      // console.log(`Processing attendance lock status for yesterday's date: ${yesterday}`);
 
       // Loop through each reporting group
       for (const group of reportingGroupData) {
@@ -31,7 +31,7 @@ module.exports = {
 
         // If record doesn't exist for yesterday, create a new one
         if (!existingRecordYesterday) {
-          console.log(`Creating new lock status for group: ${group.groupname} on date: ${yesterday}`);
+          // console.log(`Creating new lock status for group: ${group.groupname} on date: ${yesterday}`);
           await AttendanceDateLockStatus.create({
             reporting_group_name: group.groupname,
             attendance_date: yesterday,
@@ -39,11 +39,11 @@ module.exports = {
             locked_by: "",
           });
         } else {
-          console.log(`Lock status already exists for group: ${group.groupname} on date: ${yesterday}`);
+          // console.log(`Lock status already exists for group: ${group.groupname} on date: ${yesterday}`);
         }
       }
 
-      console.log('Attendance lock status processed successfully for all reporting groups!');
+      // console.log('Attendance lock status processed successfully for all reporting groups!');
     } catch (error) {
       console.error('Error processing attendance lock status:', error);
     }
