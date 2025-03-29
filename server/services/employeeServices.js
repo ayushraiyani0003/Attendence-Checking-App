@@ -1,11 +1,17 @@
 const { Employee } = require("../models"); // Import the Employee model
+const {processNewEmployeeAttendance} =require("../utils/quickFunction");
 
 // Service for creating a new employee
 const createEmployeeService = async (employeeData) => {
   try {
     // console.log("employeeData", employeeData);
-
     const newEmployee = await Employee.create(employeeData);
+
+    // Process attendance records for the new employee
+    if (employeeData.reporting_group) {
+      await processNewEmployeeAttendance(newEmployee.employee_id, employeeData.reporting_group);
+    }
+
     return newEmployee;
   } catch (error) {
     throw new Error("Error creating employee: " + error.message);

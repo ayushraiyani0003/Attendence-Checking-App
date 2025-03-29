@@ -469,7 +469,86 @@ function formatDate(dateString) {
 
     throw new Error(`Invalid date format: "${dateString}". Use DD/MM/YYYY or YYYY-MM-DD`);
 }
+
+  // Get attendance data from Redis
+const getAttendanceFromRedis = async (date, reportingGroup) => {
+    try {
+      const formattedDate = formatDate(new Date(date));
+      const key = `attendance:${reportingGroup}:${formattedDate}`;
+      
+      // Get data from Redis
+      const attendanceData = await redisClient.get(key);
+      
+      if (!attendanceData) {
+        return {
+          success: false,
+          message: `No attendance data found for ${reportingGroup} on ${formattedDate}`
+        };
+      }
+      
+      return {
+        success: true,
+        data: JSON.parse(attendanceData)
+      };
+    } catch (error) {
+      console.error('Error fetching attendance from Redis:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  };  
+
+  // Add attendance data to Redis
+const addAttendanceToRedis = async (employeeId, date, reportingGroup, attendanceData) => {
+    try {
+      const formattedDate = formatDate(new Date(date));
+      const key = `attendance:${reportingGroup}:${formattedDate}`;
+      
+      // Get existing data
+      const existingDataResult = await getAttendanceFromRedis(date, reportingGroup);
+      let existingData = [];
+      
+      if (existingDataResult.success) {
+        existingData = existingDataResult.data;
+      }
+      
+      // Check if employee already exists in the data
+      const employeeIndex = existingData.findIndex(item => item.employee_id === employeeId);
+      
+      if (employeeIndex !== -1) {
+        // Update existing employee data
+        existingData[employeeIndex] = {
+          ...existingData[employeeIndex],
+          ...attendanceData
+        };
+      } else {
+        // Add new employee data
+        existingData.push({
+          employee_id: employeeId,
+          attendance_date: formattedDate,
+          ...attendanceData
+        });
+      }
+      
+      // Save updated data back to Redis
+      await redisClient.set(key, JSON.stringify(existingData));
+      
+      return {
+        success: true,
+        message: `Attendance data added to Redis for employee ${employeeId} on ${formattedDate}`
+      };
+    } catch (error) {
+      console.error('Error adding attendance to Redis:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  };
+
 module.exports = {
+    checkDataAvailableInRedis,getAttendanceFromRedis, addAttendanceToRedis,
     getRedisAttendanceData, updateRedisAttendanceData, deleteRedisGroupKeys, checkDataAvailableInRedis, makeAttendenceKeyRedis,
     storeAttendanceInRedis, getSelectedDateRedisData, deleteRedisGroupKeysForSelectedDate, getAllAttendenceDataFromRedis
 };

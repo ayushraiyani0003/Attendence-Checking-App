@@ -395,5 +395,22 @@ async function updateAttendanceFromRedisBySystumn(redisAttendanceData) {
   }
 }
 
+// Add attendance record to MySQL (Attendance Metrics table)
+const addAttendanceToMySQL = async (attendanceData) => {
+  try {
+    // Create the attendance record in the database
+    const newAttendance = await Attendance.create(attendanceData);
+    return {
+      success: true,
+      data: newAttendance
+    };
+  } catch (error) {
+    console.error('Error adding attendance to MySQL:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+};
 
-module.exports = { getEmployeesByGroup, getEmployeesAttendanceByMonthAndGroup, updateEmployeesDetailsFromRedis, getAttendanceSelectedGroupDateMysql,updateAttendanceFromRedisBySystumn };
+module.exports = { getEmployeesByGroup, getEmployeesAttendanceByMonthAndGroup, updateEmployeesDetailsFromRedis, getAttendanceSelectedGroupDateMysql,updateAttendanceFromRedisBySystumn ,addAttendanceToMySQL};
