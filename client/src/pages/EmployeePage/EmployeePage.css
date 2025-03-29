@@ -133,14 +133,14 @@
     background-color: #f5f7fa;
     color: #1a3353;
     font-weight: 600;
-    padding: 8px 12px !important; /* Reduced padding */
+    padding: 8px 12px !important; 
     height: 40px !important; /* Fixed height for header */
     white-space: nowrap;
     font-size: 13px;
     /* This is important to keep the header visible during scroll */
-  position: sticky;
-  top: 0;
-  z-index: 2;
+    position: sticky;
+    top: 0;
+    z-index: 2;
   }
 
   /* Handle scrolling for the body */
@@ -166,7 +166,6 @@
 } 
   
   .employee-table .ant-table-tbody > tr > td {
-    padding: 6px 12px !important; /* Reduced padding */
     height: 42px !important; /* Fixed height for cells */
     font-size: 13px;
     white-space: nowrap;

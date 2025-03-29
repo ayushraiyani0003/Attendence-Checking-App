@@ -89,7 +89,6 @@ const EmployeePage = () => {
           {text}
         </Space>
       ),
-      width: 200,
     },
     {
       title: 'Department',
@@ -98,7 +97,6 @@ const EmployeePage = () => {
       filters: departments.map((dept) => ({ text: dept.name, value: dept.name })),
       onFilter: (value, record) => record.department === value,
       render: (text) => <Tag>{text}</Tag>,
-      width: 150,
     },
     {
       title: 'Designation',
@@ -107,7 +105,6 @@ const EmployeePage = () => {
       filters: designations.map((desig) => ({ text: desig.designation_name, value: desig.designation_name })),
       onFilter: (value, record) => record.designation === value,
       render: (text) => <span>{text}</span>,
-      width: 150,
     },
     {
       title: 'Reporting Group',
@@ -123,7 +120,6 @@ const EmployeePage = () => {
         };
         return <Tag color={shiftColors[text]}>{text}</Tag>;
       },
-      width: 180,
     },
     {
       title: 'Actions',
@@ -138,7 +134,6 @@ const EmployeePage = () => {
           </Tooltip>
         </Space>
       ),
-      width: 180,
       fixed: 'right',
     },
   ];
