@@ -16,6 +16,9 @@ const EmployeePage = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [pageSize, setPageSize] = useState(12);
+  // Add state for delete confirmation modal
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState(null);
 
   const [form] = Form.useForm();
 
@@ -39,6 +42,27 @@ const EmployeePage = () => {
     
     setFilteredData(filtered);
   }, [employees, searchText]);
+
+  // Function to show delete confirmation modal
+  const showDeleteConfirm = (employee) => {
+    setEmployeeToDelete(employee);
+    setIsDeleteModalVisible(true);
+  };
+
+  // Function to handle confirmed deletion
+  const handleDeleteConfirm = () => {
+    if (employeeToDelete) {
+      removeEmployee(employeeToDelete.employee_id);
+      setIsDeleteModalVisible(false);
+      setEmployeeToDelete(null);
+    }
+  };
+
+  // Function to cancel deletion
+  const handleDeleteCancel = () => {
+    setIsDeleteModalVisible(false);
+    setEmployeeToDelete(null);
+  };
 
   const columns = [
     {
@@ -110,7 +134,7 @@ const EmployeePage = () => {
             <Button type="primary" icon={<EditOutlined />} size="small" onClick={() => handleEditEmployee(record)} />
           </Tooltip>
           <Tooltip title="Delete employee">
-            <Button danger icon={<DeleteOutlined />} size="small" onClick={() => removeEmployee(record.employee_id)} />
+            <Button danger icon={<DeleteOutlined />} size="small" onClick={() => showDeleteConfirm(record)} />
           </Tooltip>
         </Space>
       ),
@@ -217,7 +241,7 @@ const EmployeePage = () => {
             }}
             rowKey="employee_id"
             bordered
-            scroll={{ x: 'max-content' , y: 'auto' }}
+            scroll={{ x: 'max-content' , y: 'max-content' }}
             className="employee-table"
             size="small"
             summary={() => (
@@ -233,6 +257,7 @@ const EmployeePage = () => {
         </div>
       </Card>
 
+      {/* Employee Add/Edit Modal */}
       <Modal
         title={selectedEmployee ? "Edit Employee" : "Add Employee"}
         open={isModalVisible}
@@ -290,6 +315,20 @@ const EmployeePage = () => {
             </Space>
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        title="Confirm Delete"
+        open={isDeleteModalVisible}
+        onOk={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        okText="Yes"
+        cancelText="No"
+        okButtonProps={{ danger: true }}
+      >
+        <p>Are you sure you want to delete employee <strong>{employeeToDelete?.name}</strong>?</p>
+        <p>This action cannot be undo.</p>
       </Modal>
     </div>
   );
