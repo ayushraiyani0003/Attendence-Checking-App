@@ -25,12 +25,12 @@ const EmployeePage = () => {
   // Improved search functionality to handle mixed types
   useEffect(() => {
     if (!employees.length) return;
-    
+
     const lowerSearchText = searchText.toLowerCase();
     const filtered = employees.filter(item => {
       // Convert punch_code to string to handle mixed types
       const punchCodeStr = String(item.punch_code);
-      
+
       return (
         (item.name && item.name.toLowerCase().includes(lowerSearchText)) ||
         (item.department && item.department.toLowerCase().includes(lowerSearchText)) ||
@@ -39,7 +39,7 @@ const EmployeePage = () => {
         (punchCodeStr && punchCodeStr.includes(lowerSearchText))
       );
     });
-    
+
     setFilteredData(filtered);
   }, [employees, searchText]);
 
@@ -76,7 +76,6 @@ const EmployeePage = () => {
         return aVal.localeCompare(bVal);
       },
       render: (text) => <span className="employee-page-punch-code">{text}</span>,
-      width: 100,
     },
     {
       title: 'Name',
@@ -127,12 +126,27 @@ const EmployeePage = () => {
       render: (_, record) => (
         <Space size={4}>
           <Tooltip title="Edit employee">
-            <Button type="primary" icon={<EditOutlined />} size="small" onClick={() => handleEditEmployee(record)} />
+            <Button
+              type="primary"
+              icon={<EditOutlined />}
+              size="small"
+              onClick={() => handleEditEmployee(record)}
+            >
+              Edit
+            </Button>
           </Tooltip>
           <Tooltip title="Delete employee">
-            <Button danger icon={<DeleteOutlined />} size="small" onClick={() => showDeleteConfirm(record)} />
+            <Button
+              danger
+              icon={<DeleteOutlined />}
+              size="small"
+              onClick={() => showDeleteConfirm(record)}
+            >
+              Delete
+            </Button>
           </Tooltip>
         </Space>
+
       ),
       fixed: 'right',
     },
@@ -229,7 +243,7 @@ const EmployeePage = () => {
               showSizeChanger: true,
               pageSizeOptions: ['12', '25', '55', '100'],
               showTotal: (total) => `Total: ${total} employees`,
-              onChange: (page, pageSize) => {},
+              onChange: (page, pageSize) => { },
               onShowSizeChange: handlePageSizeChange,
               className: 'custom-pagination',
               size: 'small',
