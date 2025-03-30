@@ -170,8 +170,6 @@ function compareAttendanceData(metricsData, finalAttendanceData) {
   matchingEmployees.forEach(employee => {
     employee.attendance.forEach(record => {
 
-      console.log(record.date);
-      
       // Extract date (day and month) from the date string
       const parts = record.date.split('/');
       var day = parts[0];
@@ -187,25 +185,26 @@ function compareAttendanceData(metricsData, finalAttendanceData) {
       // Get attendance data
       const attendanceNetHR = parseFloat(record.netHR) || 0;
       const attendanceOtHR = parseFloat(record.otHR) || 0;
+      console.log(day);
 
       // Calculate differences
       const netHRDiff = attendanceNetHR - metricsNetHR;
       const otHRDiff = attendanceOtHR - metricsOtHR;
 
       // Add to results if there's a difference
-      if (Math.abs(netHRDiff) > 0.001 || Math.abs(otHRDiff) > 0.001) {
-        allDifferences.push({
-          employeeName: employee.name,
-          punchCode: employee.punchCode,
-          attendanceDate: record.date,
-          netHRDiff: netHRDiff.toFixed(2),
-          otHRDiff: otHRDiff.toFixed(2),
-          metricsNetHR: metricsNetHR.toFixed(2),
-          attendanceNetHR: attendanceNetHR.toFixed(2),
-          metricsOtHR: metricsOtHR.toFixed(2),
-          attendanceOtHR: attendanceOtHR.toFixed(2)
-        });
-      }
+
+      allDifferences.push({
+        employeeName: employee.name,
+        punchCode: employee.punchCode,
+        attendanceDate: record.date,
+        netHRDiff: netHRDiff.toFixed(2),
+        otHRDiff: otHRDiff.toFixed(2),
+        metricsNetHR: metricsNetHR.toFixed(2),
+        attendanceNetHR: attendanceNetHR.toFixed(2),
+        metricsOtHR: metricsOtHR.toFixed(2),
+        attendanceOtHR: attendanceOtHR.toFixed(2)
+      });
+
     });
   });
 
