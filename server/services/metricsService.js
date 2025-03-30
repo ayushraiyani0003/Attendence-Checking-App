@@ -1,6 +1,3 @@
-const fs = require("fs");
-const path = require("path");
-const crypto = require("crypto");
 const Metrics = require("../models/metricsModel");
 const { parseExcelFile } = require("../utils/fileUtils");
 
@@ -211,6 +208,33 @@ const processMetricsFiles = async (networkFile, otFile, monthYear) => {
   }
 };
 
+// get metrix data.
+// Function to fetch metrics data for a specific month and year
+async function fetchMetricsForMonthYear(month, year) {
+  try {
+    // Format month to ensure it's two digits (e.g., 1 -> '01')
+    const formattedMonth = month.toString().padStart(2, '0');
+    
+    // Create the month_year format used in your database (YYYY-MM)
+    const monthYearFormat = `${year}-${formattedMonth}`;
+    
+    // Query the database for records matching the month_year
+    const metricsData = await Metrics.findAll({
+      where: {
+        month_year: monthYearFormat
+      },
+      // Optional: Add any ordering if needed
+      order: [
+        ['created_at', 'DESC']
+      ]
+    });
+    
+    return metricsData;
+  } catch (error) {
+    console.error('Error fetching metrics data:', error);
+    throw error;
+  }
+}
 module.exports = {
-  processMetricsFiles,
+  processMetricsFiles,fetchMetricsForMonthYear
 };

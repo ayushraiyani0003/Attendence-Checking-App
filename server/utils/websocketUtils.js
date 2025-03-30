@@ -5,7 +5,7 @@ const {
   updateEmployeesDetailsFromRedis,
   getAttendanceSelectedGroupDateMysql
 } = require("../services/attendenceService");
-const { convertMonthToYearMonthFormat } = require("./quickFunction");
+const { convertMonthToYearMonthFormat ,processAllMetricsData} = require("./quickFunction");
 const {
   getRedisAttendanceData,
   updateRedisAttendanceData,
@@ -17,7 +17,7 @@ const {
 } = require('./getRedisAttendenceData');
 const { redisMysqlAttendanceCompare } = require('./redisMysqlAttendenceCompare');
 const { getLockStatusDataForMonthAndGroup, setStatusFromDateGroup } = require('../services/groupAttendenceLockServices');
-
+const {fetchMetricsForMonthYear} = require('../services/metricsService');
 function initWebSocket(server) {
   const wss = new WebSocket.Server({ server });
 
@@ -155,14 +155,19 @@ async function handleAttendanceDataRetrieval(ws, data) {
       mysqlAttendanceData,
       group,
       lockStatusData
-    );
+    ); 
 
+    // get the metrix attendence and send to the clients
+    const metrixAttendenceData = await fetchMetricsForMonthYear(month, year);
+    const MetrixAtteDiffrence = await processAllMetricsData(metrixAttendenceData, finalAttendanceData)
+    
     // Send the final attendance data back to the client
     ws.send(JSON.stringify({
       action: 'attendanceData',
       userRole,
       attendance: finalAttendanceData.attendance,
-      lockStatus: lockStatusData
+      lockStatus: lockStatusData,
+      MetrixAtteDiffrence:MetrixAtteDiffrence
     }));
   } catch (error) {
     console.error('Error retrieving attendance data:', error);
