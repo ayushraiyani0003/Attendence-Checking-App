@@ -6,13 +6,13 @@ import { AuthContext } from "../../context/AuthContext";
 import { useWebSocket } from "../../hooks/useWebSocket";  // Use WebSocket hook
 import { useUsers } from "../../hooks/userList";
 
-function AttendanceHeader({ columns, onSort, sortConfig, handleLock, handleUnlock, popupOpen, setPopupOpen, displayWeeks, isShowMetrixData}) {
+function AttendanceHeader({ columns, onSort, sortConfig, handleLock, handleUnlock, popupOpen, setPopupOpen, displayWeeks, isShowMetrixData }) {
     const { userRole, groupName } = useContext(AuthContext); // Access user role and group from context
     const { users } = useUsers();  // Fetch reporting groups using the useSettings hook
     const [selectedDate, setSelectedDate] = useState(null);
     const [popupPosition, setPopupPosition] = useState({ left: 0 });
     const headerRef = useRef(null);
-    
+
     // Check if user is an admin
     const isAdmin = userRole === "admin";
 
@@ -27,15 +27,15 @@ function AttendanceHeader({ columns, onSort, sortConfig, handleLock, handleUnloc
         // Only proceed if user is Admin
         if (!isAdmin) return;
         e.stopPropagation(); // Prevent event bubbling
-    
+
         // Calculate position of the popup
         const columnElement = e.currentTarget;
         const columnRect = columnElement.getBoundingClientRect();
         const headerRect = headerRef.current.getBoundingClientRect();
-    
+
         // Position popup at the center of the clicked column
         const leftPosition = columnRect.left + (columnRect.width / 2);
-    
+
         setPopupPosition({ left: leftPosition });
         setSelectedDate(attendance.date);
         setPopupOpen(true);
@@ -49,11 +49,11 @@ function AttendanceHeader({ columns, onSort, sortConfig, handleLock, handleUnloc
     const filteredColumns = columns.filter((attendance, index) => {
         // If displayWeeks is 0, show all columns
         if (displayWeeks === 0) return true;
-        
+
         // Calculate index range for the given week
         const startIndex = (displayWeeks - 1) * 7;
         const endIndex = displayWeeks * 7 - 1;
-        
+
         // Show only columns within the index range
         return index >= startIndex && index <= endIndex;
     });
@@ -95,8 +95,8 @@ function AttendanceHeader({ columns, onSort, sortConfig, handleLock, handleUnloc
                 {/* Scrollable attendance columns */}
                 <div className="scrollable-columns" id="header-scrollable">
                     {filteredColumns.map((attendance, index) => (
-                        <div 
-                            key={index} 
+                        <div
+                            key={index}
                             className="header-cell attendance-header-cell"
                             onClick={(e) => handleLockClick(e, attendance)}
                             style={{ cursor: isAdmin ? "pointer" : "default" }}
@@ -113,8 +113,8 @@ function AttendanceHeader({ columns, onSort, sortConfig, handleLock, handleUnloc
                             <div />
                         </div>
                     ))}
-                    {isAdmin && isShowMetrixData &&(
-                    <div 
+                    {isAdmin && isShowMetrixData && (
+                        <div
                             className="header-cell total-attendance-header-cell"
                         >
                             <div className="attendance-header-total-title-container">
@@ -130,14 +130,14 @@ function AttendanceHeader({ columns, onSort, sortConfig, handleLock, handleUnloc
                             </div>
                             <div />
                         </div>)
-}
+                    }
                 </div>
             </div>
 
             {/* Popup component - Only render if user is Admin */}
             {isAdmin && popupOpen && (
-                <LockUnlockPopup 
-                    isOpen={popupOpen} 
+                <LockUnlockPopup
+                    isOpen={popupOpen}
                     onClose={handlePopupClose}
                     onLock={handleLock}
                     onUnlock={handleUnlock}
