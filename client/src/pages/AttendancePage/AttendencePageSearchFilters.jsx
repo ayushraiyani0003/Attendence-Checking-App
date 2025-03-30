@@ -61,9 +61,9 @@ function AttendencePageSearchFilters({
               background: "white",
             }}
           >
-            <option value="all">All Shifts</option>
-            <option value="day">Day Shift</option>
-            <option value="night">Night Shift</option>
+            <option value="all">All</option>
+            <option value="new">New Emp Only</option>
+            <option value="diff">Diff</option>
           </select>
             : null}
         </div>

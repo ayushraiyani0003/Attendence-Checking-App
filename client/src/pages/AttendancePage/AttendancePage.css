@@ -786,6 +786,14 @@ body .user-select__multi-value__remove:hover {
   text-align: center;
 }
 
+.exceeds-threshold {
+  background-color: rgba(255, 200, 200, 0.7) !important; /* Light red background */
+}
+
+.exceeds-threshold input {
+  background-color: rgba(255, 200, 200, 0.7) !important;
+}
+
 /* 
 ===================================
 RESPONSIVE STYLES FOR ATTENDANCE APP

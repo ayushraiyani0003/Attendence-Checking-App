@@ -22,13 +22,11 @@ function AttendanceHeader({ columns, onSort, sortConfig, handleLock, handleUnloc
         }
         return null;
     };
-    
 
     const handleLockClick = (e, attendance) => {
-        e.stopPropagation(); // Prevent event bubbling
-        
         // Only proceed if user is Admin
         if (!isAdmin) return;
+        e.stopPropagation(); // Prevent event bubbling
     
         // Calculate position of the popup
         const columnElement = e.currentTarget;
@@ -47,10 +45,6 @@ function AttendanceHeader({ columns, onSort, sortConfig, handleLock, handleUnloc
         if (!isAdmin) return;
         setPopupOpen(false);
     };
-
-    console.log(columns);
-    
-
 
     const filteredColumns = columns.filter((attendance, index) => {
         // If displayWeeks is 0, show all columns
@@ -140,7 +134,7 @@ function AttendanceHeader({ columns, onSort, sortConfig, handleLock, handleUnloc
             </div>
 
             {/* Popup component - Only render if user is Admin */}
-            {isAdmin && (
+            {isAdmin && popupOpen && (
                 <LockUnlockPopup 
                     isOpen={popupOpen} 
                     onClose={handlePopupClose}

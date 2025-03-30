@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 function DataRow({
   row,
   rowIndex,
+  punchCode,
   hoveredRow,
   setHoveredRow,
   data,
@@ -14,14 +15,15 @@ function DataRow({
   getFilteredData,
   attendanceData,
   displayWeeks,
-  isShowMetrixData
+  isShowMetrixData,
+  MetrixDiffData,
 }) {
   const [editableCell, setEditableCell] = useState(null);
   const [editValue, setEditValue] = useState({});
   const inputRef = useRef(null);
-
-    // Check if user is an admin
-    const isAdmin = user.role === "admin";
+  
+  // Check if user is an admin
+  const isAdmin = user.role === "admin";
 
   // Filter attendance data based on displayWeeks
   const filteredAttendance = row.attendance.filter((_, index) => {
@@ -36,6 +38,82 @@ function DataRow({
     return index >= startIndex && index <= endIndex;
   });
 
+  const exceedsThreshold = (value) => {
+    if (!value) return false;
+    const numericValue = parseFloat(value);
+    return !isNaN(numericValue) && Math.abs(numericValue) > 0.25; // 0.25 hours = 15 minutes
+  };
+
+  // Prepare data to display based on isShowMetrixData flag
+  const getDisplayData = () => {
+    // If not showing metrix data, return regular filtered attendance
+    if (!isShowMetrixData) return filteredAttendance;
+    
+    // Create a copy of filtered attendance to modify
+    const displayData = filteredAttendance.map(att => ({...att}));
+    
+    // Check if MetrixDiffData exists and has records for this specific punch code
+    const employeeMetrixData = MetrixDiffData?.filter(
+      item => item.punchCode === row.punchCode
+    ) || [];
+
+    
+    
+    // Process each attendance record
+    displayData.forEach((attendance) => {
+      // Format the attendance date to match MetrixDiffData format
+      if (attendance.date) {
+        const [day, month, year] = attendance.date.split('/');
+        const formattedDate = `${day}/${month}/${year}`;
+        
+        // If this employee's punch code exists in MetrixDiffData
+        if (employeeMetrixData.length > 0) {
+          // Find matching metrix data for this date
+          const matchingMetrix = employeeMetrixData.find(
+            metrix => metrix.attendanceDate === formattedDate
+          );
+          
+          // If matching metrix data exists for this date, use the diff values
+          if (matchingMetrix) {
+            attendance.netHR = matchingMetrix.netHRDiff || "0";
+            attendance.otHR = matchingMetrix.otHRDiff || "0";
+            // Add flags for threshold exceeding
+          attendance.netHRExceeds = exceedsThreshold(matchingMetrix.netHRDiff);
+          attendance.otHRExceeds = exceedsThreshold(matchingMetrix.otHRDiff);
+            // Keep dnShift unchanged as requested
+          } else {
+            // Date not found in metrix data, set to "0"
+            attendance.netHR = "0";
+            attendance.otHR = "0";
+            attendance.netHRExceeds = false;
+          attendance.otHRExceeds = false;
+
+          }
+        } else {
+          // Punch code not found in metrix data, set to "0"
+          attendance.netHR = "0";
+          attendance.otHR = "0";
+          attendance.netHRExceeds = false;
+          attendance.otHRExceeds = false;
+
+        }
+      } else {
+        // No date information, set to "0"
+        attendance.netHR = "0";
+        attendance.otHR = "0";
+        attendance.netHRExceeds = false;
+          attendance.otHRExceeds = false;
+
+      }
+    });
+    
+    return displayData;
+  };
+
+  // Get the appropriate data to display
+  const displayData = getDisplayData();
+
+  
   // Add effect to handle clicks outside the input
   useEffect(() => {
     // Only add listener if an input is currently active
@@ -49,10 +127,25 @@ function DataRow({
 
           // Get current edit value for this cell
           const editKey = `${editableCell}`;
-          const currentValue = editValue[editKey] || row.attendance[colIndex][currentField];
+          
+          // Get the current value based on whether we're in metrix mode or not
+          let currentValue;
+          if (isShowMetrixData) {
+            currentValue = editValue[editKey] || displayData[colIndex]?.[currentField] || "0";
+          } else {
+            currentValue = editValue[editKey] || row.attendance[colIndex][currentField];
+          }
+
+          // Get the original value to compare against
+          let originalValue;
+          if (isShowMetrixData) {
+            originalValue = displayData[colIndex]?.[currentField] || "0";
+          } else {
+            originalValue = row.attendance[colIndex][currentField];
+          }
 
           // Only update if the value has actually changed
-          const hasValueChanged = currentValue !== row.attendance[colIndex][currentField];
+          const hasValueChanged = currentValue !== originalValue;
 
           if (hasValueChanged) {
             // Format and update the value via WebSocket
@@ -73,7 +166,7 @@ function DataRow({
         document.removeEventListener('mousedown', handleClickOutside);
       };
     }
-  }, [editableCell, editValue, row, rowIndex, onCellUpdate]);
+  }, [editableCell, editValue, row, rowIndex, onCellUpdate, isShowMetrixData, displayData]);
 
   // Determine if the user can edit based on lock status and user role
   const canEdit = (attendance) => {
@@ -123,11 +216,10 @@ function DataRow({
 
       // If input is a valid number
       if (!isNaN(parsedFloat)) {
-        // Remove trailing zeros and decimal point if no significant digits after decimal
-        return parsedFloat % 1 === 0
-          ? parseInt(parsedFloat)
-          : parsedFloat;
+        // Return integer as requested (no decimals)
+        return Math.round(parsedFloat);
       }
+      return 0; // Default to 0 for invalid input
     }
     return value;
   };
@@ -174,7 +266,7 @@ function DataRow({
         }
 
         // If at the last field, try to move to the next column
-        if (currentColIndex < fullData[currentRowIndex].attendance.length - 1) {
+        if (currentColIndex < (isShowMetrixData ? displayData.length - 1 : fullData[currentRowIndex].attendance.length - 1)) {
           return {
             rowIndex: currentRowIndex,
             column: `${fields[0]}-${currentColIndex + 1}`
@@ -252,7 +344,7 @@ function DataRow({
       </div>
 
       <div className="scrollable-data-cells" id="body-scrollable">
-        {filteredAttendance.map((attendance, displayIndex) => {
+        {displayData.map((attendance, displayIndex) => {
           // Calculate the original index in the full attendance array
           const originalIndex = displayWeeks === 0 
             ? displayIndex 
@@ -262,8 +354,11 @@ function DataRow({
             <div key={displayIndex} className="date-cell">
               {["netHR", "otHR", "dnShift"].map((field) => {
                 const editKey = `${field}-${originalIndex}`;
-                const isEditable = editableCell === editKey;
-                const cellValue = attendance[field];
+                const isEditable = !isShowMetrixData && editableCell === editKey;
+                
+                // Use the value from the appropriate data source
+                const cellValue = attendance[field] || (field === "dnShift" ? "" : "0");
+                
                 const displayValue = isEditable
                   ? (editValue[editKey] ?? cellValue)
                   : cellValue;
@@ -275,6 +370,10 @@ function DataRow({
                 if (isEditable) {
                   className += " editable";
                 }
+
+
+  className += field === "netHR" && attendance.netHRExceeds ? " exceeds-threshold" : "";
+  className += field === "otHR" && attendance.otHRExceeds ? " exceeds-threshold" : "";
 
                 return (
                   <div
@@ -310,7 +409,7 @@ function DataRow({
           );
         })}
         
-        {isAdmin && isShowMetrixData &&(
+        {isAdmin && isShowMetrixData && (
         <div className="total-data-cell">
           <div className="Disply-total-sub-data-cell">
             <div className="sub-disply-total">Net HR</div>

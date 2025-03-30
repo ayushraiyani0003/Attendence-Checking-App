@@ -24,6 +24,7 @@ function AttendancePage({ user, monthYear }) {
   const [hasChanges, setHasChanges] = useState(false); // Track if there are unsaved changes
   const [attendanceData, setAttendanceData] = useState([]); // For storing attendance data
   const [lockStatusData, setLockStatusData] = useState([]); // For storing lock status data
+  const [MetrixDiffData, setMetrixDiffData] = useState([]); // For storing lock status data
   const [isWebSocketOpen, setIsWebSocketOpen] = useState(false); // WebSocket open state
   const [showMetrics, setShowMetrics] = useState(true); // Default to showing metrics
   const [popupOpen, setPopupOpen] = useState(false);
@@ -31,6 +32,7 @@ function AttendancePage({ user, monthYear }) {
   const { ws, send } = useWebSocket(); // WebSocket hook to send messages
 
   const isAdmin = user.role === "admin"; // Determine if user is admin
+console.log(view);
 
   const fixedColumns = [
     { key: "punchCode", label: "Punch Code" },
@@ -83,7 +85,8 @@ function AttendancePage({ user, monthYear }) {
         case "attendanceData":
           setAttendanceData(data.attendance);
           setLockStatusData(data.lockStatus);
-
+          setMetrixDiffData(data.MetrixAtteDiffrence);
+          
           // Check if any date has unlocked status
           const hasUnlockedDate = data.lockStatus.some(item => item.status === 'unlocked');
           setHasChanges(hasUnlockedDate);
@@ -229,11 +232,37 @@ function AttendancePage({ user, monthYear }) {
     }
 
     if (view !== "all") {
-      filteredData = filteredData.filter((item) =>
-        item.attendance.some(
-          (att) => att.dnShift?.toLowerCase() === view.toLowerCase()
-        )
-      );
+      if (view === "diff") {
+        // 1. Get all punch codes where netHRDiff or otHRDiff > 0.25
+        const punchCodesWithDiff = MetrixDiffData
+          .filter(item => 
+            Math.abs(parseFloat(item.netHRDiff)) > 0.25 || 
+            Math.abs(parseFloat(item.otHRDiff)) > 0.25
+          )
+          .map(item => item.punchCode);
+    
+        // 2. Remove duplicates (same punch code may appear multiple times)
+        const uniquePunchCodes = [...new Set(punchCodesWithDiff)];
+    
+        // 3. Filter employees whose punchCode is in uniquePunchCodes
+        filteredData = filteredData.filter(item => 
+          uniquePunchCodes.includes(item.punchCode)
+        );
+      } 
+      else if (view === "new") {
+        // Filter employees with punch code "new"
+        filteredData = filteredData.filter(item => 
+          item.punchCode?.toLowerCase() === "new"
+        );
+      } 
+      else {
+        // Filter by shift (original logic)
+        filteredData = filteredData.filter(item =>
+          item.attendance.some(att => 
+            att.dnShift?.toLowerCase() === view.toLowerCase()
+          )
+        );
+      }
     }
 
     if (sortConfig.key) {
@@ -376,7 +405,9 @@ function AttendancePage({ user, monthYear }) {
   }
 
   const filteredData = getFilteredData();
-
+  console.log("filteredData");
+  console.log(filteredData);
+  
   return (
     <div className="attendance-page">
       <div className="attendance-container">
@@ -433,6 +464,7 @@ function AttendancePage({ user, monthYear }) {
             <DataRow
               key={row.id}
               row={row}
+              punchCode={row.punchCode}
               rowIndex={attendanceData.findIndex((item) => item.id === row.id)}
               hoveredRow={hoveredRow}
               setHoveredRow={setHoveredRow}
@@ -456,6 +488,7 @@ function AttendancePage({ user, monthYear }) {
               attendanceData={attendanceData}
               displayWeeks={displayWeeks}
               isShowMetrixData={showMetrics}
+              MetrixDiffData={MetrixDiffData}
             />
           ))}
         </div>
