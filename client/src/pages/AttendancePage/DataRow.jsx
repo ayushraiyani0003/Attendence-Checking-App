@@ -409,16 +409,17 @@ function DataRow({
           );
         })}
         
-        {isAdmin && isShowMetrixData && (
-        <div className="total-data-cell">
-          <div className="Disply-total-sub-data-cell">
-            <div className="sub-disply-total">Net HR</div>
-            <div className="sub-disply-total">OT HR</div>
-            <div className="sub-disply-total">D/A/N</div>
-            <div className="sub-disply-total">D/A/N</div>
-            <div className="sub-disply-total">D/A/N</div>
-          </div>
-        </div>)}
+        {(!isAdmin || (isAdmin && isShowMetrixData)) && (
+  <div className="total-data-cell">
+    <div className="Disply-total-sub-data-cell">
+      <div className="sub-disply-total">Net HR</div>
+      <div className="sub-disply-total">OT HR</div>
+      <div className="sub-disply-total">D/A/N</div>
+      <div className="sub-disply-total">D/A/N</div>
+      <div className="sub-disply-total">D/A/N</div>
+    </div>
+  </div>
+)}
       </div>
     </div>
   );
