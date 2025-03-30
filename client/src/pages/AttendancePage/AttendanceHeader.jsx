@@ -117,14 +117,15 @@ function AttendanceHeader({ columns, onSort, sortConfig, handleLock, handleUnloc
                     <div 
                             className="header-cell total-attendance-header-cell"
                         >
-                            <div className="attendance-header-date-title-container">
-                                Total
+                            <div className="attendance-header-total-title-container">
+                                <span>Total</span>
+                                <span>Diff</span>
                             </div>
                             <div className="total-data-header">
-                                <div className="total-sub-header-cell">Net HR</div>
+                                <div className="total-sub-header-cell" >Net HR</div>
                                 <div className="total-sub-header-cell">OT HR</div>
                                 <div className="total-sub-header-cell">N Count</div>
-                                <div className="total-sub-header-cell">Metrix Diff</div>
+                                <div className="total-sub-header-cell">Net Diff</div>
                                 <div className="total-sub-header-cell">extra</div>
                             </div>
                             <div />

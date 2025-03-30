@@ -32,7 +32,7 @@ function AttendancePage({ user, monthYear }) {
   const { ws, send } = useWebSocket(); // WebSocket hook to send messages
 
   const isAdmin = user.role === "admin"; // Determine if user is admin
-console.log(view);
+
 
   const fixedColumns = [
     { key: "punchCode", label: "Punch Code" },

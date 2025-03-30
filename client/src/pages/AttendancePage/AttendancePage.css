@@ -222,9 +222,10 @@
 }
 .total-data-header{
   display: flex;
-  gap: 6px;
+  gap: 15px;
   width: 100%;
-  margin-top: 8px;
+  margin-top: 10px;
+  align-items: center;
   padding: 6px 0 0 0;
   border-top: 1px solid rgba(255, 255, 255, 0.3);
   justify-content: space-between;
@@ -284,7 +285,7 @@
   width: max-content;
 }
 
-.data-row.hovered {
+.data-row.hovered , .data-row.hovered>.fixed-data-cells>div{
   background-color: #f0f7ff;
   box-shadow: 0 4px 8px rgba(58, 134, 255, 0.15);
   transform: translateY(-2px);
@@ -339,6 +340,8 @@
 .data-cell.name {
   min-width: 210px;
   width: 210px;
+  text-align: left;
+  justify-content: start;
 }
 .data-cell.designation {
   min-width: 170px;
@@ -395,9 +398,7 @@
 }
 .Disply-total-sub-data-cell{
   flex: 1;
-  padding: 6px 15px;
-  margin: 0;
-  gap: 22px;
+  gap: 28px;
   text-align: center;
   font-size: 14px;
   background-color: white;
@@ -434,7 +435,7 @@
   background-color: transparent;
   font-size: 14px;
   text-align: center;
-  padding: 0;
+  padding: 10px 15px;
   margin: 0;
   outline: none;
   box-sizing: border-box;
@@ -794,6 +795,14 @@ body .user-select__multi-value__remove:hover {
   background-color: rgba(255, 200, 200, 0.7) !important;
 }
 
+.attendance-header-total-title-container{
+  width: 60%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 /* 
 ===================================
 RESPONSIVE STYLES FOR ATTENDANCE APP
@@ -923,6 +932,7 @@ RESPONSIVE STYLES FOR ATTENDANCE APP
   .attendance-header-date-title-container {
     gap: 5px;
     flex-direction: column;
+
   }
 
   .attendance-header-date-title-container svg {
