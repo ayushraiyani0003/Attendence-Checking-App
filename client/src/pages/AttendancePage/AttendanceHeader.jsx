@@ -6,9 +6,8 @@ import { AuthContext } from "../../context/AuthContext";
 import { useWebSocket } from "../../hooks/useWebSocket";  // Use WebSocket hook
 import { useUsers } from "../../hooks/userList";
 
-function AttendanceHeader({ columns, onSort, sortConfig, handleLock, handleUnlock, popupOpen, setPopupOpen }) {
+function AttendanceHeader({ columns, onSort, sortConfig, handleLock, handleUnlock, popupOpen, setPopupOpen, displayWeeks, isShowMetrixData}) {
     const { userRole, groupName } = useContext(AuthContext); // Access user role and group from context
-    const { ws, send } = useWebSocket();  // WebSocket hook to send messages
     const { users } = useUsers();  // Fetch reporting groups using the useSettings hook
     const [selectedDate, setSelectedDate] = useState(null);
     const [popupPosition, setPopupPosition] = useState({ left: 0 });
@@ -23,34 +22,47 @@ function AttendanceHeader({ columns, onSort, sortConfig, handleLock, handleUnloc
         }
         return null;
     };
+    
 
     const handleLockClick = (e, attendance) => {
         e.stopPropagation(); // Prevent event bubbling
         
         // Only proceed if user is Admin
         if (!isAdmin) return;
-
+    
         // Calculate position of the popup
         const columnElement = e.currentTarget;
         const columnRect = columnElement.getBoundingClientRect();
         const headerRect = headerRef.current.getBoundingClientRect();
-
+    
         // Position popup at the center of the clicked column
         const leftPosition = columnRect.left + (columnRect.width / 2);
-
+    
         setPopupPosition({ left: leftPosition });
         setSelectedDate(attendance.date);
         setPopupOpen(true);
     };
 
     const handlePopupClose = () => {
-        // Only proceed if user is Admin
         if (!isAdmin) return;
-        
         setPopupOpen(false);
     };
 
+    console.log(columns);
+    
 
+
+    const filteredColumns = columns.filter((attendance, index) => {
+        // If displayWeeks is 0, show all columns
+        if (displayWeeks === 0) return true;
+        
+        // Calculate index range for the given week
+        const startIndex = (displayWeeks - 1) * 7;
+        const endIndex = displayWeeks * 7 - 1;
+        
+        // Show only columns within the index range
+        return index >= startIndex && index <= endIndex;
+    });
     return (
         <>
             <div className="header-row" ref={headerRef}>
@@ -88,7 +100,7 @@ function AttendanceHeader({ columns, onSort, sortConfig, handleLock, handleUnloc
 
                 {/* Scrollable attendance columns */}
                 <div className="scrollable-columns" id="header-scrollable">
-                    {columns.map((attendance, index) => (
+                    {filteredColumns.map((attendance, index) => (
                         <div 
                             key={index} 
                             className="header-cell attendance-header-cell"
@@ -107,8 +119,8 @@ function AttendanceHeader({ columns, onSort, sortConfig, handleLock, handleUnloc
                             <div />
                         </div>
                     ))}
+                    {isAdmin && isShowMetrixData &&(
                     <div 
-                            key={99999} 
                             className="header-cell total-attendance-header-cell"
                         >
                             <div className="attendance-header-date-title-container">
@@ -122,7 +134,8 @@ function AttendanceHeader({ columns, onSort, sortConfig, handleLock, handleUnloc
                                 <div className="total-sub-header-cell">extra</div>
                             </div>
                             <div />
-                        </div>
+                        </div>)
+}
                 </div>
             </div>
 

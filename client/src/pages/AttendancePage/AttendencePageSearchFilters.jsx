@@ -1,17 +1,38 @@
-import React from 'react'
 
+// AttendencePageSearchFilters.jsx
+import React, { useEffect } from 'react';
+import WeekPicker from './WeekPicker';
+import { 
+  getCurrentWeekInMonth, 
+  getTotalWeeksInMonth 
+} from '../../utils/constants';
 function AttendencePageSearchFilters({
   filterText,
   setFilterText,
   view,
   setView,
-  downloadReport,
   hasChanges,
   handleSaveChanges,
   isAdmin,
   showMetrics,
   setShowMetrics,
+  displayWeeks,
+  setdisplayWeeks,
+  totalMonth,
+  setTotalMonth
 }) {
+
+  // Update weeks when month changes
+  useEffect(() => {
+    const today = new Date();
+    setdisplayWeeks(getCurrentWeekInMonth(today));
+    setTotalMonth(getTotalWeeksInMonth(today));
+  }, [setdisplayWeeks, setTotalMonth]);
+  
+  const handleWeekChange = (week) => {
+    setdisplayWeeks(week);
+  };
+
   return (
     <div>
       <div className="attendance-controls">
@@ -104,14 +125,12 @@ function AttendencePageSearchFilters({
                   </span>
                 </label>
               </div>
-              <button
-                className="control-button secondary"
-                onClick={downloadReport}
-              >
-                Download Report
-              </button>
             </>
           )}
+          <WeekPicker
+            displayWeeks={displayWeeks} 
+            onWeekChange={handleWeekChange}
+          />
           {/* Save Changes Button */}
           {hasChanges && (
             <button
@@ -124,7 +143,7 @@ function AttendencePageSearchFilters({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default AttendencePageSearchFilters
+export default AttendencePageSearchFilters;

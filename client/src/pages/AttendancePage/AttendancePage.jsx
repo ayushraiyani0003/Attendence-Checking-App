@@ -5,6 +5,10 @@ import AttendanceHeader from "./AttendanceHeader";
 import AttendencePageSearchFilters from "./AttendencePageSearchFilters";
 import DataRow from "./DataRow";
 import { useWebSocket } from "../../hooks/useWebSocket"; // Import WebSocket hook
+import { 
+  getCurrentWeekInMonth, 
+  getTotalWeeksInMonth 
+} from '../../utils/constants';
 
 function AttendancePage({ user, monthYear }) {
   const [hoveredRow, setHoveredRow] = useState(null);
@@ -15,6 +19,8 @@ function AttendancePage({ user, monthYear }) {
     direction: "ascending",
   });
   const [view, setView] = useState("all"); // 'all', 'day', 'night'
+  const [displayWeeks, setdisplayWeeks] = useState(getCurrentWeekInMonth());
+  const [totalMonth, setTotalMonth] = useState(getTotalWeeksInMonth());
   const [hasChanges, setHasChanges] = useState(false); // Track if there are unsaved changes
   const [attendanceData, setAttendanceData] = useState([]); // For storing attendance data
   const [lockStatusData, setLockStatusData] = useState([]); // For storing lock status data
@@ -61,7 +67,7 @@ function AttendancePage({ user, monthYear }) {
         }
       }));
 
-  return ws;
+      return ws;
     };
 
     // When the WebSocket connection is closed
@@ -75,7 +81,7 @@ function AttendancePage({ user, monthYear }) {
       // Handle different types of broadcast messages
       switch (data.action || data.type) {
         case "attendanceData":
-          setAttendanceData(data.attendance); 
+          setAttendanceData(data.attendance);
           setLockStatusData(data.lockStatus);
 
           // Check if any date has unlocked status
@@ -87,18 +93,18 @@ function AttendancePage({ user, monthYear }) {
           // Update specific employee's attendance
           setAttendanceData((prevData) =>
             prevData.map((row) =>
-              row.id === data.updateDetails.employeeId 
-                ? { 
-                    ...row, 
-                    attendance: row.attendance.map(att => 
-                      att.date === data.updateDetails.editDate 
-                        ? { 
-                            ...att, 
-                            [data.updateDetails.field]: data.updateDetails.newValue 
-                          } 
-                        : att
-                    )
-                  } 
+              row.id === data.updateDetails.employeeId
+                ? {
+                  ...row,
+                  attendance: row.attendance.map(att =>
+                    att.date === data.updateDetails.editDate
+                      ? {
+                        ...att,
+                        [data.updateDetails.field]: data.updateDetails.newValue
+                      }
+                      : att
+                  )
+                }
                 : row
             )
           );
@@ -169,7 +175,7 @@ function AttendancePage({ user, monthYear }) {
   const handleCellDataUpdate = (rowIndex, columnIndex, field, value) => {
     const updatedEmployee = { ...attendanceData[rowIndex] };
     const originalValue = updatedEmployee.attendance[columnIndex][field];
-  
+
     // Only send update if the value has actually changed
     if (originalValue !== value) {
       // Prepare minimal payload with only necessary information
@@ -184,27 +190,28 @@ function AttendancePage({ user, monthYear }) {
         newValue: value,
         oldValue: originalValue
       };
-  
+
       // Update local state
       updatedEmployee.attendance[columnIndex][field] = value;
-      
+
       // Send minimal update via WebSocket
       send(updatePayload);
-  
+
       // Set has changes to true
       setHasChanges(true);
-  
+
       // Optionally update the local state
-      setAttendanceData(prevData => 
-        prevData.map((employee, index) => 
+      setAttendanceData(prevData =>
+        prevData.map((employee, index) =>
           index === rowIndex ? updatedEmployee : employee
         )
       );
     }
   };
 
+  // Get the first and last dates of the current month
+
   // Handle keyboard navigation
-  
   const getFilteredData = () => {
     let filteredData = [...attendanceData];
 
@@ -265,11 +272,11 @@ function AttendancePage({ user, monthYear }) {
     const savePayload = {
       action: "saveDataRedisToMysql",
       monthYear: monthYear,  // The month and year
-      user:user
+      user: user
     };
-  
+
     // Send the payload via WebSocket
-    send(savePayload);  
+    send(savePayload);
 
     setHasChanges(false);
   };
@@ -281,37 +288,37 @@ function AttendancePage({ user, monthYear }) {
     // Wait for both refs to be populated and data to be loaded
     const headerWrapper = headerRef.current;
     const dataContainer = dataContainerRef.current;
-  
+
     if (!headerWrapper || !dataContainer || !attendanceData.length) return;
-  
+
     // Scroll handler functions
     const handleDataScroll = () => {
       headerWrapper.scrollLeft = dataContainer.scrollLeft;
     };
-  
+
     const handleHeaderScroll = () => {
       dataContainer.scrollLeft = headerWrapper.scrollLeft;
     };
-  
+
     // Add the event listeners
     dataContainer.addEventListener("scroll", handleDataScroll);
     headerWrapper.addEventListener("scroll", handleHeaderScroll);
-  
+
     // Cleanup function to remove event listeners
     return () => {
       dataContainer.removeEventListener("scroll", handleDataScroll);
       headerWrapper.removeEventListener("scroll", handleHeaderScroll);
     };
-    
+
     // Include dependencies that should trigger re-running this effect
   }, [attendanceData, headerRef.current, dataContainerRef.current]);
-  
+
 
 
   const handleLock = (reportingGroup, date) => {
     // Only proceed if user is Admin
     if (!isAdmin) return;
-      
+
     const payload = {
       action: "lockUnlockStatusToggle",
       group: reportingGroup,
@@ -324,12 +331,12 @@ function AttendancePage({ user, monthYear }) {
     send(payload);
 
     setPopupOpen(false);
-};
+  };
 
-const handleUnlock = (reportingGroup, date) => {
+  const handleUnlock = (reportingGroup, date) => {
     // Only proceed if user is Admin
     if (!isAdmin) return;
-      
+
     const payload = {
       action: "lockUnlockStatusToggle",
       group: reportingGroup, // Assuming selectedDate is the group, if not, replace this
@@ -342,7 +349,7 @@ const handleUnlock = (reportingGroup, date) => {
     send(payload);
 
     setPopupOpen(false);
-};
+  };
 
   if (!attendanceData.length) {
     return (
@@ -381,9 +388,12 @@ const handleUnlock = (reportingGroup, date) => {
           hasChanges={hasChanges}
           handleSaveChanges={handleSaveChanges}
           isAdmin={isAdmin}
-          showMetrics={showMetrics}         // Add this new prop
-  setShowMetrics={setShowMetrics}   // Add this new prop
-  lockStatusData={lockStatusData}
+          showMetrics={showMetrics}
+          setShowMetrics={setShowMetrics}
+          displayWeeks={displayWeeks}
+          setdisplayWeeks={setdisplayWeeks}
+          totalMonth={totalMonth}
+          setTotalMonth={setTotalMonth}
         />
         <div className="header-wrapper" ref={headerRef}>
           {filteredData.length > 0 && filteredData[0].attendance && (
@@ -396,6 +406,8 @@ const handleUnlock = (reportingGroup, date) => {
               handleUnlock={handleUnlock}
               popupOpen={popupOpen}
               setPopupOpen={setPopupOpen}
+              displayWeeks={displayWeeks}
+              isShowMetrixData={showMetrics}
             />
           )}
         </div>
@@ -428,7 +440,7 @@ const handleUnlock = (reportingGroup, date) => {
               setEditableCell={setEditableCell}
               data={attendanceData}
               setData={(newData) => {
-                const changedRow = newData.find((item, idx) => 
+                const changedRow = newData.find((item, idx) =>
                   JSON.stringify(item) !== JSON.stringify(attendanceData[idx])
                 );
                 if (changedRow) {
@@ -442,6 +454,8 @@ const handleUnlock = (reportingGroup, date) => {
               getFilteredData={getFilteredData}
               dataContainerRef={dataContainerRef}
               attendanceData={attendanceData}
+              displayWeeks={displayWeeks}
+              isShowMetrixData={showMetrics}
             />
           ))}
         </div>

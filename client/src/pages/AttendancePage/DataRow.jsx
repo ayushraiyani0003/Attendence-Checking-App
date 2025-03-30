@@ -13,10 +13,28 @@ function DataRow({
   className,
   getFilteredData,
   attendanceData,
+  displayWeeks,
+  isShowMetrixData
 }) {
   const [editableCell, setEditableCell] = useState(null);
   const [editValue, setEditValue] = useState({});
   const inputRef = useRef(null);
+
+    // Check if user is an admin
+    const isAdmin = user.role === "admin";
+
+  // Filter attendance data based on displayWeeks
+  const filteredAttendance = row.attendance.filter((_, index) => {
+    // If displayWeeks is 0, show all columns
+    if (displayWeeks === 0) return true;
+    
+    // Calculate index range for the given week
+    const startIndex = (displayWeeks - 1) * 7;
+    const endIndex = displayWeeks * 7 - 1;
+    
+    // Show only columns within the index range
+    return index >= startIndex && index <= endIndex;
+  });
 
   // Add effect to handle clicks outside the input
   useEffect(() => {
@@ -234,67 +252,74 @@ function DataRow({
       </div>
 
       <div className="scrollable-data-cells" id="body-scrollable">
-        {row.attendance.map((attendance, index) => (
-          <div key={index} className="date-cell">
-            {["netHR", "otHR", "dnShift"].map((field) => {
-              const editKey = `${field}-${index}`;
-              const isEditable = editableCell === editKey;
-              const cellValue = attendance[field];
-              const displayValue = isEditable
-                ? (editValue[editKey] ?? cellValue)
-                : cellValue;
+        {filteredAttendance.map((attendance, displayIndex) => {
+          // Calculate the original index in the full attendance array
+          const originalIndex = displayWeeks === 0 
+            ? displayIndex 
+            : (displayWeeks - 1) * 7 + displayIndex;
+            
+          return (
+            <div key={displayIndex} className="date-cell">
+              {["netHR", "otHR", "dnShift"].map((field) => {
+                const editKey = `${field}-${originalIndex}`;
+                const isEditable = editableCell === editKey;
+                const cellValue = attendance[field];
+                const displayValue = isEditable
+                  ? (editValue[editKey] ?? cellValue)
+                  : cellValue;
 
-              let className = "sub-date-cell";
-              if (field === "dnShift") {
-                className += ` ${getShiftClass(cellValue)}`;
-              }
-              if (isEditable) {
-                className += " editable";
-              }
+                let className = "sub-date-cell";
+                if (field === "dnShift") {
+                  className += ` ${getShiftClass(cellValue)}`;
+                }
+                if (isEditable) {
+                  className += " editable";
+                }
 
-              return (
-                <div
-                  key={field}
-                  className={className}
-                  onClick={() => handleEdit(field, attendance, index)}
-                >
-                  {isEditable ? (
-                    <input
-                      ref={inputRef}
-                      type="text"
-                      value={displayValue}
-                      onChange={(e) =>
-                        handleChange(e, rowIndex, field, index)
-                      }
-                      onKeyDown={(e) =>
-                        onKeyDown(e, rowIndex, `${field}-${index}`, { field, index, originalValue: cellValue })
-                      }
-                      autoFocus
-                    />
-                  ) : (
-                    <div>
-                      {field === "dnShift" &&
-                        (cellValue === "Day" || cellValue === "Night")
-                        ? cellValue.charAt(0)
-                        : cellValue}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        ))}
+                return (
+                  <div
+                    key={field}
+                    className={className}
+                    onClick={() => handleEdit(field, attendance, originalIndex)}
+                  >
+                    {isEditable ? (
+                      <input
+                        ref={inputRef}
+                        type="text"
+                        value={displayValue}
+                        onChange={(e) =>
+                          handleChange(e, rowIndex, field, originalIndex)
+                        }
+                        onKeyDown={(e) =>
+                          onKeyDown(e, rowIndex, `${field}-${originalIndex}`, { field, index: originalIndex, originalValue: cellValue })
+                        }
+                        autoFocus
+                      />
+                    ) : (
+                      <div>
+                        {field === "dnShift" &&
+                          (cellValue === "Day" || cellValue === "Night")
+                          ? cellValue.charAt(0)
+                          : cellValue}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+        
+        {isAdmin && isShowMetrixData &&(
         <div className="total-data-cell">
-          <div
-            className="Disply-total-sub-data-cell"
-          >
+          <div className="Disply-total-sub-data-cell">
             <div className="sub-disply-total">Net HR</div>
             <div className="sub-disply-total">OT HR</div>
             <div className="sub-disply-total">D/A/N</div>
             <div className="sub-disply-total">D/A/N</div>
             <div className="sub-disply-total">D/A/N</div>
           </div>
-        </div>
+        </div>)}
       </div>
     </div>
   );
