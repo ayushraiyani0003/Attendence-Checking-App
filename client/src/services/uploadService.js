@@ -30,10 +30,14 @@ apiClient.interceptors.request.use(
  */
 export const uploadFiles = async (formData) => {
   try {
-    // Change content type for file uploads
+    // Get the token directly in this function to ensure it's included
+    const token = localStorage.getItem("token");
+    
     const response = await apiClient.post("/metrics/upload-metrics", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
+        // Include the Authorization header explicitly
+        ...(token ? { "Authorization": `Bearer ${token}` } : {})
       },
     });
     return response.data;
