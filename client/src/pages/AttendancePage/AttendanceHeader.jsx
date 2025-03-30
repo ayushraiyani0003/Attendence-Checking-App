@@ -126,7 +126,7 @@ function AttendanceHeader({ columns, onSort, sortConfig, handleLock, handleUnloc
                                 <div className="total-sub-header-cell">OT HR</div>
                                 <div className="total-sub-header-cell">N Count</div>
                                 <div className="total-sub-header-cell">Net Diff</div>
-                                <div className="total-sub-header-cell">extra</div>
+                                <div className="total-sub-header-cell">OT Diff</div>
                             </div>
                             <div />
                         </div>)
