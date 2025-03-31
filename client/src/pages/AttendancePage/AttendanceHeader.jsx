@@ -6,7 +6,7 @@ import { AuthContext } from "../../context/AuthContext";
 import { useWebSocket } from "../../hooks/useWebSocket";  // Use WebSocket hook
 import { useUsers } from "../../hooks/userList";
 
-function AttendanceHeader({ columns, onSort, sortConfig, handleLock, handleUnlock, popupOpen, setPopupOpen, displayWeeks, isShowMetrixData }) {
+function AttendanceHeader({ columns, onSort, sortConfig, handleLock, handleUnlock, popupOpen, setPopupOpen, displayWeeks, isShowMetrixData, lockUnlock }) {
     const { userRole, groupName } = useContext(AuthContext); // Access user role and group from context
     const { users } = useUsers();  // Fetch reporting groups using the useSettings hook
     const [selectedDate, setSelectedDate] = useState(null);
@@ -142,6 +142,7 @@ function AttendanceHeader({ columns, onSort, sortConfig, handleLock, handleUnloc
                     usersRequiringApproval={users}
                     date={selectedDate}
                     position={popupPosition}
+                    currentlyLockUnlock={lockUnlock}
                 />
             )}
         </>
