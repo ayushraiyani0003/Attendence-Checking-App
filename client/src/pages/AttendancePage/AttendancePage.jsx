@@ -452,7 +452,7 @@ useEffect(() => {
         
         {/* Only render the data section if there's data to show and nodata is false */}
         {!nodata && filteredData.length > 0 && (
-          <div>
+          <>
             <div className="header-wrapper" ref={headerRef}>
               {filteredData[0]?.attendance && (
                 <AttendanceHeader
@@ -504,7 +504,7 @@ useEffect(() => {
                 />
               ))}
             </div>
-          </div>
+          </>
         )}
       </div>
     </div>

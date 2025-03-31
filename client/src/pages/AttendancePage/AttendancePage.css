@@ -256,7 +256,7 @@
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  overflow-x: auto !important;
+  overflow-x: scroll !important;
   padding: 4px 0;
   flex: 1;
   scroll-behavior: smooth;
@@ -265,6 +265,7 @@
   width: 100%;
   margin-bottom: 20px;
 }
+
 
 /* Make header follow data scroll position */
 
