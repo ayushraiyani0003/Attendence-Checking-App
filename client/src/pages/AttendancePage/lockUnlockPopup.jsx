@@ -11,10 +11,11 @@ function LockUnlockPopup({
     onUnlock,
     usersRequiringApproval,
     date,
-    position
+    position,
+    currentlyLockUnlock,
 }) {
     const [selectedUser, setSelectedUser] = useState(null);
-    const popupRef = useRef(null);  // Ref to the popup container
+    const popupRef = useRef(null);
 
     // Reset selectedUser when popup opens
     useEffect(() => {
@@ -23,9 +24,12 @@ function LockUnlockPopup({
         }
     }, [isOpen]);
 
+    console.log(currentlyLockUnlock);
+
+
     // Add the event listener when the popup is open
     useEffect(() => {
-        if (!isOpen) return;  // If popup is closed, no need to add event listener
+        if (!isOpen) return;
 
         const handleClickOutside = (event) => {
             if (popupRef.current && !popupRef.current.contains(event.target)) {
@@ -36,11 +40,11 @@ function LockUnlockPopup({
         // Add event listener
         document.addEventListener("mousedown", handleClickOutside);
 
-        // Clean up the event listener when the component is unmounted or when `isOpen` changes
+        // Clean up the event listener
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
-    }, [isOpen, onClose]);  // Dependencies are `isOpen` and `onClose`
+    }, [isOpen, onClose]);
 
     if (!isOpen) return null;
 
@@ -55,17 +59,53 @@ function LockUnlockPopup({
         borderRadius: "8px",
         boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
         zIndex: 1000,
-        overflow: "visible", // Changed from "hidden" to allow dropdown to extend outside
+        overflow: "visible",
         border: "1px solid #ddd",
         marginTop: "1px",
         padding: "20px",
     };
+    // In your LockUnlockPopup component, add this function to format the date
+    const formatDate = (dateString) => {
+        // If the date is in format DD/MM/YYYY (like "29/3/2025")
+        if (dateString.includes('/')) {
+            const [day, month, year] = dateString.split('/');
+            // Format to YYYY-MM-DD (pad the month and day with leading zeros if needed)
+            return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        }
+        // If it's already in YYYY-MM-DD format, return as is
+        return dateString;
+    };
 
-    // Prepare options for the dropdown
-    const userOptions = usersRequiringApproval.map(user => ({
-        value: user.reporting_group,
-        label: `${user.name} - ${user.user_role} -- ${user.reporting_group}`
-    }));
+    // Filter out admin users and prepare options for the dropdown
+// Inside your map function where you create user options
+const userOptions = usersRequiringApproval
+    .filter(user => user.user_role !== 'admin') // Filter out admin users
+    .map(user => {
+        // Format the date before comparing
+        const formattedSelectedDate = formatDate(date);
+        
+        // More flexible comparison - normalize values
+        const isLocked = currentlyLockUnlock.some(item => {
+            // Normalize strings for comparison (lowercase both values)
+            const normalizedItemGroup = String(item.reporting_group).toLowerCase();
+            const normalizedUserGroup = String(user.reporting_group).toLowerCase();
+            
+            // Strict date comparison but case-insensitive group comparison
+            return item.date === formattedSelectedDate && 
+                   normalizedItemGroup === normalizedUserGroup &&
+                   item.status === "locked";
+        });
+        
+        // Log the final result
+        console.log(`User group: ${user.reporting_group}, Date: ${formattedSelectedDate}, Locked: ${isLocked}`);
+        
+        return {
+            value: user.reporting_group,
+            label: `${user.name} - ${user.reporting_group} ${isLocked ? '🔴' : '🟢'}`,
+            isLocked: isLocked
+        };
+    });
+
 
     const handleUserChange = (selectedOption) => {
         setSelectedUser(selectedOption);
@@ -88,11 +128,11 @@ function LockUnlockPopup({
             borderRadius: "4px",
             boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)",
             marginTop: "4px",
-            zIndex: 1500, // Higher z-index to ensure it's above other elements
+            zIndex: 1500,
         }),
         menuList: (base) => ({
             ...base,
-            maxHeight: "150px", // Specific height for the dropdown list
+            maxHeight: "150px",
             paddingTop: "5px",
             paddingBottom: "5px",
         }),
@@ -106,7 +146,6 @@ function LockUnlockPopup({
             ...base,
             color: "#999",
         }),
-        // Make sure dropdown portal has correct z-index
         menuPortal: (base) => ({
             ...base,
             zIndex: 1500,
