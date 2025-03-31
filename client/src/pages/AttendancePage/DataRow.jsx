@@ -21,7 +21,7 @@ function DataRow({
   const [editableCell, setEditableCell] = useState(null);
   const [editValue, setEditValue] = useState({});
   const inputRef = useRef(null);
-  
+
   // Check if user is an admin
   const isAdmin = user.role === "admin";
 
@@ -29,11 +29,11 @@ function DataRow({
   const filteredAttendance = row.attendance.filter((_, index) => {
     // If displayWeeks is 0, show all columns
     if (displayWeeks === 0) return true;
-    
+
     // Calculate index range for the given week
     const startIndex = (displayWeeks - 1) * 7;
     const endIndex = displayWeeks * 7 - 1;
-    
+
     // Show only columns within the index range
     return index >= startIndex && index <= endIndex;
   });
@@ -48,45 +48,45 @@ function DataRow({
   const getDisplayData = () => {
     // If not showing metrix data, return regular filtered attendance
     if (!isShowMetrixData) return filteredAttendance;
-    
+
     // Create a copy of filtered attendance to modify
-    const displayData = filteredAttendance.map(att => ({...att}));
-    
+    const displayData = filteredAttendance.map(att => ({ ...att }));
+
     // Check if MetrixDiffData exists and has records for this specific punch code
     const employeeMetrixData = MetrixDiffData?.filter(
       item => item.punchCode === row.punchCode
     ) || [];
 
-    
-    
+
+
     // Process each attendance record
     displayData.forEach((attendance) => {
       // Format the attendance date to match MetrixDiffData format
       if (attendance.date) {
         const [day, month, year] = attendance.date.split('/');
         const formattedDate = `${day}/${month}/${year}`;
-        
+
         // If this employee's punch code exists in MetrixDiffData
         if (employeeMetrixData.length > 0) {
           // Find matching metrix data for this date
           const matchingMetrix = employeeMetrixData.find(
             metrix => metrix.attendanceDate === formattedDate
           );
-          
+
           // If matching metrix data exists for this date, use the diff values
           if (matchingMetrix) {
             attendance.netHR = matchingMetrix.netHRDiff || "0";
             attendance.otHR = matchingMetrix.otHRDiff || "0";
             // Add flags for threshold exceeding
-          attendance.netHRExceeds = exceedsThreshold(matchingMetrix.netHRDiff);
-          attendance.otHRExceeds = exceedsThreshold(matchingMetrix.otHRDiff);
+            attendance.netHRExceeds = exceedsThreshold(matchingMetrix.netHRDiff);
+            attendance.otHRExceeds = exceedsThreshold(matchingMetrix.otHRDiff);
             // Keep dnShift unchanged as requested
           } else {
             // Date not found in metrix data, set to "0"
             attendance.netHR = "0";
             attendance.otHR = "0";
             attendance.netHRExceeds = false;
-          attendance.otHRExceeds = false;
+            attendance.otHRExceeds = false;
 
           }
         } else {
@@ -102,18 +102,18 @@ function DataRow({
         attendance.netHR = "0";
         attendance.otHR = "0";
         attendance.netHRExceeds = false;
-          attendance.otHRExceeds = false;
+        attendance.otHRExceeds = false;
 
       }
     });
-    
+
     return displayData;
   };
 
   // Get the appropriate data to display
   const displayData = getDisplayData();
 
-  
+
   // Add effect to handle clicks outside the input
   useEffect(() => {
     // Only add listener if an input is currently active
@@ -127,7 +127,7 @@ function DataRow({
 
           // Get current edit value for this cell
           const editKey = `${editableCell}`;
-          
+
           // Get the current value based on whether we're in metrix mode or not
           let currentValue;
           if (isShowMetrixData) {
@@ -346,80 +346,102 @@ function DataRow({
       <div className="scrollable-data-cells" id="body-scrollable">
         {displayData.map((attendance, displayIndex) => {
           // Calculate the original index in the full attendance array
-          const originalIndex = displayWeeks === 0 
-            ? displayIndex 
+          const originalIndex = displayWeeks === 0
+            ? displayIndex
             : (displayWeeks - 1) * 7 + displayIndex;
-            
+
           return (
             <div key={displayIndex} className="date-cell">
-              {["netHR", "otHR", "dnShift"].map((field) => {
-                const editKey = `${field}-${originalIndex}`;
-                const isEditable = !isShowMetrixData && editableCell === editKey;
-                
-                // Use the value from the appropriate data source
-                const cellValue = attendance[field] || (field === "dnShift" ? "" : "0");
-                
-                const displayValue = isEditable
-                  ? (editValue[editKey] ?? cellValue)
-                  : cellValue;
+  {["netHR", "otHR", "dnShift"].map((field) => {
+    const editKey = `${field}-${originalIndex}`;
+    const isEditable = (isAdmin ? !isShowMetrixData : true) && editableCell === editKey;
 
-                let className = "sub-date-cell";
-                if (field === "dnShift") {
-                  className += ` ${getShiftClass(cellValue)}`;
+    // Use the value from the appropriate data source
+    let cellValue = attendance[field] || (field === "dnShift" ? "" : "0");
+    
+    // Convert dnShift values to uppercase for consistency
+    if (field === "dnShift" && cellValue) {
+      cellValue = cellValue.toUpperCase();
+    }
+
+    const displayValue = isEditable
+      ? (editValue[editKey] ?? cellValue)
+      : cellValue;
+
+    let className = "sub-date-cell";
+    if (field === "dnShift") {
+      className += ` ${getShiftClass(cellValue)}`;
+    }
+    if (isEditable) {
+      className += " editable";
+    }
+
+    className += field === "netHR" && attendance.netHRExceeds ? " exceeds-threshold" : "";
+    className += field === "otHR" && attendance.otHRExceeds ? " exceeds-threshold" : "";
+
+    return (
+      <div
+        key={field}
+        className={className}
+        onClick={() => handleEdit(field, attendance, originalIndex)}
+      >
+        {isEditable ? (
+          <input
+            ref={inputRef}
+            type="text"
+            value={displayValue}
+            onChange={(e) => {
+              if (field === "dnShift") {
+                // Handle dnShift field specially
+                let input = e.target.value.toUpperCase();
+                if (input.length > 0) {
+                  const lastChar = input.charAt(input.length - 1);
+                  if (['A', 'D', 'N'].includes(lastChar)) {
+                    input = lastChar;
+                  } else {
+                    input = 'D'; // Default to D if invalid input
+                  }
                 }
-                if (isEditable) {
-                  className += " editable";
-                }
-
-
-  className += field === "netHR" && attendance.netHRExceeds ? " exceeds-threshold" : "";
-  className += field === "otHR" && attendance.otHRExceeds ? " exceeds-threshold" : "";
-
-                return (
-                  <div
-                    key={field}
-                    className={className}
-                    onClick={() => handleEdit(field, attendance, originalIndex)}
-                  >
-                    {isEditable ? (
-                      <input
-                        ref={inputRef}
-                        type="text"
-                        value={displayValue}
-                        onChange={(e) =>
-                          handleChange(e, rowIndex, field, originalIndex)
-                        }
-                        onKeyDown={(e) =>
-                          onKeyDown(e, rowIndex, `${field}-${originalIndex}`, { field, index: originalIndex, originalValue: cellValue })
-                        }
-                        autoFocus
-                      />
-                    ) : (
-                      <div>
-                        {field === "dnShift" &&
-                          (cellValue === "Day" || cellValue === "Night")
-                          ? cellValue.charAt(0)
-                          : cellValue}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                handleChange({ target: { value: input } }, rowIndex, field, originalIndex);
+              } else {
+                handleChange(e, rowIndex, field, originalIndex);
+              }
+            }}
+            onKeyDown={(e) =>
+              onKeyDown(e, rowIndex, `${field}-${originalIndex}`, { field, index: originalIndex, originalValue: cellValue })
+            }
+            onBlur={() => {
+              if (field === "dnShift" && (!displayValue || !['A', 'D', 'N'].includes(displayValue))) {
+                handleChange({ target: { value: 'D' } }, rowIndex, field, originalIndex);
+              }
+            }}
+            autoFocus
+          />
+        ) : (
+          <div>
+            {field === "dnShift" && ['D', 'N', 'A'].includes(cellValue?.toUpperCase())
+              ? cellValue.charAt(0).toUpperCase()
+              : field === "dnShift" ? "" : cellValue}
+          </div>
+        )}
+      </div>
+    );
+  })}
+</div>
           );
         })}
-        
+
         {(!isAdmin || (isAdmin && isShowMetrixData)) && (
-  <div className="total-data-cell">
-    <div className="Disply-total-sub-data-cell">
-      <div className="total sub-disply-total">N00</div>
-      <div className="total sub-disply-total">O00</div>
-      <div className="total sub-disply-total">N0</div>
-      <div className="total sub-disply-total">Ne.00</div>
-      <div className="total sub-disply-total">OT.00</div>
-    </div>
-  </div>
-)}
+          <div className="total-data-cell">
+            <div className="Disply-total-sub-data-cell">
+              <div className="total sub-disply-total">N00</div>
+              <div className="total sub-disply-total">O00</div>
+              <div className="total sub-disply-total">N0</div>
+              <div className="total sub-disply-total">Ne.00</div>
+              <div className="total sub-disply-total">OT.00</div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
