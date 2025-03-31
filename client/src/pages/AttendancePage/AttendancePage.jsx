@@ -420,30 +420,6 @@ useEffect(() => {
   }
 
 
-  if (nodata || filteredData.length === 0) {
-    return (
-      <div className="attendance-page">
-        <div className="attendance-container">
-          <AttendencePageSearchFilters
-            filterText={filterText}
-            setFilterText={setFilterText}
-            view={view}
-            setView={setView}
-            hasChanges={hasChanges}
-            handleSaveChanges={handleSaveChanges}
-            isAdmin={isAdmin}
-            showMetrics={showMetrics}
-            setShowMetrics={setShowMetrics}
-            displayWeeks={displayWeeks}
-            setdisplayWeeks={setdisplayWeeks}
-            totalMonth={totalMonth}
-            setTotalMonth={setTotalMonth}
-          />
-        </div>
-      </div>
-    );
-  }
-
   console.log("filteredData");
   console.log(filteredData);
 
@@ -465,6 +441,14 @@ useEffect(() => {
           totalMonth={totalMonth}
           setTotalMonth={setTotalMonth}
         />
+
+        {nodata && filteredData.length ==0 &&(
+        <div className="attendance-container">
+          <div className="error-state" style={{ textAlign: "center", padding: "40px", color: "red" }}>
+            No data For this Filter Change the filter...
+        </div>
+      </div>
+        )}
         
         {/* Only render the data section if there's data to show and nodata is false */}
         {!nodata && filteredData.length > 0 && (
@@ -482,6 +466,7 @@ useEffect(() => {
                   setPopupOpen={setPopupOpen}
                   displayWeeks={displayWeeks}
                   isShowMetrixData={showMetrics}
+                  lockUnlock={lockStatusData}
                 />
               )}
             </div>
