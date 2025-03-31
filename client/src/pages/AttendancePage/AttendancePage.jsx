@@ -5,9 +5,9 @@ import AttendanceHeader from "./AttendanceHeader";
 import AttendencePageSearchFilters from "./AttendencePageSearchFilters";
 import DataRow from "./DataRow";
 import { useWebSocket } from "../../hooks/useWebSocket"; // Import WebSocket hook
-import { 
-  getCurrentWeekInMonth, 
-  getTotalWeeksInMonth 
+import {
+  getCurrentWeekInMonth,
+  getTotalWeeksInMonth
 } from '../../utils/constants';
 
 function AttendancePage({ user, monthYear }) {
@@ -28,6 +28,7 @@ function AttendancePage({ user, monthYear }) {
   const [isWebSocketOpen, setIsWebSocketOpen] = useState(false); // WebSocket open state
   const [showMetrics, setShowMetrics] = useState(true); // Default to showing metrics
   const [popupOpen, setPopupOpen] = useState(false);
+  const [nodata, setNodata] = useState(false);
 
   const { ws, send } = useWebSocket(); // WebSocket hook to send messages
 
@@ -86,7 +87,7 @@ function AttendancePage({ user, monthYear }) {
           setAttendanceData(data.attendance);
           setLockStatusData(data.lockStatus);
           setMetrixDiffData(data.MetrixAtteDiffrence);
-          
+
           // Check if any date has unlocked status
           const hasUnlockedDate = data.lockStatus.some(item => item.status === 'unlocked');
           setHasChanges(hasUnlockedDate);
@@ -215,8 +216,10 @@ function AttendancePage({ user, monthYear }) {
   // Get the first and last dates of the current month
 
   // Handle keyboard navigation
-  const getFilteredData = () => {
+   // Modify your getFilteredData function to prevent state updates during rendering
+   const getFilteredData = () => {
     let filteredData = [...attendanceData];
+    let isEmpty = false;
 
     if (filterText) {
       const searchTerm = filterText.toLowerCase();
@@ -232,37 +235,40 @@ function AttendancePage({ user, monthYear }) {
     }
 
     if (view !== "all") {
-      if (view === "diff") {
+      if (view === "diffsd") {
         // 1. Get all punch codes where netHRDiff or otHRDiff > 0.25
         const punchCodesWithDiff = MetrixDiffData
-          .filter(item => 
-            Math.abs(parseFloat(item.netHRDiff)) > 0.25 || 
+          .filter(item =>
+            Math.abs(parseFloat(item.netHRDiff)) > 0.25 ||
             Math.abs(parseFloat(item.otHRDiff)) > 0.25
           )
           .map(item => item.punchCode);
-    
+
         // 2. Remove duplicates (same punch code may appear multiple times)
         const uniquePunchCodes = [...new Set(punchCodesWithDiff)];
-    
+
         // 3. Filter employees whose punchCode is in uniquePunchCodes
-        filteredData = filteredData.filter(item => 
+        filteredData = filteredData.filter(item =>
           uniquePunchCodes.includes(item.punchCode)
         );
-      } 
+      }
       else if (view === "new") {
         // Filter employees with punch code "new"
-        filteredData = filteredData.filter(item => 
+        filteredData = filteredData.filter(item =>
           item.punchCode?.toLowerCase() === "new"
         );
-      } 
+      }
       else {
         // Filter by shift (original logic)
         filteredData = filteredData.filter(item =>
-          item.attendance.some(att => 
+          item.attendance.some(att =>
             att.dnShift?.toLowerCase() === view.toLowerCase()
           )
         );
       }
+
+      // Instead of directly setting state during render, return a flag
+      isEmpty = filteredData.length === 0;
     }
 
     if (sortConfig.key) {
@@ -286,7 +292,7 @@ function AttendancePage({ user, monthYear }) {
       });
     }
 
-    return filteredData;
+    return { data: filteredData, isEmpty };
   };
 
   const handleSort = (key) => {
@@ -342,7 +348,13 @@ function AttendancePage({ user, monthYear }) {
     // Include dependencies that should trigger re-running this effect
   }, [attendanceData, headerRef.current, dataContainerRef.current]);
 
-
+// Use useEffect to update the nodata state instead of doing it during rendering
+useEffect(() => {
+  if (attendanceData.length > 0) {
+    const { isEmpty } = getFilteredData();
+    setNodata(isEmpty);
+  }
+}, [view, filterText, attendanceData, MetrixDiffData]);
 
   const handleLock = (reportingGroup, date) => {
     // Only proceed if user is Admin
@@ -376,9 +388,12 @@ function AttendancePage({ user, monthYear }) {
 
     // Send the payload via WebSocket
     send(payload);
-
+    
     setPopupOpen(false);
   };
+  
+  // Get filtered data without setting state directly
+  const { data: filteredData } = getFilteredData();
 
   if (!attendanceData.length) {
     return (
@@ -404,10 +419,34 @@ function AttendancePage({ user, monthYear }) {
     );
   }
 
-  const filteredData = getFilteredData();
+
+  if (nodata || filteredData.length === 0) {
+    return (
+      <div className="attendance-page">
+        <div className="attendance-container">
+          <AttendencePageSearchFilters
+            filterText={filterText}
+            setFilterText={setFilterText}
+            view={view}
+            setView={setView}
+            hasChanges={hasChanges}
+            handleSaveChanges={handleSaveChanges}
+            isAdmin={isAdmin}
+            showMetrics={showMetrics}
+            setShowMetrics={setShowMetrics}
+            displayWeeks={displayWeeks}
+            setdisplayWeeks={setdisplayWeeks}
+            totalMonth={totalMonth}
+            setTotalMonth={setTotalMonth}
+          />
+        </div>
+      </div>
+    );
+  }
+
   console.log("filteredData");
   console.log(filteredData);
-  
+
   return (
     <div className="attendance-page">
       <div className="attendance-container">
@@ -426,72 +465,62 @@ function AttendancePage({ user, monthYear }) {
           totalMonth={totalMonth}
           setTotalMonth={setTotalMonth}
         />
-        <div className="header-wrapper" ref={headerRef}>
-          {filteredData.length > 0 && filteredData[0].attendance && (
-            <AttendanceHeader
-              columns={filteredData[0].attendance}
-              onSort={handleSort}
-              sortConfig={sortConfig}
-              fixedColumns={fixedColumns}
-              handleLock={handleLock}
-              handleUnlock={handleUnlock}
-              popupOpen={popupOpen}
-              setPopupOpen={setPopupOpen}
-              displayWeeks={displayWeeks}
-              isShowMetrixData={showMetrics}
-            />
-          )}
-        </div>
+        
+        {/* Only render the data section if there's data to show and nodata is false */}
+        {!nodata && filteredData.length > 0 && (
+          <div>
+            <div className="header-wrapper" ref={headerRef}>
+              {filteredData[0]?.attendance && (
+                <AttendanceHeader
+                  columns={filteredData[0].attendance}
+                  onSort={handleSort}
+                  sortConfig={sortConfig}
+                  fixedColumns={fixedColumns}
+                  handleLock={handleLock}
+                  handleUnlock={handleUnlock}
+                  popupOpen={popupOpen}
+                  setPopupOpen={setPopupOpen}
+                  displayWeeks={displayWeeks}
+                  isShowMetrixData={showMetrics}
+                />
+              )}
+            </div>
 
-        {filteredData.length === 0 && (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "40px",
-              color: "var(--gray-600)",
-              backgroundColor: "white",
-              borderRadius: "8px",
-              marginTop: "20px",
-            }}
-          >
-            <h3>No data found</h3>
-            <p>Try adjusting your filters or add new employees</p>
+            <div className="data-container" ref={dataContainerRef}>
+              {filteredData.map((row, rowIndex) => (
+                <DataRow
+                  key={row.id}
+                  row={row}
+                  punchCode={row.punchCode}
+                  rowIndex={attendanceData.findIndex((item) => item.id === row.id)}
+                  hoveredRow={hoveredRow}
+                  setHoveredRow={setHoveredRow}
+                  editableCell={editableCell}
+                  setEditableCell={setEditableCell}
+                  data={attendanceData}
+                  setData={(newData) => {
+                    const changedRow = newData.find((item, idx) =>
+                      JSON.stringify(item) !== JSON.stringify(attendanceData[idx])
+                    );
+                    if (changedRow) {
+                      send("updateAttendance", { employeeId: changedRow.id, updatedEmployee: changedRow });
+                    }
+                    setHasChanges(true);
+                  }}
+                  lockStatusData={lockStatusData}
+                  user={user}
+                  onCellUpdate={handleCellDataUpdate}
+                  getFilteredData={() => getFilteredData().data}
+                  dataContainerRef={dataContainerRef}
+                  attendanceData={attendanceData}
+                  displayWeeks={displayWeeks}
+                  isShowMetrixData={showMetrics}
+                  MetrixDiffData={MetrixDiffData}
+                />
+              ))}
+            </div>
           </div>
         )}
-
-        <div className="data-container" ref={dataContainerRef}>
-          {filteredData.map((row, rowIndex) => (
-            <DataRow
-              key={row.id}
-              row={row}
-              punchCode={row.punchCode}
-              rowIndex={attendanceData.findIndex((item) => item.id === row.id)}
-              hoveredRow={hoveredRow}
-              setHoveredRow={setHoveredRow}
-              editableCell={editableCell}
-              setEditableCell={setEditableCell}
-              data={attendanceData}
-              setData={(newData) => {
-                const changedRow = newData.find((item, idx) =>
-                  JSON.stringify(item) !== JSON.stringify(attendanceData[idx])
-                );
-                if (changedRow) {
-                  send("updateAttendance", { employeeId: changedRow.id, updatedEmployee: changedRow });
-                }
-                setHasChanges(true);
-              }}
-              lockStatusData={lockStatusData}
-              user={user}
-              onCellUpdate={handleCellDataUpdate}
-              getFilteredData={getFilteredData}
-              dataContainerRef={dataContainerRef}
-              attendanceData={attendanceData}
-              displayWeeks={displayWeeks}
-              isShowMetrixData={showMetrics}
-              MetrixDiffData={MetrixDiffData}
-            />
-          ))}
-        </div>
       </div>
     </div>
   );

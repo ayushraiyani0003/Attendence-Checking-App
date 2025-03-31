@@ -412,11 +412,11 @@ function DataRow({
         {(!isAdmin || (isAdmin && isShowMetrixData)) && (
   <div className="total-data-cell">
     <div className="Disply-total-sub-data-cell">
-      <div className="sub-disply-total">Net HR</div>
-      <div className="sub-disply-total">OT HR</div>
-      <div className="sub-disply-total">D/A/N</div>
-      <div className="sub-disply-total">D/A/N</div>
-      <div className="sub-disply-total">D/A/N</div>
+      <div className="total sub-disply-total">N00</div>
+      <div className="total sub-disply-total">O00</div>
+      <div className="total sub-disply-total">N0</div>
+      <div className="total sub-disply-total">Ne.00</div>
+      <div className="total sub-disply-total">OT.00</div>
     </div>
   </div>
 )}
