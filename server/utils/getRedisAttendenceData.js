@@ -34,72 +34,81 @@ async function getRedisAttendanceData(year, month, groups) {
 // Function to update attendance data in Redis
 async function updateRedisAttendanceData(updateData) {
     try {
-        // Validate input data
-        if (!updateData || !updateData.employeeId || !updateData.editDate) {
-            throw new Error('Missing required fields for Redis update');
-        }
-
-        // Format the date to match Redis key format (YYYY-MM-DD)
-        const formattedDate = formatDate(updateData.editDate);
-
-        // Construct the Redis key
-        const key = `attendance:${updateData.reportGroup}:${formattedDate}`;
-
-        // Retrieve existing data for the key
-        const existingData = await redisClient.get(key);
-
-        if (!existingData) {
-            throw new Error(`No existing data found for key: ${key}`);
-        }
-
-        let attendanceRecords;
-        try {
-            // Parse existing data 
-            attendanceRecords = JSON.parse(existingData);
-        } catch (parseError) {
-            throw new Error('Error parsing existing Redis data');
-        }
-
-        // Find the specific employee record
-        const employeeRecordIndex = attendanceRecords.findIndex(
-            record => record.employee_id === updateData.employeeId
-        );
-
-        if (employeeRecordIndex === -1) {
-            throw new Error(`No record found for employee ID ${updateData.employeeId}`);
-        }
-
-        // Map field names
-        const fieldMapping = {
-            'netHR': 'network_hours',
-            'otHR': 'overtime_hours'
-        };
-
-        // Get the mapped field name
-        const mappedField = fieldMapping[updateData.field] || updateData.field;
-
-        // Update the specific field
+      // Validate input data
+      if (!updateData || !updateData.employeeId || !updateData.editDate) {
+        throw new Error('Missing required fields for Redis update');
+      }
+      
+      // Format the date to match Redis key format (YYYY-MM-DD)
+      const formattedDate = formatDate(updateData.editDate);
+      
+      // Construct the Redis key
+      const key = `attendance:${updateData.reportGroup}:${formattedDate}`;
+      
+      // Retrieve existing data for the key
+      const existingData = await redisClient.get(key);
+      if (!existingData) {
+        throw new Error(`No existing data found for key: ${key}`);
+      }
+      
+      let attendanceRecords;
+      try {
+        // Parse existing data
+        attendanceRecords = JSON.parse(existingData);
+      } catch (parseError) {
+        throw new Error('Error parsing existing Redis data');
+      }
+      
+      // Find the specific employee record
+      const employeeRecordIndex = attendanceRecords.findIndex(
+        record => record.employee_id === updateData.employeeId
+      );
+      
+      if (employeeRecordIndex === -1) {
+        throw new Error(`No record found for employee ID ${updateData.employeeId}`);
+      }
+      
+      // Map field names
+      const fieldMapping = {
+        'netHR': 'network_hours',
+        'otHR': 'overtime_hours',
+        'shift_type': 'shift_type'
+      };
+      
+      console.log(fieldMapping);
+      
+      // Get the mapped field name
+      const mappedField = fieldMapping[updateData.field] || updateData.field;
+      
+      // Update the specific field - handle different data types appropriately
+      if (updateData.field === 'shift_type') {
+        // For shift_type, store as string
+        attendanceRecords[employeeRecordIndex][mappedField] = updateData.newValue;
+      } else {
+        // For numeric fields, parse as float
         attendanceRecords[employeeRecordIndex][mappedField] = parseFloat(updateData.newValue);
-
-        // Add metadata
-        attendanceRecords[employeeRecordIndex].lastUpdatedBy = updateData.name;
-        attendanceRecords[employeeRecordIndex].lastUpdatedAt = new Date().toISOString();
-
-        // Store the updated record back in Redis
-        await redisClient.set(key, JSON.stringify(attendanceRecords));
-
-        // console.log(`Updated Redis key ${key} for employee ${updateData.employeeId}`);
-
-        return {
-            success: true,
-            key: key,
-            updatedRecord: attendanceRecords[employeeRecordIndex]
-        };
+      }
+      
+      console.log(attendanceRecords[employeeRecordIndex][mappedField]);
+      
+      // Add metadata
+      attendanceRecords[employeeRecordIndex].lastUpdatedBy = updateData.user?.name || 'System';
+      attendanceRecords[employeeRecordIndex].lastUpdatedAt = new Date().toISOString();
+      
+      // Store the updated record back in Redis
+      await redisClient.set(key, JSON.stringify(attendanceRecords));
+      console.log(`Updated Redis key ${key} for employee ${updateData.employeeId}`);
+      
+      return {
+        success: true,
+        key: key,
+        updatedRecord: attendanceRecords[employeeRecordIndex]
+      };
     } catch (error) {
-        console.error('Error updating Redis attendance data:', error);
-        throw error;
+      console.error('Error updating Redis attendance data:', error);
+      throw error;
     }
-}
+  }
 
 // delete redis data for freeup the memory base on group only "because on group data submit all data is submit" 
 async function deleteRedisGroupKeys(groups, year, month) {
