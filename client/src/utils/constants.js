@@ -39,3 +39,51 @@ export const getYesterday = () => {
   yesterday.setDate(yesterday.getDate() - 1);
   return yesterday;
 };
+
+ // Validation functions
+ export const exceedsThreshold = (value) => {
+  if (!value) return false;
+  const numericValue = parseFloat(value);
+  return !isNaN(numericValue) && Math.abs(numericValue) > 0.25; // 0.25 hours = 15 minutes
+};
+
+export const validateNetHR = (value) => {
+  const numValue = parseFloat(value);
+  return !isNaN(numValue) && numValue <= 11;
+};
+
+export const validateOtHR = (value) => {
+  const numValue = parseFloat(value);
+  return !isNaN(numValue) && numValue <= 15;
+};
+
+  // Format value for database update
+  export const formatValue = (value, column) => {
+    if (column === "netHR" || column === "otHR") {
+      const parsedFloat = parseFloat(value);
+      return !isNaN(parsedFloat) ? Math.round(parsedFloat) : 0;
+    }
+    return value;
+  };
+
+  // Calculate shift class for CSS styling
+  export const getShiftClass = (shift) => {
+    if (!shift) return "";
+    const upperShift = shift.toUpperCase();
+    if (upperShift === "D") return "dnShift-Day";
+    if (upperShift === "N") return "dnShift-Night";
+    if (upperShift === "E") return "dnShift-AfterNoon";
+    return "";
+  };
+
+  export const canEdit = (attendance, isAdmin, isShowMetrixData) => {
+    if (!attendance) return false;
+    // Check if the record is unlocked
+    const isUnlocked = attendance.lock_status === "unlocked";
+    // Admin can edit if unlocked and not in metrix view
+    if (isAdmin) {
+      return isUnlocked && !isShowMetrixData;
+    }
+    // Non-admin users can edit if the record is unlocked
+    return isUnlocked;
+  };
