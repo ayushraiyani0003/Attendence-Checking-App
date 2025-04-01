@@ -1,11 +1,9 @@
 
 // AttendencePageSearchFilters.jsx
 import React, { useEffect } from 'react';
-import WeekPicker from './WeekPicker';
-import { 
-  getCurrentWeekInMonth, 
-  getTotalWeeksInMonth 
-} from '../../utils/constants';
+import SimplifiedDatePicker from './CustomDatePicker';
+import ColumnVisibilityControl from './ColumnVisibilityControl';
+
 function AttendencePageSearchFilters({
   filterText,
   setFilterText,
@@ -16,23 +14,11 @@ function AttendencePageSearchFilters({
   isAdmin,
   showMetrics,
   setShowMetrics,
-  displayWeeks,
-  setdisplayWeeks,
-  totalMonth,
-  setTotalMonth
+  dateRange, 
+  setDateRange,
+  columns, 
+  onToggleColumn
 }) {
-
-  // Update weeks when month changes
-  useEffect(() => {
-    const today = new Date();
-    setdisplayWeeks(getCurrentWeekInMonth(today));
-    setTotalMonth(getTotalWeeksInMonth(today));
-  }, [setdisplayWeeks, setTotalMonth]);
-  
-  const handleWeekChange = (week) => {
-    setdisplayWeeks(week);
-  };
-
   return (
     <div>
       <div className="attendance-controls">
@@ -127,9 +113,14 @@ function AttendencePageSearchFilters({
               </div>
             </>
           )}
-          <WeekPicker
-            displayWeeks={displayWeeks} 
-            onWeekChange={handleWeekChange}
+          <ColumnVisibilityControl  
+  columns={columns}
+  onToggleColumn={onToggleColumn}
+
+          />
+          <SimplifiedDatePicker
+          dateRange={dateRange}
+          setDateRange={setDateRange}
           />
           {/* Save Changes Button */}
           {hasChanges && (

@@ -6,7 +6,7 @@ import { AuthContext } from "../../context/AuthContext";
 import { useWebSocket } from "../../hooks/useWebSocket";  // Use WebSocket hook
 import { useUsers } from "../../hooks/userList";
 
-function AttendanceHeader({ columns, onSort, sortConfig, handleLock, handleUnlock, popupOpen, setPopupOpen, displayWeeks, isShowMetrixData, lockUnlock }) {
+function AttendanceHeader({ columns, onSort, sortConfig, handleLock, handleUnlock, popupOpen, setPopupOpen, displayWeeks, isShowMetrixData, lockUnlock, attDateStart, attDateEnd  }) {
     const { userRole, groupName } = useContext(AuthContext); // Access user role and group from context
     const { users } = useUsers();  // Fetch reporting groups using the useSettings hook
     const [selectedDate, setSelectedDate] = useState(null);
@@ -47,16 +47,17 @@ function AttendanceHeader({ columns, onSort, sortConfig, handleLock, handleUnloc
     };
 
     const filteredColumns = columns.filter((attendance, index) => {
-        // If displayWeeks is 0, show all columns
-        if (displayWeeks === 0) return true;
-
-        // Calculate index range for the given week
-        const startIndex = (displayWeeks - 1) * 7;
-        const endIndex = displayWeeks * 7 - 1;
-
-        // Show only columns within the index range
-        return index >= startIndex && index <= endIndex;
-    });
+        // Parse attendance date (DD/MM/YYYY format)
+        const [day, month, year] = attendance.date.split('/');
+        const attDate = new Date(year, month - 1, day);
+        
+        // Parse filter dates (ISO format)
+        const startDate = new Date(attDateStart);
+        const endDate = new Date(attDateEnd);
+        
+        // Show only columns within the date range
+        return attDate >= startDate && attDate <= endDate;
+      });
     return (
         <>
             <div className="header-row" ref={headerRef}>

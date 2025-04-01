@@ -17,7 +17,11 @@ function DataRow({
   displayWeeks,
   isShowMetrixData,
   MetrixDiffData,
+  attDateStart, 
+  attDateEnd
 }) {
+  console.log(row);
+  
   const [editableCell, setEditableCell] = useState(null);
   const [editValue, setEditValue] = useState({});
   const inputRef = useRef(null);
@@ -25,24 +29,26 @@ function DataRow({
   // Check if user is an admin
   const isAdmin = user.role === "admin";
 
-  // Filter attendance data based on displayWeeks
-  const filteredAttendance = row.attendance.filter((_, index) => {
-    // If displayWeeks is 0, show all columns
-    if (displayWeeks === 0) return true;
-
-    // Calculate index range for the given week
-    const startIndex = (displayWeeks - 1) * 7;
-    const endIndex = displayWeeks * 7 - 1;
-
-    // Show only columns within the index range
-    return index >= startIndex && index <= endIndex;
-  });
+  // Filter attendance data based on attDateStart and attDateEnd
+// Filter attendance data based on attDateStart and attDateEnd
+const filteredAttendance = row.attendance.filter(att => {
+  // Parse attendance date (DD/MM/YYYY format)
+  const [day, month, year] = att.date.split('/');
+  const attDate = new Date(year, month - 1, day);
+  
+  // Parse filter dates (ISO format)
+  const startDate = new Date(attDateStart);
+  const endDate = new Date(attDateEnd);
+  
+  // Show only attendance records within the date range
+  return attDate >= startDate && attDate <= endDate;
+});
 
   const exceedsThreshold = (value) => {
     if (!value) return false;
     const numericValue = parseFloat(value);
     return !isNaN(numericValue) && Math.abs(numericValue) > 0.25; // 0.25 hours = 15 minutes
-  };
+  };  
 
   // Add these validation functions at the top of your component
 const validateNetHR = (value) => {

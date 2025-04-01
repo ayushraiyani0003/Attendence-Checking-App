@@ -1,14 +1,12 @@
 // components/AttendancePage/AttendancePage.jsx
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef ,useCallback} from "react";
 import "./AttendancePage.css";
 import AttendanceHeader from "./AttendanceHeader";
 import AttendencePageSearchFilters from "./AttendencePageSearchFilters";
 import DataRow from "./DataRow";
 import { useWebSocket } from "../../hooks/useWebSocket"; // Import WebSocket hook
-import {
-  getCurrentWeekInMonth,
-  getTotalWeeksInMonth
-} from '../../utils/constants';
+import moment from 'moment-timezone';
+import { getYesterday } from "../../utils/constants";
 
 function AttendancePage({ user, monthYear }) {
   const [hoveredRow, setHoveredRow] = useState(null);
@@ -19,8 +17,6 @@ function AttendancePage({ user, monthYear }) {
     direction: "ascending",
   });
   const [view, setView] = useState("all"); // 'all', 'day', 'night'
-  const [displayWeeks, setdisplayWeeks] = useState(getCurrentWeekInMonth());
-  const [totalMonth, setTotalMonth] = useState(getTotalWeeksInMonth());
   const [hasChanges, setHasChanges] = useState(false); // Track if there are unsaved changes
   const [attendanceData, setAttendanceData] = useState([]); // For storing attendance data
   const [lockStatusData, setLockStatusData] = useState([]); // For storing lock status data
@@ -29,10 +25,29 @@ function AttendancePage({ user, monthYear }) {
   const [showMetrics, setShowMetrics] = useState(true); // Default to showing metrics
   const [popupOpen, setPopupOpen] = useState(false);
   const [nodata, setNodata] = useState(false);
+  // State for the date range
+  const [dateRange, setDateRange] = useState([getYesterday(), getYesterday()]);
+
+  const [columns, setColumns] = useState([
+    { id: 'punchCode', label: 'Punch Code', isVisible: true },
+    { id: 'name', label: 'Name', isVisible: true },
+    { id: 'designation', label: 'Designation', isVisible: true },
+    { id: 'department', label: 'Department', isVisible: false },
+  ]);
+
 
   const { ws, send } = useWebSocket(); // WebSocket hook to send messages
 
   const isAdmin = user.role === "admin"; // Determine if user is admin
+  console.log(dateRange);
+
+  const toggleColumn = (columnId) => {
+    setColumns(columns.map(column => 
+      column.id === columnId 
+        ? { ...column, isVisible: !column.isVisible } 
+        : column
+    ));
+  };
 
 
   const fixedColumns = [
@@ -53,6 +68,12 @@ function AttendancePage({ user, monthYear }) {
       });
     }
   }, [user.userReportingGroup, monthYear, isWebSocketOpen, ws, send]);
+  
+  // Handler to reset everything
+const handleReset = () => {
+  // Reset to yesterday's date
+  setDateRange([getYesterday(), getYesterday()]);
+};
 
   useEffect(() => {
     if (!ws) return;
@@ -400,7 +421,7 @@ useEffect(() => {
       <div className="attendance-page">
         <div className="attendance-container">
           <div className="loading-state" style={{ textAlign: "center", padding: "40px" }}>
-            Loading attendance data...
+             Loading attendance data... or change the month 
           </div>
         </div>
       </div>
@@ -436,10 +457,11 @@ useEffect(() => {
           isAdmin={isAdmin}
           showMetrics={showMetrics}
           setShowMetrics={setShowMetrics}
-          displayWeeks={displayWeeks}
-          setdisplayWeeks={setdisplayWeeks}
-          totalMonth={totalMonth}
-          setTotalMonth={setTotalMonth}
+          dateRange={dateRange}
+          setDateRange={setDateRange}
+
+  columns={columns}
+  onToggleColumn={toggleColumn}
         />
 
         {nodata && filteredData.length ==0 &&(
@@ -459,14 +481,15 @@ useEffect(() => {
                   columns={filteredData[0].attendance}
                   onSort={handleSort}
                   sortConfig={sortConfig}
-                  fixedColumns={fixedColumns}
+                  fixedColumns={columns}
                   handleLock={handleLock}
                   handleUnlock={handleUnlock}
                   popupOpen={popupOpen}
                   setPopupOpen={setPopupOpen}
-                  displayWeeks={displayWeeks}
                   isShowMetrixData={showMetrics}
                   lockUnlock={lockStatusData}
+                  attDateStart={dateRange[0]}
+                  attDateEnd={dateRange[1]}
                 />
               )}
             </div>
@@ -498,9 +521,10 @@ useEffect(() => {
                   getFilteredData={() => getFilteredData().data}
                   dataContainerRef={dataContainerRef}
                   attendanceData={attendanceData}
-                  displayWeeks={displayWeeks}
                   isShowMetrixData={showMetrics}
                   MetrixDiffData={MetrixDiffData}
+                  attDateStart={dateRange[0]}
+                  attDateEnd={dateRange[1]}
                 />
               ))}
             </div>

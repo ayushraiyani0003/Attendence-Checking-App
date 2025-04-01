@@ -33,3 +33,9 @@ export const getTotalWeeksInMonth = (date = new Date()) => {
   // Calculate how many complete 7-day weeks fit in the month
   return Math.ceil(daysInMonth / 7);
 };
+
+export const getYesterday = () => {
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  return yesterday;
+};
