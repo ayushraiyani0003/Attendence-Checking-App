@@ -1,5 +1,5 @@
 // components/AttendancePage/AttendancePage.jsx
-import React, { useState, useEffect, useRef ,useCallback} from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import "./AttendancePage.css";
 import AttendanceHeader from "./AttendanceHeader";
 import AttendencePageSearchFilters from "./AttendencePageSearchFilters";
@@ -27,6 +27,8 @@ function AttendancePage({ user, monthYear }) {
   const [nodata, setNodata] = useState(false);
   // State for the date range
   const [dateRange, setDateRange] = useState([getYesterday(), getYesterday()]);
+  // Add displayWeeks state which is needed by DataRow
+  const [displayWeeks, setDisplayWeeks] = useState(0);
 
   const [columns, setColumns] = useState([
     { id: 'punchCode', label: 'Punch Code', isVisible: true },
@@ -35,20 +37,17 @@ function AttendancePage({ user, monthYear }) {
     { id: 'department', label: 'Department', isVisible: false },
   ]);
 
-
   const { ws, send } = useWebSocket(); // WebSocket hook to send messages
 
   const isAdmin = user.role === "admin"; // Determine if user is admin
-  console.log(dateRange);
 
   const toggleColumn = (columnId) => {
-    setColumns(columns.map(column => 
-      column.id === columnId 
-        ? { ...column, isVisible: !column.isVisible } 
+    setColumns(columns.map(column =>
+      column.id === columnId
+        ? { ...column, isVisible: !column.isVisible }
         : column
     ));
   };
-
 
   const fixedColumns = [
     { key: "punchCode", label: "Punch Code" },
@@ -68,18 +67,18 @@ function AttendancePage({ user, monthYear }) {
       });
     }
   }, [user.userReportingGroup, monthYear, isWebSocketOpen, ws, send]);
-  
+
   // Handler to reset everything
-const handleReset = () => {
-  // Reset to yesterday's date
-  setDateRange([getYesterday(), getYesterday()]);
-};
+  const handleReset = () => {
+    // Reset to yesterday's date
+    setDateRange([getYesterday(), getYesterday()]);
+  };
 
   useEffect(() => {
     if (!ws) return;
 
     // When the WebSocket connection is established
-    ws.onopen = () => {
+    const handleOpen = () => {
       setIsWebSocketOpen(true);
       ws.send(JSON.stringify({
         action: 'setUserInfo',
@@ -90,16 +89,14 @@ const handleReset = () => {
           id: user.id
         }
       }));
-
-      return ws;
     };
 
     // When the WebSocket connection is closed
-    ws.onclose = () => {
+    const handleClose = () => {
       setIsWebSocketOpen(false);
     };
 
-    ws.onmessage = (event) => {
+    const handleMessage = (event) => {
       const data = JSON.parse(event.data);
 
       // Handle different types of broadcast messages
@@ -107,10 +104,10 @@ const handleReset = () => {
         case "attendanceData":
           setAttendanceData(data.attendance);
           setLockStatusData(data.lockStatus);
-          setMetrixDiffData(data.MetrixAtteDiffrence);
+          setMetrixDiffData(data.MetrixAtteDiffrence || []);
 
           // Check if any date has unlocked status
-          const hasUnlockedDate = data.lockStatus.some(item => item.status === 'unlocked');
+          const hasUnlockedDate = data.lockStatus?.some(item => item.status === 'unlocked');
           setHasChanges(hasUnlockedDate);
           break;
 
@@ -143,7 +140,8 @@ const handleReset = () => {
                 ...row,
                 attendance: row.attendance.map(att => ({
                   ...att,
-                  isLocked: false
+                  isLocked: false,
+                  lock_status: 'unlocked' // Add lock_status for DataRow component
                 }))
               }))
             );
@@ -154,7 +152,8 @@ const handleReset = () => {
                 ...row,
                 attendance: row.attendance.map(att => ({
                   ...att,
-                  isLocked: true
+                  isLocked: true,
+                  lock_status: 'locked' // Add lock_status for DataRow component
                 }))
               }))
             );
@@ -162,17 +161,20 @@ const handleReset = () => {
           }
           break;
 
-        case "dataUpdated":
-          // Optional: Handle general data update broadcasts
-          break;
-
         case "attendanceLockStatus":
           setAttendanceData((prevData) =>
-            prevData.map((row) =>
-              row.attendance_date === data.date
-                ? { ...row, isLocked: data.status === "locked" }
-                : row
-            )
+            prevData.map((row) => ({
+              ...row,
+              attendance: row.attendance.map(att => 
+                att.date === data.date
+                  ? { 
+                      ...att, 
+                      isLocked: data.status === "locked",
+                      lock_status: data.status // Add lock_status for DataRow component
+                    }
+                  : att
+              )
+            }))
           );
           break;
 
@@ -181,9 +183,15 @@ const handleReset = () => {
       }
     };
 
-    ws.onerror = (error) => {
+    const handleError = (error) => {
       console.error("WebSocket error:", error);
     };
+
+    // Assign event handlers
+    ws.onopen = handleOpen;
+    ws.onclose = handleClose;
+    ws.onmessage = handleMessage;
+    ws.onerror = handleError;
 
     // Cleanup function
     return () => {
@@ -194,51 +202,63 @@ const handleReset = () => {
         ws.onerror = null;
       }
     };
-  }, [ws, isWebSocketOpen]);
+  }, [ws, user]);
 
   // Handle Cell Data Update
-  const handleCellDataUpdate = (rowIndex, columnIndex, field, value) => {
-    const updatedEmployee = { ...attendanceData[rowIndex] };
-    const originalValue = updatedEmployee.attendance[columnIndex][field];
+ // Handle Cell Data Update
+const handleCellDataUpdate = (rowIndex, date, field, value) => {
+  if (rowIndex < 0 || rowIndex >= attendanceData.length) {
+    console.error("Invalid rowIndex:", rowIndex);
+    return;
+  }
+  
+  const updatedEmployee = { ...attendanceData[rowIndex] };
+  
+  // Find the attendance entry with the matching date
+  const columnIndex = updatedEmployee.attendance.findIndex(att => att.date === date);
+  
+  // Make sure the attendance entry with the given date exists
+  if (columnIndex === -1 || !updatedEmployee.attendance) {
+    console.error("Invalid date or missing attendance data:", date);
+    return;
+  }
+  
+  const originalValue = updatedEmployee.attendance[columnIndex][field];
 
-    // Only send update if the value has actually changed
-    if (originalValue !== value) {
-      // Prepare minimal payload with only necessary information
-      const updatePayload = {
-        action: "updateAttendance",
-        employeeId: updatedEmployee.id,
-        punchCode: updatedEmployee.punchCode,
-        user: user,
-        reportGroup: updatedEmployee.reporting_group,
-        editDate: updatedEmployee.attendance[columnIndex].date,
-        field: field, // Specific field being updated
-        newValue: value,
-        oldValue: originalValue
-      };
+  // Only send update if the value has actually changed
+  if (originalValue !== value) {
+    // Prepare minimal payload with only necessary information
+    const updatePayload = {
+      action: "updateAttendance",
+      employeeId: updatedEmployee.id,
+      punchCode: updatedEmployee.punchCode,
+      user: user,
+      reportGroup: updatedEmployee.reporting_group,
+      editDate: date, // Use date directly instead of accessing by columnIndex
+      field: field === 'dnShift' ? 'shift_type' : field, // Specific field being updated
+      newValue: value,
+      oldValue: originalValue
+    };
 
-      // Update local state
-      updatedEmployee.attendance[columnIndex][field] = value;
+    // Update local state
+    updatedEmployee.attendance[columnIndex][field] = value;
 
-      // Send minimal update via WebSocket
-      send(updatePayload);
+    // Send minimal update via WebSocket
+    send(updatePayload);
 
-      // Set has changes to true
-      setHasChanges(true);
+    // Set has changes to true
+    setHasChanges(true);
 
-      // Optionally update the local state
-      setAttendanceData(prevData =>
-        prevData.map((employee, index) =>
-          index === rowIndex ? updatedEmployee : employee
-        )
-      );
-    }
-  };
-
-  // Get the first and last dates of the current month
-
-  // Handle keyboard navigation
-   // Modify your getFilteredData function to prevent state updates during rendering
-   const getFilteredData = () => {
+    // Update the local state
+    setAttendanceData(prevData =>
+      prevData.map((employee, index) =>
+        index === rowIndex ? updatedEmployee : employee
+      )
+    );
+  }
+};
+  // Modify your getFilteredData function to prevent state updates during rendering
+  const getFilteredData = useCallback(() => {
     let filteredData = [...attendanceData];
     let isEmpty = false;
 
@@ -246,10 +266,10 @@ const handleReset = () => {
       const searchTerm = filterText.toLowerCase();
       filteredData = filteredData.filter((item) => {
         const textMatch =
-          item.name.toLowerCase().includes(searchTerm) ||
-          item.punchCode.toLowerCase().includes(searchTerm) ||
-          item.department.toLowerCase().includes(searchTerm) ||
-          item.designation.toLowerCase().includes(searchTerm);
+          item.name?.toLowerCase().includes(searchTerm) ||
+          item.punchCode?.toLowerCase().includes(searchTerm) ||
+          item.department?.toLowerCase().includes(searchTerm) ||
+          item.designation?.toLowerCase().includes(searchTerm);
 
         return textMatch;
       });
@@ -282,13 +302,13 @@ const handleReset = () => {
       else {
         // Filter by shift (original logic)
         filteredData = filteredData.filter(item =>
-          item.attendance.some(att =>
+          item.attendance?.some(att =>
             att.dnShift?.toLowerCase() === view.toLowerCase()
           )
         );
       }
 
-      // Instead of directly setting state during render, return a flag
+      // Set the isEmpty flag for filtering
       isEmpty = filteredData.length === 0;
     }
 
@@ -299,8 +319,8 @@ const handleReset = () => {
 
         if (sortConfig.key.startsWith("attendance.")) {
           const field = sortConfig.key.split(".")[1];
-          aValue = a.attendance[0]?.[field] || "";
-          bValue = b.attendance[0]?.[field] || "";
+          aValue = a.attendance?.[0]?.[field] || "";
+          bValue = b.attendance?.[0]?.[field] || "";
         }
 
         if (aValue < bValue) {
@@ -314,7 +334,7 @@ const handleReset = () => {
     }
 
     return { data: filteredData, isEmpty };
-  };
+  }, [attendanceData, filterText, view, MetrixDiffData, sortConfig]);
 
   const handleSort = (key) => {
     let direction = "ascending";
@@ -365,17 +385,15 @@ const handleReset = () => {
       dataContainer.removeEventListener("scroll", handleDataScroll);
       headerWrapper.removeEventListener("scroll", handleHeaderScroll);
     };
+  }, [attendanceData]);
 
-    // Include dependencies that should trigger re-running this effect
-  }, [attendanceData, headerRef.current, dataContainerRef.current]);
-
-// Use useEffect to update the nodata state instead of doing it during rendering
-useEffect(() => {
-  if (attendanceData.length > 0) {
-    const { isEmpty } = getFilteredData();
-    setNodata(isEmpty);
-  }
-}, [view, filterText, attendanceData, MetrixDiffData]);
+  // Use useEffect to update the nodata state
+  useEffect(() => {
+    if (attendanceData.length > 0) {
+      const { isEmpty } = getFilteredData();
+      setNodata(isEmpty);
+    }
+  }, [view, filterText, attendanceData, MetrixDiffData, getFilteredData]);
 
   const handleLock = (reportingGroup, date) => {
     // Only proceed if user is Admin
@@ -401,7 +419,7 @@ useEffect(() => {
 
     const payload = {
       action: "lockUnlockStatusToggle",
-      group: reportingGroup, // Assuming selectedDate is the group, if not, replace this
+      group: reportingGroup,
       date: date,
       user: user,
       status: "unlocked"
@@ -409,10 +427,10 @@ useEffect(() => {
 
     // Send the payload via WebSocket
     send(payload);
-    
+
     setPopupOpen(false);
   };
-  
+
   // Get filtered data without setting state directly
   const { data: filteredData } = getFilteredData();
 
@@ -421,28 +439,12 @@ useEffect(() => {
       <div className="attendance-page">
         <div className="attendance-container">
           <div className="loading-state" style={{ textAlign: "center", padding: "40px" }}>
-             Loading attendance data... or change the month 
+            Loading attendance data... or change the month
           </div>
         </div>
       </div>
     );
   }
-
-  if (!attendanceData) {
-    return (
-      <div className="attendance-page">
-        <div className="attendance-container">
-          <div className="error-state" style={{ textAlign: "center", padding: "40px", color: "red" }}>
-            Error loading data.
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-
-  console.log("filteredData");
-  console.log(filteredData);
 
   return (
     <div className="attendance-page">
@@ -459,19 +461,18 @@ useEffect(() => {
           setShowMetrics={setShowMetrics}
           dateRange={dateRange}
           setDateRange={setDateRange}
-
-  columns={columns}
-  onToggleColumn={toggleColumn}
+          columns={columns}
+          onToggleColumn={toggleColumn}
         />
 
-        {nodata && filteredData.length ==0 &&(
-        <div className="attendance-container">
-          <div className="error-state" style={{ textAlign: "center", padding: "40px", color: "red" }}>
-            No data For this Filter Change the filter...
-        </div>
-      </div>
+        {nodata && filteredData.length === 0 && (
+          <div className="attendance-container">
+            <div className="error-state" style={{ textAlign: "center", padding: "40px", color: "red" }}>
+              No data For this Filter Change the filter...
+            </div>
+          </div>
         )}
-        
+
         {/* Only render the data section if there's data to show and nodata is false */}
         {!nodata && filteredData.length > 0 && (
           <>
@@ -481,7 +482,7 @@ useEffect(() => {
                   columns={filteredData[0].attendance}
                   onSort={handleSort}
                   sortConfig={sortConfig}
-                  fixedColumns={columns}
+                  fixedColumns={fixedColumns}
                   handleLock={handleLock}
                   handleUnlock={handleUnlock}
                   popupOpen={popupOpen}
@@ -490,43 +491,39 @@ useEffect(() => {
                   lockUnlock={lockStatusData}
                   attDateStart={dateRange[0]}
                   attDateEnd={dateRange[1]}
+                  isAdmin={isAdmin}
                 />
               )}
             </div>
 
             <div className="data-container" ref={dataContainerRef}>
-              {filteredData.map((row, rowIndex) => (
-                <DataRow
-                  key={row.id}
-                  row={row}
-                  punchCode={row.punchCode}
-                  rowIndex={attendanceData.findIndex((item) => item.id === row.id)}
-                  hoveredRow={hoveredRow}
-                  setHoveredRow={setHoveredRow}
-                  editableCell={editableCell}
-                  setEditableCell={setEditableCell}
-                  data={attendanceData}
-                  setData={(newData) => {
-                    const changedRow = newData.find((item, idx) =>
-                      JSON.stringify(item) !== JSON.stringify(attendanceData[idx])
-                    );
-                    if (changedRow) {
-                      send("updateAttendance", { employeeId: changedRow.id, updatedEmployee: changedRow });
-                    }
-                    setHasChanges(true);
-                  }}
-                  lockStatusData={lockStatusData}
-                  user={user}
-                  onCellUpdate={handleCellDataUpdate}
-                  getFilteredData={() => getFilteredData().data}
-                  dataContainerRef={dataContainerRef}
-                  attendanceData={attendanceData}
-                  isShowMetrixData={showMetrics}
-                  MetrixDiffData={MetrixDiffData}
-                  attDateStart={dateRange[0]}
-                  attDateEnd={dateRange[1]}
-                />
-              ))}
+              {filteredData.map((row) => {
+                // Find the actual index in the attendanceData array
+                const rowIndex = attendanceData.findIndex((item) => item.id === row.id);
+                
+                return (
+                  <DataRow
+                    key={row.id}
+                    row={row}
+                    punchCode={row.punchCode}
+                    rowIndex={rowIndex}
+                    hoveredRow={hoveredRow}
+                    setHoveredRow={setHoveredRow}
+                    data={attendanceData}
+                    user={user}
+                    onCellUpdate={handleCellDataUpdate}
+                    getFilteredData={() => getFilteredData().data}
+                    dataContainerRef={dataContainerRef}
+                    attendanceData={attendanceData}
+                    isShowMetrixData={showMetrics}
+                    MetrixDiffData={MetrixDiffData}
+                    attDateStart={dateRange[0]}
+                    attDateEnd={dateRange[1]}
+                    displayWeeks={displayWeeks}
+                    isAdmin={isAdmin}
+                  />
+                );
+              })}
             </div>
           </>
         )}

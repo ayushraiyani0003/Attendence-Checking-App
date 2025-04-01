@@ -1,75 +1,40 @@
 import React, { useState, useEffect, useRef } from "react";
+import {exceedsThreshold, validateNetHR, validateOtHR, formatValue, getShiftClass, canEdit} from "../../utils/constants"
 
 function DataRow({
-  row,
-  rowIndex,
-  punchCode,
-  hoveredRow,
-  setHoveredRow,
-  data,
-  setData,
-  onCellUpdate,
-  user,
-  lockStatusData,
-  className,
-  getFilteredData,
-  attendanceData,
-  displayWeeks,
-  isShowMetrixData,
-  MetrixDiffData,
-  attDateStart, 
-  attDateEnd
+  row, rowIndex, hoveredRow, isAdmin, setHoveredRow, data, onCellUpdate, user, getFilteredData, attendanceData, displayWeeks, isShowMetrixData, MetrixDiffData, attDateStart, attDateEnd
 }) {
-  console.log(row);
-  
   const [editableCell, setEditableCell] = useState(null);
   const [editValue, setEditValue] = useState({});
   const inputRef = useRef(null);
 
-  // Check if user is an admin
-  const isAdmin = user.role === "admin";
-
   // Filter attendance data based on attDateStart and attDateEnd
-// Filter attendance data based on attDateStart and attDateEnd
-const filteredAttendance = row.attendance.filter(att => {
-  // Parse attendance date (DD/MM/YYYY format)
-  const [day, month, year] = att.date.split('/');
-  const attDate = new Date(year, month - 1, day);
-  
-  // Parse filter dates (ISO format)
-  const startDate = new Date(attDateStart);
-  const endDate = new Date(attDateEnd);
-  
-  // Show only attendance records within the date range
-  return attDate >= startDate && attDate <= endDate;
-});
+  const filteredAttendance = React.useMemo(() => {
+    if (!row.attendance) return [];
+    return row.attendance.filter(att => {
+      if (!att || !att.date) return false;
+      // Parse attendance date (DD/MM/YYYY format)
+      const [day, month, year] = att.date.split('/');
+      const attDate = new Date(year, month - 1, day);
+      // Parse filter dates (ISO format)
+      const startDate = new Date(attDateStart);
+      const endDate = new Date(attDateEnd);
+      // Add one day to endDate to include the end date in the range
+      endDate.setDate(endDate.getDate() + 1);
+      // Show only attendance records within the date range
+      return attDate >= startDate && attDate < endDate;
+    });
+  }, [row.attendance, attDateStart, attDateEnd]);
 
-  const exceedsThreshold = (value) => {
-    if (!value) return false;
-    const numericValue = parseFloat(value);
-    return !isNaN(numericValue) && Math.abs(numericValue) > 0.25; // 0.25 hours = 15 minutes
-  };  
-
-  // Add these validation functions at the top of your component
-const validateNetHR = (value) => {
-  const numValue = parseFloat(value);
-  return !isNaN(numValue) && numValue <= 11;
-};
-
-const validateOtHR = (value) => {
-  const numValue = parseFloat(value);
-  return !isNaN(numValue) && numValue <= 15;
-};
-
-  // Prepare data to display based on isShowMetrixData flag and user role
-  const getDisplayData = () => {
+  // Process data to display based on isShowMetrixData flag
+  const displayData = React.useMemo(() => {
     // If not showing metrix data or user is not admin, return regular filtered attendance
     if (!isShowMetrixData || !isAdmin) return filteredAttendance;
 
     // Create a copy of filtered attendance to modify
     const displayData = filteredAttendance.map(att => ({ ...att }));
 
-    // Check if MetrixDiffData exists and has records for this specific punch code
+    // Get metrix data for this employee
     const employeeMetrixData = MetrixDiffData?.filter(
       item => item.punchCode === row.punchCode
     ) || [];
@@ -95,7 +60,6 @@ const validateOtHR = (value) => {
             // Add flags for threshold exceeding
             attendance.netHRExceeds = exceedsThreshold(matchingMetrix.netHRDiff);
             attendance.otHRExceeds = exceedsThreshold(matchingMetrix.otHRDiff);
-            // Keep dnShift unchanged as requested
           } else {
             // Date not found in metrix data, set to "0"
             attendance.netHR = "0";
@@ -104,288 +68,224 @@ const validateOtHR = (value) => {
             attendance.otHRExceeds = false;
           }
         } else {
-          // Punch code not found in metrix data, set to "0"
+          // Punch code not found in metrix data
           attendance.netHR = "0";
           attendance.otHR = "0";
           attendance.netHRExceeds = false;
           attendance.otHRExceeds = false;
         }
-      } else {
-        // No date information, set to "0"
-        attendance.netHR = "0";
-        attendance.otHR = "0";
-        attendance.netHRExceeds = false;
-        attendance.otHRExceeds = false;
       }
     });
 
     return displayData;
-  };
+  }, [filteredAttendance, isShowMetrixData, isAdmin, row.punchCode, MetrixDiffData]);
 
-  // Get the appropriate data to display
-  const displayData = getDisplayData();
-
-  // Add effect to handle clicks outside the input
+  // Handle clicks outside the input
   useEffect(() => {
-    // Only add listener if an input is currently active
-    if (editableCell) {
-      const handleClickOutside = (event) => {
-        // Check if the click is outside the input
-        if (inputRef.current && !inputRef.current.contains(event.target)) {
-          // Parse column and index
-          const [currentField, currentColIndex] = editableCell.split("-");
-          const colIndex = parseInt(currentColIndex);
+    if (!editableCell) return;
 
-          // Get current edit value for this cell
-          const editKey = `${editableCell}`;
+    const handleClickOutside = (event) => {
+      if (inputRef.current && !inputRef.current.contains(event.target)) {
+        // Parse column and index
+        const [currentField, currentColIndex] = editableCell.split("-");
+        const colIndex = parseInt(currentColIndex);
 
-          // Get the current value based on whether we're in metrix mode or not
-          let currentValue;
-          if (isShowMetrixData && isAdmin) {
-            currentValue = editValue[editKey] || displayData[colIndex]?.[currentField] || "0";
-          } else {
-            currentValue = editValue[editKey] || row.attendance[colIndex][currentField];
-          }
+        // Get current edit value for this cell
+        const editKey = `${editableCell}`;
 
-          // Get the original value to compare against
-          let originalValue;
-          if (isShowMetrixData && isAdmin) {
-            originalValue = displayData[colIndex]?.[currentField] || "0";
-          } else {
-            originalValue = row.attendance[colIndex][currentField];
-          }
+        // Check if the index is valid in the displayData array
+        if (colIndex >= 0 && colIndex < displayData.length) {
+          // Get the current value and original value
+          const currentValue = editValue[editKey] || displayData[colIndex]?.[currentField] || "0";
+          const originalValue = displayData[colIndex]?.[currentField] || "0";
 
           // Only update if the value has actually changed
-          const hasValueChanged = currentValue !== originalValue;
-
-          if (hasValueChanged) {
-            // Format and update the value via WebSocket
+          if (currentValue !== originalValue) {
+            // Format and update the value
             const formattedValue = formatValue(currentValue, currentField);
-            onCellUpdate(rowIndex, colIndex, currentField, formattedValue);
+            // Pass the date instead of colIndex
+            const attendanceDate = displayData[colIndex]?.date;
+            console.log(rowIndex);
+            console.log(attendanceDate);
+            console.log(currentField);
+            console.log(formattedValue);
+            
+            onCellUpdate(rowIndex, attendanceDate, currentField, formattedValue);
           }
-
-          // Clear the editable cell
-          setEditableCell(null);
         }
-      };
 
-      // Add click listener to document
-      document.addEventListener('mousedown', handleClickOutside);
+        // Clear the editable cell
+        setEditableCell(null);
+      }
+    };
 
-      // Cleanup listener
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }
-  }, [editableCell, editValue, row, rowIndex, onCellUpdate, isShowMetrixData, displayData, isAdmin]);
+    // Add click listener
+    document.addEventListener('mousedown', handleClickOutside);
 
-  // Determine if the user can edit based on lock status and user role
-  const canEdit = (attendance) => {
-    // Check if the record is unlocked
-    const isUnlocked = attendance.lock_status === "unlocked";
-    
-    // Admin can edit anything that's unlocked
-    if (isAdmin) {
-      return isUnlocked && !isShowMetrixData;
-    }
-    
-    // Non-admin users can edit if the record is unlocked
-    return isUnlocked;
-  };
+    // Cleanup
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [editableCell, editValue, displayData, rowIndex, onCellUpdate]);
 
   // Handle edit action
   const handleEdit = (field, attendance, index) => {
-    if (canEdit(attendance)) {
+    if (canEdit(attendance, isAdmin, isShowMetrixData)) {
       setEditableCell(`${field}-${index}`);
       // Initialize edit value with current cell value
       setEditValue(prev => ({
         ...prev,
         [`${field}-${index}`]: attendance[field]
       }));
-    } else {
-      // Check if the record is locked or in metrix mode for admins
-      if (attendance.lock_status !== "unlocked") {
-        alert("Editing is not allowed. This record is locked.");
-      } else if (isAdmin && isShowMetrixData) {
-        alert("Editing is not allowed in metrix view mode.");
-      }
+    } else if (attendance && attendance.lock_status !== "unlocked") {
+      alert("Editing is not allowed. This record is locked.");
+    } else if (isAdmin && isShowMetrixData) {
+      alert("Editing is not allowed in metrix view mode.");
     }
   };
 
-  // Handle input change
-  const handleChange = (e, rowIndex, column, index) => {
+  // Handle input change with improved validation
+  const handleChange = (e, column, index) => {
     let value = e.target.value;
-  
-    // Sanitize numeric input for netHR and otHR
+
+    // Validate and format input based on field type
     if (column === "netHR" || column === "otHR") {
+      // Allow only numbers and one decimal point
       value = value.replace(/[^0-9.]/g, "");
+
+      // Ensure only one decimal point
       const decimalCount = (value.match(/\./g) || []).length;
       if (decimalCount > 1) {
         value = value.substring(0, value.lastIndexOf("."));
       }
-      
-      // Check for maximum values
+
+      // Apply maximum value constraints
       if (value !== "") {
         const numValue = parseFloat(value);
         if (!isNaN(numValue)) {
           if (column === "netHR" && numValue > 11) {
-            alert("Net hours cannot exceed 11");
             value = "11";
           } else if (column === "otHR" && numValue > 15) {
-            alert("Overtime hours cannot exceed 15");
             value = "15";
           }
         }
       }
+    } else if (column === "dnShift") {
+      // Handle day/night shift values - accept only E, D, N and convert to uppercase
+      value = value.toUpperCase();
+      if (value.length > 0) {
+        const lastChar = value.charAt(value.length - 1);
+        if (['E', 'D', 'N'].includes(lastChar)) {
+          value = lastChar;
+        } else {
+          value = 'D'; // Default to D if invalid input
+        }
+      }
     }
+
     // Update edit value
     setEditValue(prev => ({
       ...prev,
       [`${column}-${index}`]: value
     }));
   };
-  // Format value for update
-  const formatValue = (value, column) => {
-    if ((column === "netHR" || column === "otHR")) {
-      // Parsing logic to handle different input scenarios
-      const parsedFloat = parseFloat(value);
 
-      // If input is a valid number
-      if (!isNaN(parsedFloat)) {
-        // Return integer as requested (no decimals)
-        return Math.round(parsedFloat);
-      }
-      return 0; // Default to 0 for invalid input
-    }
-    return value;
-  };
-
-  // Key down handler with intelligent update
-  const onKeyDown = (e, rowIndex, column, currentCellInfo) => {
+  // Improved keyboard navigation handling
+  const onKeyDown = (e, column) => {
     if (e.key === "Enter" || e.key === "Tab") {
       e.preventDefault();
-  
+
       // Parse column and index
       const [currentField, currentColIndex] = column.split("-");
       const colIndex = parseInt(currentColIndex);
-  
-      // Get current edit value for this cell
+
+      // Get current edit value
       const editKey = `${column}`;
-      const currentValue = editValue[editKey] || currentCellInfo.originalValue;
+      const currentValue = editValue[editKey] || displayData[colIndex]?.[currentField] || "0";
+      const originalValue = displayData[colIndex]?.[currentField] || "0";
 
       // Validate values before saving
-    if (currentField === "netHR" && !validateNetHR(currentValue)) {
-      alert("Net hours cannot exceed 11");
-      setEditValue(prev => ({
-        ...prev,
-        [editKey]: "11"
-      }));
-      return;
-    }
-    
-    if (currentField === "otHR" && !validateOtHR(currentValue)) {
-      alert("Overtime hours cannot exceed 15");
-      setEditValue(prev => ({
-        ...prev,
-        [editKey]: "15"
-      }));
-      return;
-    }
+      let validationFailed = false;
 
-    // Only update if the value has actually changed
-    const hasValueChanged = currentValue !== currentCellInfo.originalValue;
+      if (currentField === "netHR" && !validateNetHR(currentValue)) {
+        alert("Net hours cannot exceed 11");
+        setEditValue(prev => ({ ...prev, [editKey]: "11" }));
+        validationFailed = true;
+      }
 
-    if (hasValueChanged) {
-      // Format and update the value via WebSocket
-      const formattedValue = formatValue(currentValue, currentField);
-      onCellUpdate(rowIndex, colIndex, currentField, formattedValue);
-    }
-    
-      // Define the order of fields
+      if (currentField === "otHR" && !validateOtHR(currentValue)) {
+        alert("Overtime hours cannot exceed 15");
+        setEditValue(prev => ({ ...prev, [editKey]: "15" }));
+        validationFailed = true;
+      }
+
+      if (validationFailed) return;
+
+      // Only update if the value has changed
+      if (currentValue !== originalValue) {
+        const formattedValue = formatValue(currentValue, currentField);
+        // Pass the date instead of colIndex
+        const attendanceDate = displayData[colIndex]?.date;
+        onCellUpdate(rowIndex, attendanceDate, currentField, formattedValue);
+      }
+
+      // Define the order of editable fields
       const fields = ["netHR", "otHR", "dnShift"];
 
-      // Determine the full data source
+      // Get the full and filtered data sources
       const fullData = attendanceData || data;
-      const filteredData = getFilteredData ? getFilteredData() : data;
+      const filteredData = getFilteredData ? getFilteredData() : fullData;
 
-      // Function to find the next cell to focus
-      const findNextCell = (currentRowIndex, currentField, currentColIndex) => {
+      // Find the next cell to focus
+      const findNextCell = () => {
         const currentFieldIndex = fields.indexOf(currentField);
 
-        // Try to move to the next field in the same column
+        // Try next field in the same column
         if (currentFieldIndex < fields.length - 1) {
           return {
-            rowIndex: currentRowIndex,
-            column: `${fields[currentFieldIndex + 1]}-${currentColIndex}`
+            rowIndex,
+            column: `${fields[currentFieldIndex + 1]}-${colIndex}`
           };
         }
 
-        // If at the last field, try to move to the next column
-        if (currentColIndex < (isShowMetrixData && isAdmin ? displayData.length - 1 : fullData[currentRowIndex].attendance.length - 1)) {
+        // Try first field in the next column
+        if (colIndex < displayData.length - 1) {
           return {
-            rowIndex: currentRowIndex,
-            column: `${fields[0]}-${currentColIndex + 1}`
+            rowIndex,
+            column: `${fields[0]}-${colIndex + 1}`
           };
         }
 
-        // If at the last column, try to move to the next row
+        // Try first field in the first column of the next row
         if (rowIndex < filteredData.length - 1) {
           const nextRowId = filteredData[rowIndex + 1].id;
-          const nextRowOriginalIndex = fullData.findIndex(
-            (item) => item.id === nextRowId
-          );
-          return {
-            rowIndex: nextRowOriginalIndex,
-            column: `${fields[0]}-0`
-          };
+          const nextRowIndex = fullData.findIndex(item => item.id === nextRowId);
+
+          if (nextRowIndex >= 0) {
+            return {
+              rowIndex: nextRowIndex,
+              column: `${fields[0]}-0`
+            };
+          }
         }
 
-        // If no more cells, return null
         return null;
       };
 
-      // Find the next cell to focus
-      const nextCell = findNextCell(rowIndex, currentField, colIndex);
+      const nextCell = findNextCell();
 
       if (nextCell) {
-        // Update the editable cell to the next cell
-        setEditableCell(`${nextCell.column}`);
+        // Move to next cell - we'll just set the editableCell here
+        // and let the parent component handle focusing the right row
+        setEditableCell(nextCell.column);
+      } else {
+        setEditableCell(null);
       }
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      // Parse column and index
-      const [currentField, currentColIndex] = column.split("-");
-      const colIndex = parseInt(currentColIndex);
-
-      // Get current edit value for this cell
-      const editKey = `${column}`;
-      const currentValue = editValue[editKey] || currentCellInfo.originalValue;
-
-      // Only update if the value has actually changed
-      const hasValueChanged = currentValue !== currentCellInfo.originalValue;
-
-      if (hasValueChanged) {
-        // Format and update the value via WebSocket
-        const formattedValue = formatValue(currentValue, currentField);
-        onCellUpdate(rowIndex, colIndex, currentField, formattedValue);
-      }
-
-      setEditableCell(null); // Save and exit editing
     } else if (e.key === "Escape") {
       e.preventDefault();
-      setEditableCell(null); // Cancel editing
+      setEditableCell(null);
     }
   };
 
-  // Define the getShiftClass function to handle different shifts (Day/Night)
-  const getShiftClass = (shift) => {
-    if (shift === "D") return "dnShift-Day";
-    if (shift === "N") return "dnShift-Night";
-    if (shift === "A") return "dnShift-AfterNoon";
-    return "";
-  };
-
-  // Determine whether to show metrix display based on user role and isShowMetrixData
+  // Determine whether to show metrix display
   const shouldShowMetrixDisplay = isAdmin && isShowMetrixData;
 
   return (
@@ -403,6 +303,8 @@ const validateOtHR = (value) => {
 
       <div className="scrollable-data-cells" id="body-scrollable">
         {displayData.map((attendance, displayIndex) => {
+          if (!attendance) return null;
+
           // Calculate the original index in the full attendance array
           const originalIndex = displayWeeks === 0
             ? displayIndex
@@ -413,12 +315,10 @@ const validateOtHR = (value) => {
               {["netHR", "otHR", "dnShift"].map((field) => {
                 const editKey = `${field}-${originalIndex}`;
                 const isEditing = editableCell === editKey;
-                const canEditThisCell = canEdit(attendance);
+                const canEditThisCell = canEdit(attendance,isAdmin, isShowMetrixData);
 
-                // Use the value from the appropriate data source
+                // Get the appropriate value to display
                 let cellValue = attendance[field] || (field === "dnShift" ? "" : "0");
-                
-                // Convert dnShift values to uppercase for consistency
                 if (field === "dnShift" && cellValue) {
                   cellValue = cellValue.toUpperCase();
                 }
@@ -427,6 +327,7 @@ const validateOtHR = (value) => {
                   ? (editValue[editKey] ?? cellValue)
                   : cellValue;
 
+                // Build class name
                 let className = "sub-date-cell";
                 if (field === "dnShift") {
                   className += ` ${getShiftClass(cellValue)}`;
@@ -434,10 +335,12 @@ const validateOtHR = (value) => {
                 if (isEditing) {
                   className += " editable";
                 }
-
-                // Only add exceeds-threshold class if admin and in metrix mode
-                className += field === "netHR" && shouldShowMetrixDisplay && attendance.netHRExceeds ? " exceeds-threshold" : "";
-                className += field === "otHR" && shouldShowMetrixDisplay && attendance.otHRExceeds ? " exceeds-threshold" : "";
+                if (field === "netHR" && shouldShowMetrixDisplay && attendance.netHRExceeds) {
+                  className += " exceeds-threshold";
+                }
+                if (field === "otHR" && shouldShowMetrixDisplay && attendance.otHRExceeds) {
+                  className += " exceeds-threshold";
+                }
 
                 return (
                   <div
@@ -450,36 +353,19 @@ const validateOtHR = (value) => {
                         ref={inputRef}
                         type="text"
                         value={displayValue}
-                        onChange={(e) => {
-                          if (field === "dnShift") {
-                            // Handle dnShift field specially
-                            let input = e.target.value.toUpperCase();
-                            if (input.length > 0) {
-                              const lastChar = input.charAt(input.length - 1);
-                              if (['A', 'D', 'N'].includes(lastChar)) {
-                                input = lastChar;
-                              } else {
-                                input = 'D'; // Default to D if invalid input
-                              }
-                            }
-                            handleChange({ target: { value: input } }, rowIndex, field, originalIndex);
-                          } else {
-                            handleChange(e, rowIndex, field, originalIndex);
-                          }
-                        }}
-                        onKeyDown={(e) =>
-                          onKeyDown(e, rowIndex, `${field}-${originalIndex}`, { field, index: originalIndex, originalValue: cellValue })
-                        }
+                        onChange={(e) => handleChange(e, field, originalIndex)}
+                        onKeyDown={(e) => onKeyDown(e, `${field}-${originalIndex}`)}
                         onBlur={() => {
-                          if (field === "dnShift" && (!displayValue || !['A', 'D', 'N'].includes(displayValue))) {
-                            handleChange({ target: { value: 'D' } }, rowIndex, field, originalIndex);
+                          // Handle special case for dnShift
+                          if (field === "dnShift" && (!displayValue || !['E', 'D', 'N'].includes(displayValue))) {
+                            handleChange({ target: { value: 'D' } }, field, originalIndex);
                           }
                         }}
                         autoFocus
                       />
                     ) : (
                       <div className={canEditThisCell ? "editable-cell" : ""}>
-                        {field === "dnShift" && ['D', 'N', 'A'].includes(cellValue?.toUpperCase())
+                        {field === "dnShift" && ['D', 'N', 'E'].includes(cellValue?.toUpperCase())
                           ? cellValue.charAt(0).toUpperCase()
                           : field === "dnShift" ? "" : cellValue}
                       </div>

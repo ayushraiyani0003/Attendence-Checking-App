@@ -6,15 +6,11 @@ import { AuthContext } from "../../context/AuthContext";
 import { useWebSocket } from "../../hooks/useWebSocket";  // Use WebSocket hook
 import { useUsers } from "../../hooks/userList";
 
-function AttendanceHeader({ columns, onSort, sortConfig, handleLock, handleUnlock, popupOpen, setPopupOpen, displayWeeks, isShowMetrixData, lockUnlock, attDateStart, attDateEnd  }) {
-    const { userRole, groupName } = useContext(AuthContext); // Access user role and group from context
+function AttendanceHeader({ columns, isAdmin, onSort, sortConfig, handleLock, handleUnlock, popupOpen, setPopupOpen, displayWeeks, isShowMetrixData, lockUnlock, attDateStart, attDateEnd  }) {
     const { users } = useUsers();  // Fetch reporting groups using the useSettings hook
     const [selectedDate, setSelectedDate] = useState(null);
     const [popupPosition, setPopupPosition] = useState({ left: 0 });
     const headerRef = useRef(null);
-
-    // Check if user is an admin
-    const isAdmin = userRole === "admin";
 
     const renderSortIcon = (key) => {
         if (sortConfig && sortConfig.key === key) {
