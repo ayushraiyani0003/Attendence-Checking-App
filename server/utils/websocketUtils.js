@@ -191,6 +191,9 @@ async function handleAttendanceUpdate(ws, data, broadcastToClients) {
       'reportGroup'
     ];
 
+    console.log(data);
+    
+
     // Check for missing fields
     const missingFields = requiredFields.filter(field =>
       data[field] === undefined || data[field] === null
