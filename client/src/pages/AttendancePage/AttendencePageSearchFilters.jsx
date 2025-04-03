@@ -50,6 +50,7 @@ function AttendencePageSearchFilters({
             <option value="all">All</option>
             <option value="new">New Emp Only</option>
             <option value="diff">Diff</option>
+            <option value="comment">Only Comment</option>
           </select>
             : null}
         </div>

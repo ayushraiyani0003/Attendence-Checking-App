@@ -273,7 +273,7 @@ function AttendancePage({ user, monthYear }) {
     }
 
     if (view !== "all") {
-      if (view === "diffsd") {
+      if (view === "diff") {
         // 1. Get all punch codes where netHRDiff or otHRDiff > 0.25
         const punchCodesWithDiff = MetrixDiffData
           .filter(item =>
@@ -289,7 +289,20 @@ function AttendancePage({ user, monthYear }) {
         filteredData = filteredData.filter(item =>
           uniquePunchCodes.includes(item.punchCode)
         );
+      }else if (view === "comment") {
+        // Filter employees who have at least one attendance record with a non-empty comment
+        filteredData = filteredData.filter(item => {
+          // Check if the employee has an attendance array
+          if (item.attendance && Array.isArray(item.attendance)) {
+            // Return true if at least one attendance record has a non-empty comment
+            return item.attendance.some(record => 
+              record.comment && record.comment.trim() !== ""
+            );
+          }
+          return false; // No attendance data or not an array
+        });
       }
+
       else if (view === "new") {
         // Filter employees with punch code "new"
         filteredData = filteredData.filter(item =>

@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import {exceedsThreshold, validateNetHR, validateOtHR, formatValue, getShiftClass, canEdit} from "../../utils/constants"
+import "./DataRow.css";
+import CommentPopup from './CommentPopup'; // Import the new component
 
 function DataRow({
   row, rowIndex, hoveredRow, isAdmin, setHoveredRow, data, onCellUpdate, user, getFilteredData, attendanceData, isShowMetrixData, MetrixDiffData, attDateStart, attDateEnd
@@ -8,6 +10,7 @@ function DataRow({
   const [editValue, setEditValue] = useState({});
   const [showCommentPopup, setShowCommentPopup] = useState(false);
   const inputRef = useRef(null);
+  const rowRef = useRef(null);
   
   // Filter attendance data based on attDateStart and attDateEnd
   const filteredAttendance = React.useMemo(() => {
@@ -306,98 +309,35 @@ function DataRow({
     return row.attendance.some(att => att.comment && att.comment.trim() !== "");
   };
 
+  
+  // Handle closing the comment popup
+  const handleCloseCommentPopup = () => {
+    setShowCommentPopup(false);
+  };
+  
+  // Handle showing comment popup
+  const handleShowCommentPopup = () => {
+    if (hasAnyComments()) {
+      setShowCommentPopup(true);
+    }
+  };
+
   // Determine whether to show metrix display
   const shouldShowMetrixDisplay = isAdmin && isShowMetrixData;
-
-  // Create comment popup content
-  const commentPopupContent = () => {
-    // Collect all comments for this punch code
-    const comments = row.attendance?.filter(att => att.comment && att.comment.trim() !== "") || [];
-    
-    if (comments.length === 0) return null;
-    
-    return (
-      <div className="comment-popup" style={commentPopupStyle}>
-        <div className="comment-popup-header" style={commentPopupHeaderStyle}>
-          <strong>Comments for {row.punchCode}</strong>
-        </div>
-        <div className="comment-popup-content" style={commentPopupContentStyle}>
-          <table style={commentTableStyle}>
-            <thead>
-              <tr>
-                <th style={commentThStyle}>Date</th>
-                <th style={commentThStyle}>Comment</th>
-              </tr>
-            </thead>
-            <tbody>
-              {comments.map((att, index) => (
-                <tr key={index}>
-                  <td style={commentTdStyle}>{att.date}</td>
-                  <td style={commentTdStyle}>{att.comment}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    );
-  };
-
-  // Inline styles for comment popup
-  const commentPopupStyle = {
-    position: 'absolute',
-    top: '100%',
-    left: '0',
-    zIndex: 1000,
-    width: '300px',
-    backgroundColor: 'white',
-    border: '1px solid #ccc',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-    borderRadius: '4px',
-    overflow: 'hidden'
-  };
-
-  const commentPopupHeaderStyle = {
-    padding: '8px 12px',
-    backgroundColor: '#f0f0f0',
-    borderBottom: '1px solid #ccc',
-    textAlign: 'center'
-  };
-
-  const commentPopupContentStyle = {
-    maxHeight: '200px',
-    overflowY: 'auto'
-  };
-
-  const commentTableStyle = {
-    width: '100%',
-    borderCollapse: 'collapse'
-  };
-
-  const commentThStyle = {
-    padding: '8px',
-    backgroundColor: '#f5f5f5',
-    borderBottom: '1px solid #ddd',
-    textAlign: 'left'
-  };
-
-  const commentTdStyle = {
-    padding: '8px',
-    borderBottom: '1px solid #eee'
-  };
-
+  
   return (
     <div
-      className={`data-row ${hoveredRow === rowIndex ? "hovered" : ""} ${hasAnyComments() ? "has-comments" : ""}`}
+      className={`data-row ${hoveredRow === rowIndex ? "hovered" : ""}${hasAnyComments() ? "has-comments" : ""}`}
       onMouseEnter={() => {
         setHoveredRow(rowIndex);
-        setShowCommentPopup(hasAnyComments());
+        handleShowCommentPopup();
       }}
       onMouseLeave={() => {
         setHoveredRow(null);
         setShowCommentPopup(false);
+        // We don't close the popup on mouse leave anymore
       }}
-      style={{ position: 'relative' }}
+      ref={rowRef}
     >
       <div className="fixed-data-cells">
         <div className="data-cell punch-code">{row.punchCode}</div>
@@ -453,7 +393,7 @@ function DataRow({
                   className += " exceeds-threshold";
                 }
                 // Add gray-comment class if this date has a comment
-                if (hasComment) {
+                if (hasComment && field !== "dnShift") {
                   className += " gray-comment";
                 }
 
@@ -505,8 +445,13 @@ function DataRow({
         )}
       </div>
       
-      {/* Comment popup when hovering over a row with comments */}
-      {showCommentPopup && commentPopupContent()}
+      {/* Comment popup displayed at top right of screen with fixed position */}
+      {showCommentPopup && (
+        <CommentPopup 
+          rowData={row} 
+          onClose={handleCloseCommentPopup}
+        />
+      )}
     </div>
   );
 }

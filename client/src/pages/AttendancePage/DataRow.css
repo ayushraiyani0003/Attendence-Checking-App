@@ -137,9 +137,9 @@
   }
 
   .gray-comment {
-    background-color: #f0f0f0;
+    background-color: #e9dffd;
   }
   
   .has-comments {
-    border-left: 3px solid #1890ff;
+    border-left: 5px solid #1890ff;
   }
