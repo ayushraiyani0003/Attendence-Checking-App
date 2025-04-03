@@ -77,91 +77,91 @@ const App = () => {
   // console.log(user);
 
   return (
-    <AuthProvider>
-      {isAuthenticated ? (
-        <div className="flex">
-            <CustomSidebar
-              isOpen={isSidebarOpen}
-              toggleSidebar={toggleSidebar}
-              isAdmin={user?.role === "admin"}
-              userDepartments={user.userReportingGroup}
-              onLogout={handleLogout}
-              pagesRedirect={pageRedirect}
-            />
+    // <AuthProvider>
+    //   {isAuthenticated ? (
+    //     <div className="flex">
+    //         <CustomSidebar
+    //           isOpen={isSidebarOpen}
+    //           toggleSidebar={toggleSidebar}
+    //           isAdmin={user?.role === "admin"}
+    //           userDepartments={user.userReportingGroup}
+    //           onLogout={handleLogout}
+    //           pagesRedirect={pageRedirect}
+    //         />
 
-          <div className="flex-1">
-            <CustomHeader toggleSidebar={toggleSidebar} user={user}
-               onSearch={handleSearchChange} // Pass search change handler
-               onMonthChange={handleMonthChange} // Pass month/year change handler
-            />
-            <Routes>
-              {/* Default page after login (either user or admin based) */}
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute isAuthenticated={isAuthenticated}>
-                    <WebSocketProvider>
-                    <AttendencePage user={user} monthYear={selectedMonthYear}/>
-                    </WebSocketProvider>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute isAuthenticated={isAuthenticated}>
-                      <DashboardPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/employee"
-                element={
-                  <ProtectedRoute isAuthenticated={isAuthenticated}>
-                    <EmployeeProvider>
-                      <EmployeePage />
-                    </EmployeeProvider>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/user-list"
-                element={
-                  <ProtectedRoute isAuthenticated={isAuthenticated}>
-                    <UserListPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/settings"
-                element={
-                  <ProtectedRoute isAuthenticated={isAuthenticated}>
-                    <SettingsPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/upload"
-                element={
-                  <ProtectedRoute isAuthenticated={isAuthenticated}>
-                    <UploadProvider>
-                      <UploadPage />
-                    </UploadProvider>
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </div>
-        </div>
-      ) : (
-        <Routes>
-          <Route path="/login" element={<LogInPage onLogin={login} />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      )}
-    </AuthProvider>
-    // <UnderMaintenancePage />
+    //       <div className="flex-1">
+    //         <CustomHeader toggleSidebar={toggleSidebar} user={user}
+    //            onSearch={handleSearchChange} // Pass search change handler
+    //            onMonthChange={handleMonthChange} // Pass month/year change handler
+    //         />
+    //         <Routes>
+    //           {/* Default page after login (either user or admin based) */}
+    //           <Route
+    //             path="/"
+    //             element={
+    //               <ProtectedRoute isAuthenticated={isAuthenticated}>
+    //                 <WebSocketProvider>
+    //                 <AttendencePage user={user} monthYear={selectedMonthYear}/>
+    //                 </WebSocketProvider>
+    //               </ProtectedRoute>
+    //             }
+    //           />
+    //           <Route
+    //             path="/dashboard"
+    //             element={
+    //               <ProtectedRoute isAuthenticated={isAuthenticated}>
+    //                   <DashboardPage />
+    //               </ProtectedRoute>
+    //             }
+    //           />
+    //           <Route
+    //             path="/employee"
+    //             element={
+    //               <ProtectedRoute isAuthenticated={isAuthenticated}>
+    //                 <EmployeeProvider>
+    //                   <EmployeePage />
+    //                 </EmployeeProvider>
+    //               </ProtectedRoute>
+    //             }
+    //           />
+    //           <Route
+    //             path="/user-list"
+    //             element={
+    //               <ProtectedRoute isAuthenticated={isAuthenticated}>
+    //                 <UserListPage />
+    //               </ProtectedRoute>
+    //             }
+    //           />
+    //           <Route
+    //             path="/settings"
+    //             element={
+    //               <ProtectedRoute isAuthenticated={isAuthenticated}>
+    //                 <SettingsPage />
+    //               </ProtectedRoute>
+    //             }
+    //           />
+    //           <Route
+    //             path="/upload"
+    //             element={
+    //               <ProtectedRoute isAuthenticated={isAuthenticated}>
+    //                 <UploadProvider>
+    //                   <UploadPage />
+    //                 </UploadProvider>
+    //               </ProtectedRoute>
+    //             }
+    //           />
+    //           <Route path="*" element={<Navigate to="/" replace />} />
+    //         </Routes>
+    //       </div>
+    //     </div>
+    //   ) : (
+    //     <Routes>
+    //       <Route path="/login" element={<LogInPage onLogin={login} />} />
+    //       <Route path="*" element={<Navigate to="/login" replace />} />
+    //     </Routes>
+    //   )}
+    // </AuthProvider>
+    <UnderMaintenancePage />
   );
 };
 
