@@ -5,8 +5,8 @@ const { getAllAttendenceDataFromRedis,deleteRedisGroupKeysForSelectedDate } = re
 const {updateAttendanceFromRedisBySystumn} = require("../services/attendenceService")
 
 // Cron job to generate attendance at 12:00 AM every day
-cron.schedule('0 0 0 * * *', () => {
-  // console.log('Generating daily attendance...');
+cron.schedule('0 30 0 * * *', () => {
+  console.log('Generating daily attendance...');
   try {
     generateDailyAttendance();
   } catch (error) {
@@ -21,7 +21,7 @@ cron.schedule('0 0 0 * * *', () => {
 });
 
 // make a conns sedual for run the all attndence update as redis one in mysql. all attendence are update and update all status as lock status
-cron.schedule('00 00 20 * * *', async () => {
+cron.schedule('00 30 14 * * *', async () => {
   try {
     const allDates = [];
     const allGroups = [];
