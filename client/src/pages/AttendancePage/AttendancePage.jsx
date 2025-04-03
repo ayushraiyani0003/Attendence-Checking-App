@@ -467,7 +467,7 @@ function AttendancePage({ user, monthYear }) {
         <p style={{
           margin: 0,
           fontSize: '14px'
-        }}>Services will be back soon at 1:30 PM.</p>
+        }}>Services will be back as soon as possible.</p>
       </div>
     );
   }
