@@ -165,13 +165,13 @@ function AttendancePage({ user, monthYear }) {
           setAttendanceData((prevData) =>
             prevData.map((row) => ({
               ...row,
-              attendance: row.attendance.map(att => 
+              attendance: row.attendance.map(att =>
                 att.date === data.date
-                  ? { 
-                      ...att, 
-                      isLocked: data.status === "locked",
-                      lock_status: data.status // Add lock_status for DataRow component
-                    }
+                  ? {
+                    ...att,
+                    isLocked: data.status === "locked",
+                    lock_status: data.status // Add lock_status for DataRow component
+                  }
                   : att
               )
             }))
@@ -205,58 +205,58 @@ function AttendancePage({ user, monthYear }) {
   }, [ws, user]);
 
   // Handle Cell Data Update
- // Handle Cell Data Update
-const handleCellDataUpdate = (rowIndex, date, field, value) => {
-  if (rowIndex < 0 || rowIndex >= attendanceData.length) {
-    console.error("Invalid rowIndex:", rowIndex);
-    return;
-  }
-  
-  const updatedEmployee = { ...attendanceData[rowIndex] };
-  
-  // Find the attendance entry with the matching date
-  const columnIndex = updatedEmployee.attendance.findIndex(att => att.date === date);
-  
-  // Make sure the attendance entry with the given date exists
-  if (columnIndex === -1 || !updatedEmployee.attendance) {
-    console.error("Invalid date or missing attendance data:", date);
-    return;
-  }
-  
-  const originalValue = updatedEmployee.attendance[columnIndex][field];
+  // Handle Cell Data Update
+  const handleCellDataUpdate = (rowIndex, date, field, value) => {
+    if (rowIndex < 0 || rowIndex >= attendanceData.length) {
+      console.error("Invalid rowIndex:", rowIndex);
+      return;
+    }
 
-  // Only send update if the value has actually changed
-  if (originalValue !== value) {
-    // Prepare minimal payload with only necessary information
-    const updatePayload = {
-      action: "updateAttendance",
-      employeeId: updatedEmployee.id,
-      punchCode: updatedEmployee.punchCode,
-      user: user,
-      reportGroup: updatedEmployee.reporting_group,
-      editDate: date, // Use date directly instead of accessing by columnIndex
-      field: field === 'dnShift' ? 'shift_type' : field, // Specific field being updated
-      newValue: value,
-      oldValue: originalValue
-    };
+    const updatedEmployee = { ...attendanceData[rowIndex] };
 
-    // Update local state
-    updatedEmployee.attendance[columnIndex][field] = value;
+    // Find the attendance entry with the matching date
+    const columnIndex = updatedEmployee.attendance.findIndex(att => att.date === date);
 
-    // Send minimal update via WebSocket
-    send(updatePayload);
+    // Make sure the attendance entry with the given date exists
+    if (columnIndex === -1 || !updatedEmployee.attendance) {
+      console.error("Invalid date or missing attendance data:", date);
+      return;
+    }
 
-    // Set has changes to true
-    setHasChanges(true);
+    const originalValue = updatedEmployee.attendance[columnIndex][field];
 
-    // Update the local state
-    setAttendanceData(prevData =>
-      prevData.map((employee, index) =>
-        index === rowIndex ? updatedEmployee : employee
-      )
-    );
-  }
-};
+    // Only send update if the value has actually changed
+    if (originalValue !== value) {
+      // Prepare minimal payload with only necessary information
+      const updatePayload = {
+        action: "updateAttendance",
+        employeeId: updatedEmployee.id,
+        punchCode: updatedEmployee.punchCode,
+        user: user,
+        reportGroup: updatedEmployee.reporting_group,
+        editDate: date, // Use date directly instead of accessing by columnIndex
+        field: field === 'dnShift' ? 'shift_type' : field, // Specific field being updated
+        newValue: value,
+        oldValue: originalValue
+      };
+
+      // Update local state
+      updatedEmployee.attendance[columnIndex][field] = value;
+
+      // Send minimal update via WebSocket
+      send(updatePayload);
+
+      // Set has changes to true
+      setHasChanges(true);
+
+      // Update the local state
+      setAttendanceData(prevData =>
+        prevData.map((employee, index) =>
+          index === rowIndex ? updatedEmployee : employee
+        )
+      );
+    }
+  };
   // Modify your getFilteredData function to prevent state updates during rendering
   const getFilteredData = useCallback(() => {
     let filteredData = [...attendanceData];
@@ -445,7 +445,32 @@ const handleCellDataUpdate = (rowIndex, date, field, value) => {
       </div>
     );
   }
-
+  if (isWebSocketOpen === false) {
+    return (
+      <div style={{
+        position: 'fixed',
+        top: '20px',
+        right: '20px',
+        backgroundColor: '#ff4d4f',
+        color: 'white',
+        padding: '16px',
+        borderRadius: '4px',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+        zIndex: 9999,
+        maxWidth: '350px',
+        fontFamily: 'Arial, sans-serif'
+      }}>
+        <h3 style={{
+          margin: '0 0 8px 0',
+          fontSize: '18px'
+        }}>Server Disconnected</h3>
+        <p style={{
+          margin: 0,
+          fontSize: '14px'
+        }}>Services will be back soon at 1:30 PM.</p>
+      </div>
+    );
+  }
   return (
     <div className="attendance-page">
       <div className="attendance-container">
@@ -500,7 +525,7 @@ const handleCellDataUpdate = (rowIndex, date, field, value) => {
               {filteredData.map((row) => {
                 // Find the actual index in the attendanceData array
                 const rowIndex = attendanceData.findIndex((item) => item.id === row.id);
-                
+
                 return (
                   <DataRow
                     key={row.id}
