@@ -4,12 +4,12 @@ const API_URL = process.env.REACT_APP_API_URL;
 
 export const getEmployees = async () => {
   const response = await axios.get(`${API_URL}/employees`);
-  console.log("response", response);
+  // console.log("response", response);
   return response.data.employees;
 };
 
 export const addEmployee = async (employeeData) => {
-  console.log("employe data services : " + employeeData);
+  // console.log("employe data services : " + employeeData);
 
   const response = await axios.post(`${API_URL}/employees`, employeeData);
   return response.data.employee;

@@ -4,9 +4,9 @@ const API_URL = process.env.REACT_APP_API_URL;
 // Get all users
 export const getAllUsers = async () => {
   try {
-    console.log('Fetching users from:', `${API_URL}/users`);
+    // console.log('Fetching users from:', `${API_URL}/users`);
     const response = await axios.get(`${API_URL}/users`);
-    console.log('Users response:', response.data); // No need to specify '/users' as it's already set in baseURL
+    // console.log('Users response:', response.data); // No need to specify '/users' as it's already set in baseURL
     return response.data;  // Assuming the response is an array of users
   } catch (error) {
     throw new Error(error.response?.data?.message || error.message);
@@ -16,7 +16,7 @@ export const getAllUsers = async () => {
 // Create a new user
 export const createUser = async (userData) => {
   try {
-    console.log("userData", userData);
+    // console.log("userData", userData);
     const response = await axios.post(`${API_URL}/users/create`, userData); // Post request to create a user
     return response.data;
   } catch (error) {

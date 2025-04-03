@@ -24,7 +24,7 @@ function LockUnlockPopup({
         }
     }, [isOpen]);
 
-    console.log(currentlyLockUnlock);
+    // console.log(currentlyLockUnlock);
 
 
     // Add the event listener when the popup is open
@@ -103,8 +103,8 @@ const userOptions = usersRequiringApproval
             });
         });
         
-        console.log(user);
-        console.log("formattedSelectedDate: " + formattedSelectedDate);
+        // console.log(user);
+        // console.log("formattedSelectedDate: " + formattedSelectedDate);
         
         // For display, join multiple groups with commas
         const displayGroups = Array.isArray(user.reporting_group) 

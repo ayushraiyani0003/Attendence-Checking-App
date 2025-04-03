@@ -7,17 +7,17 @@ const WebSocketProvider = ({ children }) => {
   const [ws, setWs] = useState(null);
 
   useEffect(() => {
-    const webSocket = new WebSocket(`wss://${API_URL}`); // Make sure this is correct URL
+    const webSocket = new WebSocket(`ws://${API_URL}`); // Make sure this is correct URL
     setWs(webSocket);
 
     // Handle WebSocket open event
     webSocket.onopen = () => {
-      console.log("WebSocket connection established.");
+      // console.log("WebSocket connection established.");
     };
 
     // Handle WebSocket message event
     webSocket.onmessage = (message) => {
-      console.log("Received WebSocket message:", message);
+      // console.log("Received WebSocket message:", message);
     };
 
     // Handle WebSocket error event
@@ -27,7 +27,7 @@ const WebSocketProvider = ({ children }) => {
 
     // Handle WebSocket close event
     webSocket.onclose = () => {
-      console.log("WebSocket connection closed.");
+      // console.log("WebSocket connection closed.");
     };
 
     // Cleanup WebSocket connection on component unmount

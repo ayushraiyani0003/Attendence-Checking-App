@@ -128,7 +128,7 @@ export const useSettings = () => {
 
   // Save all settings to the server
   const saveSettings = async () => {
-    console.log('Saving settings:', { departments, designations });
+    // console.log('Saving settings:', { departments, designations });
     try {
       setLoading(true);
       setError(null);

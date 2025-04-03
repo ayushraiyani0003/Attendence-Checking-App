@@ -34,7 +34,7 @@ export const EmployeeProvider = ({ children }) => {
 
   const addNewEmployee = async (employeeData) => {
     try {
-      console.log(employeeData);
+      // console.log(employeeData);
       const newEmployee = await createEmployee(employeeData);
       setEmployees([...employees, newEmployee]);
 

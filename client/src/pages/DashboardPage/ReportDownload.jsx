@@ -9,7 +9,7 @@ const ReportDownload = () => {
 
   const handleDownload = (reportType) => {
     // Implement the download logic here
-    console.log(`Downloading ${reportType} report with file format: ${isSeparated ? 'Separated' : 'Zipped'}`);
+    // console.log(`Downloading ${reportType} report with file format: ${isSeparated ? 'Separated' : 'Zipped'}`);
   };
 
   return (
