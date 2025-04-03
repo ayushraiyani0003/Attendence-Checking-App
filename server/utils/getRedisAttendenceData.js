@@ -93,7 +93,7 @@ async function updateRedisAttendanceData(updateData) {
       console.log(`Updated ${mappedField} to:`, attendanceRecords[employeeRecordIndex][mappedField]);
       
       // Add metadata
-      attendanceRecords[employeeRecordIndex].lastUpdatedBy = updateData.user?.name || 'System';
+      attendanceRecords[employeeRecordIndex].lastUpdatedBy = updateData.name || 'System';
       attendanceRecords[employeeRecordIndex].lastUpdatedAt = new Date().toISOString();
       
       // Store the updated record back in Redis
