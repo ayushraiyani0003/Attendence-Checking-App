@@ -143,6 +143,15 @@
   .has-comments {
     border-left: 5px solid #1890ff;
   }
+  .bg-red-100{
+    background-color: #f9d3d4;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #353535;
+  }
+  .total.sub-disply-total{
+    padding: 7px 8px;
+  }
 .hoveredhas-comments, .data-row.hoveredhas-comments>.fixed-data-cells>div{
   background-color: #f0f7ff;
 }

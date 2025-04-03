@@ -19,6 +19,7 @@ function AttendancePage({ user, monthYear }) {
   const [attendanceData, setAttendanceData] = useState([]); // For storing attendance data
   const [lockStatusData, setLockStatusData] = useState([]); // For storing lock status data
   const [MetrixDiffData, setMetrixDiffData] = useState([]); // For storing lock status data
+  const [TotalDiffData, setTotalDiffData] = useState([]); // For storing lock status data
   const [isWebSocketOpen, setIsWebSocketOpen] = useState(false); // WebSocket open state
   const [showMetrics, setShowMetrics] = useState(true); // Default to showing metrics
   const [popupOpen, setPopupOpen] = useState(false);
@@ -102,6 +103,8 @@ function AttendancePage({ user, monthYear }) {
           setAttendanceData(data.attendance);
           setLockStatusData(data.lockStatus);
           setMetrixDiffData(data.MetrixAtteDiffrence || []);
+          setTotalDiffData(data.totalTimeDiff || []);
+
 
           // Check if any date has unlocked status
           const hasUnlockedDate = data.lockStatus?.some(item => item.status === 'unlocked');
@@ -555,6 +558,7 @@ function AttendancePage({ user, monthYear }) {
                     attDateStart={dateRange[0]}
                     attDateEnd={dateRange[1]}
                     isAdmin={isAdmin}
+                    TotalDiffData={TotalDiffData}
                   />
                 );
               })}

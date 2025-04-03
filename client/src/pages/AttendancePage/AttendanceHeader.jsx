@@ -115,13 +115,16 @@ function AttendanceHeader({ columns, isAdmin, onSort, sortConfig, handleLock, ha
                             <div className="attendance-header-total-title-container">
                                 <span>Total</span>
                                 <span>Diff</span>
+                                <span>Counts</span>
                             </div>
                             <div className="total-data-header">
                                 <div className="total-sub-header-cell">Net HR</div>
                                 <div className="total-sub-header-cell">OT HR</div>
-                                <div className="total-sub-header-cell">N Count</div>
                                 <div className="total-sub-header-cell">Net Diff</div>
                                 <div className="total-sub-header-cell">OT Diff</div>
+                                <div className="total-sub-header-cell">N Count</div>
+                                <div className="total-sub-header-cell">E Count</div>
+                                <div className="total-sub-header-cell">Site Count</div>
                             </div>
                             <div />
                         </div>

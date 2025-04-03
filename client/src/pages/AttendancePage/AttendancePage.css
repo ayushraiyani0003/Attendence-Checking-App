@@ -335,7 +335,7 @@
   background-color: white;
 }
 .total.sub-disply-total{
-  width: 52px;
+  width: 70px;
 }
 
 /* Fixed data cell widths */
@@ -405,7 +405,7 @@
 }
 .Disply-total-sub-data-cell{
   flex: 1;
-  gap: 28px;
+  gap: 12px;
   text-align: center;
   font-size: 14px;
   background-color: white;
@@ -442,7 +442,7 @@
   background-color: transparent;
   font-size: 14px;
   text-align: center;
-  padding: 10px 15px;
+  padding: 0px 15px;
   margin: 0;
   outline: none;
   box-sizing: border-box;

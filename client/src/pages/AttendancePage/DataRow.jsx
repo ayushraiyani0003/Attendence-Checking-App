@@ -1,17 +1,27 @@
 import React, { useState, useEffect, useRef } from "react";
-import {exceedsThreshold, validateNetHR, validateOtHR, formatValue, getShiftClass, canEdit} from "../../utils/constants"
+import { exceedsThreshold, validateNetHR, validateOtHR, formatValue, getShiftClass, canEdit } from "../../utils/constants"
 import "./DataRow.css";
 import CommentPopup from './CommentPopup'; // Import the new component
 
 function DataRow({
-  row, rowIndex, hoveredRow, isAdmin, setHoveredRow, data, onCellUpdate, user, getFilteredData, attendanceData, isShowMetrixData, MetrixDiffData, attDateStart, attDateEnd
+  row, rowIndex, hoveredRow, isAdmin, setHoveredRow, data, onCellUpdate, user, getFilteredData, attendanceData, isShowMetrixData, MetrixDiffData, attDateStart, attDateEnd, TotalDiffData
 }) {
   const [editableCell, setEditableCell] = useState(null);
   const [editValue, setEditValue] = useState({});
+  const [netDiffValue, setNetDiffValue] = useState({});
+  const [otDiffValue, setOtDiffValue] = useState({});
   const [showCommentPopup, setShowCommentPopup] = useState(false);
+
+  // Additional state for totals
+  const [totalNetHR, setTotalNetHR] = useState(0);
+  const [totalOtHR, setTotalOtHR] = useState(0);
+  const [nightShiftCount, setNightShiftCount] = useState(0);
+  const [eveningShiftCount, setEveningShiftCount] = useState(0);
+  const [siteCommentCount, setSiteCommentCount] = useState(0);
+
   const inputRef = useRef(null);
   const rowRef = useRef(null);
-  
+
   // Filter attendance data based on attDateStart and attDateEnd
   const filteredAttendance = React.useMemo(() => {
     if (!row.attendance) return [];
@@ -84,6 +94,67 @@ function DataRow({
     return displayData;
   }, [filteredAttendance, isShowMetrixData, isAdmin, row.punchCode, MetrixDiffData]);
 
+  // Calculate totals whenever displayData changes
+  useEffect(() => {
+    if (!displayData || displayData.length === 0) {
+      setTotalNetHR(0);
+      setTotalOtHR(0);
+      setNightShiftCount(0);
+      setEveningShiftCount(0);
+      setSiteCommentCount(0);
+      return;
+    }
+
+    // Calculate total network hours and overtime hours
+    let netHRSum = 0;
+    let otHRSum = 0;
+    let nightCount = 0;
+    let eveningCount = 0;
+    let siteCount = 0;
+
+    displayData.forEach(att => {
+      // Sum up network hours
+      if (att.netHR) {
+        const netHRValue = parseFloat(att.netHR);
+        if (!isNaN(netHRValue)) {
+          netHRSum += netHRValue;
+        }
+      }
+
+      // Sum up overtime hours
+      if (att.otHR) {
+        const otHRValue = parseFloat(att.otHR);
+        if (!isNaN(otHRValue)) {
+          otHRSum += otHRValue;
+        }
+      }
+
+      // Count night shifts
+      if (att.dnShift && att.dnShift.toUpperCase() === 'N') {
+        nightCount++;
+      }
+
+      // Count evening shifts
+      if (att.dnShift && att.dnShift.toUpperCase() === 'E') {
+        eveningCount++;
+      }
+
+      // Count site comments
+      if (att.comment &&
+        att.comment.trim().toLowerCase().startsWith('site')) {
+        siteCount++;
+      }
+    });
+
+    // Update state with calculated totals
+    setTotalNetHR(netHRSum);
+    setTotalOtHR(otHRSum);
+    setNightShiftCount(nightCount);
+    setEveningShiftCount(eveningCount);
+    setSiteCommentCount(siteCount);
+
+  }, [displayData]);
+
   // Handle clicks outside the input
   useEffect(() => {
     if (!editableCell) return;
@@ -146,16 +217,16 @@ function DataRow({
     if (!attendance || !attendance.date) return;
 
     const date = attendance.date;
-    
+
     // Create a detailed prompt message
     const promptMessage = `Add comment for: ${date}\nEmployee: ${row.name}\nPunch Code: ${row.punchCode}\n\nCurrent comment: ${attendance.comment || "None"}\nEnter new comment:`;
-    
+
     // Show prompt to add/edit comment
     const commentText = window.prompt(promptMessage, attendance.comment || "");
-    
+
     // If user cancels, return without updating
     if (commentText === null) return;
-    
+
     // Update comment via parent component's onCellUpdate function
     onCellUpdate(rowIndex, date, "comment", commentText.trim());
   };
@@ -309,12 +380,12 @@ function DataRow({
     return row.attendance.some(att => att.comment && att.comment.trim() !== "");
   };
 
-  
+
   // Handle closing the comment popup
   const handleCloseCommentPopup = () => {
     setShowCommentPopup(false);
   };
-  
+
   // Handle showing comment popup
   const handleShowCommentPopup = () => {
     if (hasAnyComments()) {
@@ -322,9 +393,37 @@ function DataRow({
     }
   };
 
+  // Process the difference data when it changes
+  useEffect(() => {
+    if (TotalDiffData) {
+      // Initialize empty objects
+      const netDiffs = {};
+      const otDiffs = {};
+
+      // Process each punch code in the totalDiffData
+      Object.keys(TotalDiffData).forEach(punchCode => {
+        netDiffs[punchCode] = TotalDiffData[punchCode].netHRDiff;
+        otDiffs[punchCode] = TotalDiffData[punchCode].otHRDiff;
+      });
+
+      // Update state with the processed data
+      setNetDiffValue(netDiffs);
+      setOtDiffValue(otDiffs);
+    }
+  }, [TotalDiffData]);
+
+  // Function to determine cell background color based on difference
+  const getDiffColor = (value) => {
+    if (!value) return '';
+    const numValue = parseFloat(value);
+    if (numValue > 0) return 'bg-red-100'; // Positive difference (more in attendance than metrics)
+    if (numValue < 0) return 'bg-green-100'; // Negative difference (less in attendance than metrics)
+    return ''; // No difference
+  };
+
   // Determine whether to show metrix display
   const shouldShowMetrixDisplay = isAdmin && isShowMetrixData;
-  
+
   return (
     <div
       className={`data-row ${hoveredRow === rowIndex ? "hovered" : ""}${hasAnyComments() ? "has-comments" : ""}`}
@@ -349,16 +448,16 @@ function DataRow({
       <div className="scrollable-data-cells" id="body-scrollable">
         {displayData.map((attendance, displayIndex) => {
           if (!attendance) return null;
-          
+
           // Calculate the original index in the full attendance array
           const originalIndex = displayIndex;
-          
+
           // Check if this date has a comment
           const hasComment = attendance.comment && attendance.comment.trim() !== "";
 
           return (
-            <div 
-              key={displayIndex} 
+            <div
+              key={displayIndex}
               className="date-cell"
               onDoubleClick={() => handleAddComment(attendance, originalIndex)}
               title={hasComment ? `Comment: ${attendance.comment}` : "Double-click to add comment"}
@@ -435,20 +534,28 @@ function DataRow({
         {(!isAdmin || (isAdmin && isShowMetrixData)) && (
           <div className="total-data-cell">
             <div className="Disply-total-sub-data-cell">
-              <div className="total sub-disply-total">N00</div>
-              <div className="total sub-disply-total">O00</div>
-              <div className="total sub-disply-total">N0</div>
-              <div className="total sub-disply-total">Ne.00</div>
-              <div className="total sub-disply-total">OT.00</div>
+              <div className="total sub-disply-total">{totalNetHR.toFixed(2)}</div>
+              <div className="total sub-disply-total">{totalOtHR.toFixed(2)}</div>
+              <div className={`total sub-disply-total ${netDiffValue[row.punchCode] && parseFloat(netDiffValue[row.punchCode]) !== 0 ? 'bg-red-100' : ''}`}>
+                {netDiffValue[row.punchCode] !== undefined ?
+                  netDiffValue[row.punchCode].toFixed(2) : '0.00'}
+              </div>
+              <div className={`total sub-disply-total ${otDiffValue[row.punchCode] && parseFloat(otDiffValue[row.punchCode]) !== 0 ? 'bg-red-100' : ''}`}>
+                {otDiffValue[row.punchCode] !== undefined ?
+                  otDiffValue[row.punchCode].toFixed(2) : '0.00'}
+              </div>
+              <div className="total sub-disply-total">{nightShiftCount}</div>
+              <div className="total sub-disply-total">{eveningShiftCount}</div>
+              <div className="total sub-disply-total">{siteCommentCount}</div>
             </div>
           </div>
         )}
       </div>
-      
+
       {/* Comment popup displayed at top right of screen with fixed position */}
       {showCommentPopup && (
-        <CommentPopup 
-          rowData={row} 
+        <CommentPopup
+          rowData={row}
           onClose={handleCloseCommentPopup}
         />
       )}
