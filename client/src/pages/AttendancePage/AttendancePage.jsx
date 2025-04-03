@@ -1,448 +1,52 @@
 // components/AttendancePage/AttendancePage.jsx
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React from "react";
 import "./AttendancePage.css";
 import AttendanceHeader from "./AttendanceHeader";
 import AttendencePageSearchFilters from "./AttendencePageSearchFilters";
 import DataRow from "./DataRow";
-import { useWebSocket } from "../../hooks/useWebSocket"; // Import WebSocket hook
-import { getYesterday } from "../../utils/constants";
+import { useWebSocket } from "../../hooks/useWebSocket";
+import { useAttendance } from "../../hooks/useAttendance";
 
 function AttendancePage({ user, monthYear }) {
-  const [hoveredRow, setHoveredRow] = useState(null);
-  const [filterText, setFilterText] = useState("");
-  const [sortConfig, setSortConfig] = useState({
-    key: null,
-    direction: "ascending",
-  });
-  const [view, setView] = useState("all"); // 'all', 'day', 'night'
-  const [hasChanges, setHasChanges] = useState(false); // Track if there are unsaved changes
-  const [attendanceData, setAttendanceData] = useState([]); // For storing attendance data
-  const [lockStatusData, setLockStatusData] = useState([]); // For storing lock status data
-  const [MetrixDiffData, setMetrixDiffData] = useState([]); // For storing lock status data
-  const [TotalDiffData, setTotalDiffData] = useState([]); // For storing lock status data
-  const [isWebSocketOpen, setIsWebSocketOpen] = useState(false); // WebSocket open state
-  const [showMetrics, setShowMetrics] = useState(true); // Default to showing metrics
-  const [popupOpen, setPopupOpen] = useState(false);
-  const [nodata, setNodata] = useState(false);
-  // State for the date range
-  const [dateRange, setDateRange] = useState([getYesterday(), getYesterday()]);
-  // Add displayWeeks state which is needed by DataRow
-
-  const [columns, setColumns] = useState([
-    { id: 'punchCode', label: 'Punch Code', isVisible: true },
-    { id: 'name', label: 'Name', isVisible: true },
-    { id: 'designation', label: 'Designation', isVisible: true },
-    { id: 'department', label: 'Department', isVisible: false },
-  ]);
-
-  const { ws, send } = useWebSocket(); // WebSocket hook to send messages
-
-  const isAdmin = user.role === "admin"; // Determine if user is admin
-
-  const toggleColumn = (columnId) => {
-    setColumns(columns.map(column =>
-      column.id === columnId
-        ? { ...column, isVisible: !column.isVisible }
-        : column
-    ));
-  };
-
-  const fixedColumns = [
-    { key: "punchCode", label: "Punch Code" },
-    { key: "name", label: "Name" },
-    { key: "designation", label: "Designation" },
-    { key: "department", label: "Department" },
-  ];
-
-  // Fetch initial attendance data when component mounts
-  useEffect(() => {
-    if (ws && isWebSocketOpen) {
-      send({
-        action: "getAttendance",
-        group: user.userReportingGroup,
-        month: monthYear,
-        user: user
-      });
-    }
-  }, [user.userReportingGroup, monthYear, isWebSocketOpen, ws, send]);
-
-  // Handler to reset everything
-  const handleReset = () => {
-    // Reset to yesterday's date
-    setDateRange([getYesterday(), getYesterday()]);
-  };
-
-  useEffect(() => {
-    if (!ws) return;
-
-    // When the WebSocket connection is established
-    const handleOpen = () => {
-      setIsWebSocketOpen(true);
-      ws.send(JSON.stringify({
-        action: 'setUserInfo',
-        user: {
-          userRole: user.role,
-          userReportingGroup: user.userReportingGroup,
-          name: user.name,
-          id: user.id
-        }
-      }));
-    };
-
-    // When the WebSocket connection is closed
-    const handleClose = () => {
-      setIsWebSocketOpen(false);
-    };
-
-    const handleMessage = (event) => {
-      const data = JSON.parse(event.data);
-
-      // Handle different types of broadcast messages
-      switch (data.action || data.type) {
-        case "attendanceData":
-          setAttendanceData(data.attendance);
-          setLockStatusData(data.lockStatus);
-          setMetrixDiffData(data.MetrixAtteDiffrence || []);
-          setTotalDiffData(data.totalTimeDiff || []);
-
-
-          // Check if any date has unlocked status
-          const hasUnlockedDate = data.lockStatus?.some(item => item.status === 'unlocked');
-          setHasChanges(hasUnlockedDate);
-          break;
-
-        case "attendanceUpdated":
-          // Update specific employee's attendance
-          setAttendanceData((prevData) =>
-            prevData.map((row) =>
-              row.id === data.updateDetails.employeeId
-                ? {
-                  ...row,
-                  attendance: row.attendance.map(att =>
-                    att.date === data.updateDetails.editDate
-                      ? {
-                        ...att,
-                        [data.updateDetails.field]: data.updateDetails.newValue
-                      }
-                      : att
-                  )
-                }
-                : row
-            )
-          );
-          break;
-
-        case "lockUnlockStatusChanged":
-          // Handle lock/unlock status changes
-          if (data.status === 'unlocked') {
-            setAttendanceData((prevData) =>
-              prevData.map((row) => ({
-                ...row,
-                attendance: row.attendance.map(att => ({
-                  ...att,
-                  isLocked: false,
-                  lock_status: 'unlocked' // Add lock_status for DataRow component
-                }))
-              }))
-            );
-            setHasChanges(true);
-          } else if (data.status === 'locked') {
-            setAttendanceData((prevData) =>
-              prevData.map((row) => ({
-                ...row,
-                attendance: row.attendance.map(att => ({
-                  ...att,
-                  isLocked: true,
-                  lock_status: 'locked' // Add lock_status for DataRow component
-                }))
-              }))
-            );
-            setHasChanges(false);
-          }
-          break;
-
-        case "attendanceLockStatus":
-          setAttendanceData((prevData) =>
-            prevData.map((row) => ({
-              ...row,
-              attendance: row.attendance.map(att =>
-                att.date === data.date
-                  ? {
-                    ...att,
-                    isLocked: data.status === "locked",
-                    lock_status: data.status // Add lock_status for DataRow component
-                  }
-                  : att
-              )
-            }))
-          );
-          break;
-
-        default:
-          console.warn("Unhandled WebSocket message type:", data);
-      }
-    };
-
-    const handleError = (error) => {
-      console.error("WebSocket error:", error);
-    };
-
-    // Assign event handlers
-    ws.onopen = handleOpen;
-    ws.onclose = handleClose;
-    ws.onmessage = handleMessage;
-    ws.onerror = handleError;
-
-    // Cleanup function
-    return () => {
-      if (ws) {
-        ws.onopen = null;
-        ws.onclose = null;
-        ws.onmessage = null;
-        ws.onerror = null;
-      }
-    };
-  }, [ws, user]);
-
-  // Handle Cell Data Update
-  // Handle Cell Data Update
-  const handleCellDataUpdate = (rowIndex, date, field, value) => {
-    if (rowIndex < 0 || rowIndex >= attendanceData.length) {
-      console.error("Invalid rowIndex:", rowIndex);
-      return;
-    }
-
-    const updatedEmployee = { ...attendanceData[rowIndex] };
-
-    // Find the attendance entry with the matching date
-    const columnIndex = updatedEmployee.attendance.findIndex(att => att.date === date);
-
-    // Make sure the attendance entry with the given date exists
-    if (columnIndex === -1 || !updatedEmployee.attendance) {
-      console.error("Invalid date or missing attendance data:", date);
-      return;
-    }
-
-    const originalValue = updatedEmployee.attendance[columnIndex][field];
-
-    // Only send update if the value has actually changed
-    if (originalValue !== value) {
-      // Prepare minimal payload with only necessary information
-      const updatePayload = {
-        action: "updateAttendance",
-        employeeId: updatedEmployee.id,
-        punchCode: updatedEmployee.punchCode,
-        user: user,
-        reportGroup: updatedEmployee.reporting_group,
-        editDate: date, // Use date directly instead of accessing by columnIndex
-        field: field === 'dnShift' ? 'shift_type' : field, // Specific field being updated
-        newValue: value,
-        oldValue: originalValue
-      };
-
-      // Update local state
-      updatedEmployee.attendance[columnIndex][field] = value;
-
-      // Send minimal update via WebSocket
-      send(updatePayload);
-
-      // Set has changes to true
-      setHasChanges(true);
-
-      // Update the local state
-      setAttendanceData(prevData =>
-        prevData.map((employee, index) =>
-          index === rowIndex ? updatedEmployee : employee
-        )
-      );
-    }
-  };
-  // Modify your getFilteredData function to prevent state updates during rendering
-  const getFilteredData = useCallback(() => {
-    let filteredData = [...attendanceData];
-    let isEmpty = false;
-
-    if (filterText) {
-      const searchTerm = filterText.toLowerCase();
-      filteredData = filteredData.filter((item) => {
-        const textMatch =
-          item.name?.toLowerCase().includes(searchTerm) ||
-          item.punchCode?.toLowerCase().includes(searchTerm) ||
-          item.department?.toLowerCase().includes(searchTerm) ||
-          item.designation?.toLowerCase().includes(searchTerm);
-
-        return textMatch;
-      });
-    }
-
-    if (view !== "all") {
-      if (view === "diff") {
-        // 1. Get all punch codes where netHRDiff or otHRDiff > 0.25
-        const punchCodesWithDiff = MetrixDiffData
-          .filter(item =>
-            Math.abs(parseFloat(item.netHRDiff)) > 0.25 ||
-            Math.abs(parseFloat(item.otHRDiff)) > 0.25
-          )
-          .map(item => item.punchCode);
-
-        // 2. Remove duplicates (same punch code may appear multiple times)
-        const uniquePunchCodes = [...new Set(punchCodesWithDiff)];
-
-        // 3. Filter employees whose punchCode is in uniquePunchCodes
-        filteredData = filteredData.filter(item =>
-          uniquePunchCodes.includes(item.punchCode)
-        );
-      }else if (view === "comment") {
-        // Filter employees who have at least one attendance record with a non-empty comment
-        filteredData = filteredData.filter(item => {
-          // Check if the employee has an attendance array
-          if (item.attendance && Array.isArray(item.attendance)) {
-            // Return true if at least one attendance record has a non-empty comment
-            return item.attendance.some(record => 
-              record.comment && record.comment.trim() !== ""
-            );
-          }
-          return false; // No attendance data or not an array
-        });
-      }
-
-      else if (view === "new") {
-        // Filter employees with punch code "new"
-        filteredData = filteredData.filter(item =>
-          item.punchCode?.toLowerCase() === "new"
-        );
-      }
-      else {
-        // Filter by shift (original logic)
-        filteredData = filteredData.filter(item =>
-          item.attendance?.some(att =>
-            att.dnShift?.toLowerCase() === view.toLowerCase()
-          )
-        );
-      }
-
-      // Set the isEmpty flag for filtering
-      isEmpty = filteredData.length === 0;
-    }
-
-    if (sortConfig.key) {
-      filteredData.sort((a, b) => {
-        let aValue = a[sortConfig.key];
-        let bValue = b[sortConfig.key];
-
-        if (sortConfig.key.startsWith("attendance.")) {
-          const field = sortConfig.key.split(".")[1];
-          aValue = a.attendance?.[0]?.[field] || "";
-          bValue = b.attendance?.[0]?.[field] || "";
-        }
-
-        if (aValue < bValue) {
-          return sortConfig.direction === "ascending" ? -1 : 1;
-        }
-        if (aValue > bValue) {
-          return sortConfig.direction === "ascending" ? 1 : -1;
-        }
-        return 0;
-      });
-    }
-
-    return { data: filteredData, isEmpty };
-  }, [attendanceData, filterText, view, MetrixDiffData, sortConfig]);
-
-  const handleSort = (key) => {
-    let direction = "ascending";
-    if (sortConfig.key === key && sortConfig.direction === "ascending") {
-      direction = "descending";
-    }
-    setSortConfig({ key, direction });
-  };
-
-  const handleSaveChanges = () => {
-    const savePayload = {
-      action: "saveDataRedisToMysql",
-      monthYear: monthYear,  // The month and year
-      user: user
-    };
-
-    // Send the payload via WebSocket
-    send(savePayload);
-
-    setHasChanges(false);
-  };
-
-  const headerRef = useRef(null);
-  const dataContainerRef = useRef(null);
-
-  useEffect(() => {
-    // Wait for both refs to be populated and data to be loaded
-    const headerWrapper = headerRef.current;
-    const dataContainer = dataContainerRef.current;
-
-    if (!headerWrapper || !dataContainer || !attendanceData.length) return;
-
-    // Scroll handler functions
-    const handleDataScroll = () => {
-      headerWrapper.scrollLeft = dataContainer.scrollLeft;
-    };
-
-    const handleHeaderScroll = () => {
-      dataContainer.scrollLeft = headerWrapper.scrollLeft;
-    };
-
-    // Add the event listeners
-    dataContainer.addEventListener("scroll", handleDataScroll);
-    headerWrapper.addEventListener("scroll", handleHeaderScroll);
-
-    // Cleanup function to remove event listeners
-    return () => {
-      dataContainer.removeEventListener("scroll", handleDataScroll);
-      headerWrapper.removeEventListener("scroll", handleHeaderScroll);
-    };
-  }, [attendanceData]);
-
-  // Use useEffect to update the nodata state
-  useEffect(() => {
-    if (attendanceData.length > 0) {
-      const { isEmpty } = getFilteredData();
-      setNodata(isEmpty);
-    }
-  }, [view, filterText, attendanceData, MetrixDiffData, getFilteredData]);
-
-  const handleLock = (reportingGroup, date) => {
-    // Only proceed if user is Admin
-    if (!isAdmin) return;
-
-    const payload = {
-      action: "lockUnlockStatusToggle",
-      group: reportingGroup,
-      date: date,
-      user: user,
-      status: "locked"
-    };
-
-    // Send the payload via WebSocket
-    send(payload);
-
-    setPopupOpen(false);
-  };
-
-  const handleUnlock = (reportingGroup, date) => {
-    // Only proceed if user is Admin
-    if (!isAdmin) return;
-
-    const payload = {
-      action: "lockUnlockStatusToggle",
-      group: reportingGroup,
-      date: date,
-      user: user,
-      status: "unlocked"
-    };
-
-    // Send the payload via WebSocket
-    send(payload);
-
-    setPopupOpen(false);
-  };
+  const { ws, send } = useWebSocket();
+  
+  const {
+    // States
+    hoveredRow,
+    setHoveredRow,
+    filterText,
+    setFilterText,
+    sortConfig,
+    view,
+    setView,
+    hasChanges,
+    attendanceData,
+    lockStatusData,
+    MetrixDiffData,
+    TotalDiffData,
+    isWebSocketOpen,
+    showMetrics,
+    setShowMetrics,
+    popupOpen,
+    setPopupOpen,
+    nodata,
+    dateRange,
+    setDateRange,
+    columns,
+    isAdmin,
+    headerRef,
+    dataContainerRef,
+    
+    // Functions
+    toggleColumn,
+    fixedColumns,
+    getFilteredData,
+    handleSort,
+    handleSaveChanges,
+    handleCellDataUpdate,
+    handleLock,
+    handleUnlock
+  } = useAttendance(user, monthYear, ws, send);
 
   // Get filtered data without setting state directly
   const { data: filteredData } = getFilteredData();
@@ -458,6 +62,7 @@ function AttendancePage({ user, monthYear }) {
       </div>
     );
   }
+  
   if (isWebSocketOpen === false) {
     return (
       <div style={{
@@ -484,6 +89,7 @@ function AttendancePage({ user, monthYear }) {
       </div>
     );
   }
+  
   return (
     <div className="attendance-page">
       <div className="attendance-container">
