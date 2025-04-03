@@ -84,24 +84,36 @@ const userOptions = usersRequiringApproval
         // Format the date before comparing
         const formattedSelectedDate = formatDate(date);
         
-        // More flexible comparison - normalize values
-        const isLocked = currentlyLockUnlock.some(item => {
-            // Normalize strings for comparison (lowercase both values)
-            const normalizedItemGroup = String(item.reporting_group).toLowerCase();
-            const normalizedUserGroup = String(user.reporting_group).toLowerCase();
-            
-            // Strict date comparison but case-insensitive group comparison
-            return item.date === formattedSelectedDate && 
-                   normalizedItemGroup === normalizedUserGroup &&
-                   item.status === "locked";
+        // Handle multi-group users without changing the return structure
+        const userGroups = Array.isArray(user.reporting_group) 
+            ? user.reporting_group 
+            : [user.reporting_group];
+        
+        // Check if ANY group is unlocked (we want green if any group is unlocked)
+        const isLocked = userGroups.every(group => {
+            return currentlyLockUnlock.some(item => {
+                // Normalize strings for comparison (lowercase both values)
+                const normalizedItemGroup = String(item.reporting_group).toLowerCase();
+                const normalizedUserGroup = String(group).toLowerCase();
+                
+                // Return true if this specific group is locked
+                return item.date === formattedSelectedDate && 
+                    normalizedItemGroup === normalizedUserGroup &&
+                    item.status === "locked";
+            });
         });
         
-        // Log the final result
-        console.log(`User group: ${user.reporting_group}, Date: ${formattedSelectedDate}, Locked: ${isLocked}`);
+        console.log(user);
+        console.log("formattedSelectedDate: " + formattedSelectedDate);
+        
+        // For display, join multiple groups with commas
+        const displayGroups = Array.isArray(user.reporting_group) 
+            ? user.reporting_group.join(', ') 
+            : user.reporting_group;
         
         return {
-            value: user.reporting_group,
-            label: `${user.name} - ${user.reporting_group} ${isLocked ? '🔴' : '🟢'}`,
+            value: user.reporting_group, // Keep original value structure
+            label: `${user.name} - ${displayGroups} ${isLocked ? '🔴' : '🟢'}`,
             isLocked: isLocked
         };
     });
