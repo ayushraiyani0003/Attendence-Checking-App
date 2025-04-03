@@ -281,11 +281,6 @@ async function saveDataRedisToMysql(ws, data, broadcastToClients) {
   const { year, month } = convertMonthToYearMonthFormat(data.monthYear);
 
   try {
-    // Ensure only admin can save data
-    if (data.user.role !== 'admin') {
-      throw new Error('Unauthorized to save attendance data');
-    }
-
     // Fetch attendance data from Redis
     const redisAttendanceData = await getRedisAttendanceData(year, month, data.user.userReportingGroup);
 
