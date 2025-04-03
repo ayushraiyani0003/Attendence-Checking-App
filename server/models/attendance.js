@@ -24,11 +24,11 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
       network_hours: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.FLOAT,
         allowNull: true,
       },
       overtime_hours: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.FLOAT,
         allowNull: true,
       },
       comment: {
