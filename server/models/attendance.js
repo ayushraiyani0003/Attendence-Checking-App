@@ -31,6 +31,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: true,
       },
+      comment: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
     },
     {
       tableName: "Attendance",

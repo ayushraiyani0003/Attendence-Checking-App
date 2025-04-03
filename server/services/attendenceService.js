@@ -1,6 +1,6 @@
 // getEmployeesByGroup.js
 const { Op } = require('sequelize');  // Import Op from sequelize
-const { Employee, Attendance, Audit,AttendanceDateLockStatus } = require('../models'); // Assuming Employee and Attendance models are defined
+const { Employee, Attendance, Audit, AttendanceDateLockStatus } = require('../models'); // Assuming Employee and Attendance models are defined
 
 // Function to get all employees for a selected group
 async function getEmployeesByGroup(groups) {
@@ -56,7 +56,7 @@ async function getEmployeesAttendanceByMonthAndGroup(groups, year, month) {
 
     // Add reporting_group to each attendance record
     const attendanceWithGroups = attendanceData.map(attendance => {
-      const attendanceObj = attendance.toJSON(); // Convert to plain object if using Sequelize
+      const attendanceObj = attendance.get({ plain: true }); // Using get({ plain: true }) instead of toJSON()
       attendanceObj.reporting_group = employeeGroupMap[attendance.employee_id] || null;
       return attendanceObj;
     });
@@ -70,7 +70,7 @@ async function getEmployeesAttendanceByMonthAndGroup(groups, year, month) {
   }
 }
 
-// get all employe details for selected dates from redis for update the data.
+// get all employee details for selected dates from redis for update the data.
 async function updateEmployeesDetailsFromRedis(redisAttendanceData, user) {
   try {
     // Prepare to store audit logs
@@ -103,16 +103,16 @@ async function updateEmployeesDetailsFromRedis(redisAttendanceData, user) {
             table_name: 'Attendance',
             action: existingRecord ? 'UPDATE' : 'CREATE',
             changed_by: user.username, 
-            old_data: existingRecord ? {
+            old_data: existingRecord ? JSON.stringify({
               shift_type: existingRecord.shift_type,
               network_hours: existingRecord.network_hours,
               overtime_hours: existingRecord.overtime_hours
-            } : null,
-            new_data: {
+            }) : null,
+            new_data: JSON.stringify({
               shift_type: redisRecord.shift_type,
               network_hours: redisRecord.network_hours,
               overtime_hours: redisRecord.overtime_hours
-            }
+            })
           };
 
           // Update or create record
@@ -120,7 +120,8 @@ async function updateEmployeesDetailsFromRedis(redisAttendanceData, user) {
             await existingRecord.update({
               shift_type: redisRecord.shift_type,
               network_hours: redisRecord.network_hours,
-              overtime_hours: redisRecord.overtime_hours
+              overtime_hours: redisRecord.overtime_hours,
+              comment: redisRecord.comment || existingRecord.comment // Preserve comment if not provided
             });
           } else {
             await Attendance.create({
@@ -128,7 +129,8 @@ async function updateEmployeesDetailsFromRedis(redisAttendanceData, user) {
               attendance_date: redisRecord.attendance_date,
               shift_type: redisRecord.shift_type,
               network_hours: redisRecord.network_hours,
-              overtime_hours: redisRecord.overtime_hours
+              overtime_hours: redisRecord.overtime_hours,
+              comment: redisRecord.comment || null
             });
           }
 
@@ -179,7 +181,7 @@ async function updateEmployeesDetailsFromRedis(redisAttendanceData, user) {
   }
 }
 
-// data fetch from mysql attendence data only using the redporting_group and date
+// data fetch from mysql attendance data only using the reporting_group and date
 async function getAttendanceSelectedGroupDateMysql(reportingGroups, attendanceDate) {
   try {
     // Ensure reportingGroups is an array
@@ -221,7 +223,8 @@ async function getAttendanceSelectedGroupDateMysql(reportingGroups, attendanceDa
         'attendance_date', 
         'shift_type', 
         'network_hours', 
-        'overtime_hours'
+        'overtime_hours',
+        'comment' // Added comment field
       ]
     });
 
@@ -235,7 +238,7 @@ async function getAttendanceSelectedGroupDateMysql(reportingGroups, attendanceDa
     const transformedRecords = attendanceRecords.map(record => {
       const employee = employeeMap[record.employee_id];
       return {
-        ...record.toJSON(),
+        ...record.get({ plain: true }), // Using get({ plain: true }) instead of toJSON()
         reporting_group: employee ? employee.reporting_group : null,
         employee_name: employee ? employee.name : 'Unknown'
       };
@@ -254,7 +257,7 @@ async function getAttendanceSelectedGroupDateMysql(reportingGroups, attendanceDa
   }
 }
 
-// update the attandence from redis to mysql but only need redis data.
+// update the attendance from redis to mysql but only need redis data.
 async function updateAttendanceFromRedisBySystumn(redisAttendanceData) {
   try {
     // Prepare to store audit logs
@@ -262,10 +265,6 @@ async function updateAttendanceFromRedisBySystumn(redisAttendanceData) {
     const groupsToLock = new Set();
     let totalCheckedRecords = 0;
     let totalUpdatedRecords = 0;
-
-    // Detailed logging of input data
-    // console.log('Total Redis Groups:', redisAttendanceData.length);
-    // console.log('Redis Attendance Data:', JSON.stringify(redisAttendanceData, null, 2));
 
     // Iterate through each group's data in Redis
     for (const redisGroup of redisAttendanceData) {
@@ -278,15 +277,9 @@ async function updateAttendanceFromRedisBySystumn(redisAttendanceData) {
       // Extract attendance records from the Redis group
       const attendanceRecords = redisGroup.attendance;
 
-      // console.log(`Processing Group: ${groupName}, Date: ${attendanceDate}`);
-      // console.log(`Number of Records in this Group: ${attendanceRecords.length}`);
-
       // Process each attendance record
       for (const redisRecord of attendanceRecords) {
         totalCheckedRecords++;
-
-        // Log the current record being processed
-        // console.log('Processing Record:', JSON.stringify(redisRecord, null, 2));
 
         // Ensure redisRecord is an object and has necessary properties
         if (typeof redisRecord !== 'object' || !redisRecord.employee_id) {
@@ -302,16 +295,12 @@ async function updateAttendanceFromRedisBySystumn(redisAttendanceData) {
           } 
         });
 
-        // Log existing record status
-        // console.log('Existing Record:', existingRecord ? 'Found' : 'Not Found');
-
         // Check if the record needs updating (fields comparison)
         const needsUpdate = !existingRecord || 
           (existingRecord.shift_type !== redisRecord.shift_type) || 
           (existingRecord.network_hours !== redisRecord.network_hours) || 
-          (existingRecord.overtime_hours !== redisRecord.overtime_hours);
-
-        // console.log('Needs Update:', needsUpdate);
+          (existingRecord.overtime_hours !== redisRecord.overtime_hours) ||
+          (existingRecord.comment !== redisRecord.comment); // Added comment check
 
         if (needsUpdate) {
           // Prepare audit log
@@ -319,16 +308,18 @@ async function updateAttendanceFromRedisBySystumn(redisAttendanceData) {
             table_name: 'Attendance',
             action: existingRecord ? 'UPDATE' : 'CREATE',
             changed_by: 'system',
-            old_data: existingRecord ? {
+            old_data: existingRecord ? JSON.stringify({
               shift_type: existingRecord.shift_type,
               network_hours: existingRecord.network_hours,
-              overtime_hours: existingRecord.overtime_hours
-            } : null,
-            new_data: {
+              overtime_hours: existingRecord.overtime_hours,
+              comment: existingRecord.comment
+            }) : null,
+            new_data: JSON.stringify({
               shift_type: redisRecord.shift_type,
               network_hours: redisRecord.network_hours,
-              overtime_hours: redisRecord.overtime_hours
-            }
+              overtime_hours: redisRecord.overtime_hours,
+              comment: redisRecord.comment
+            })
           };
 
           // Update or create record in MySQL
@@ -336,7 +327,8 @@ async function updateAttendanceFromRedisBySystumn(redisAttendanceData) {
             await existingRecord.update({
               shift_type: redisRecord.shift_type,
               network_hours: redisRecord.network_hours,
-              overtime_hours: redisRecord.overtime_hours
+              overtime_hours: redisRecord.overtime_hours,
+              comment: redisRecord.comment || existingRecord.comment // Keep existing comment if not provided
             });
           } else {
             await Attendance.create({
@@ -344,7 +336,8 @@ async function updateAttendanceFromRedisBySystumn(redisAttendanceData) {
               attendance_date: attendanceDate,
               shift_type: redisRecord.shift_type,
               network_hours: redisRecord.network_hours,
-              overtime_hours: redisRecord.overtime_hours
+              overtime_hours: redisRecord.overtime_hours,
+              comment: redisRecord.comment || null
             });
           }
 
@@ -377,9 +370,6 @@ async function updateAttendanceFromRedisBySystumn(redisAttendanceData) {
       await Audit.bulkCreate(auditLogs);
     }
 
-    // console.log(`Total Checked Records: ${totalCheckedRecords}`);
-    // console.log(`Total Updated Records: ${totalUpdatedRecords}`);
-
     return { 
       success: true, 
       checkedRecords: totalCheckedRecords,
@@ -395,17 +385,74 @@ async function updateAttendanceFromRedisBySystumn(redisAttendanceData) {
   }
 }
 
-// Add attendance record to MySQL (Attendance Metrics table)
+// Add attendance record to MySQL (Attendance table)
 const addAttendanceToMySQL = async (attendanceData) => {
   try {
-    // Create the attendance record in the database
-    const newAttendance = await Attendance.create(attendanceData);
+    // Ensure required fields are present
+    if (!attendanceData.employee_id || !attendanceData.attendance_date) {
+      return {
+        success: false,
+        error: 'Missing required fields: employee_id and attendance_date are required'
+      };
+    }
+
+    // Check if a record already exists
+    const existingRecord = await Attendance.findOne({
+      where: {
+        employee_id: attendanceData.employee_id,
+        attendance_date: attendanceData.attendance_date
+      }
+    });
+
+    let result;
+    
+    // If record exists, update it
+    if (existingRecord) {
+      await existingRecord.update({
+        shift_type: attendanceData.shift_type || existingRecord.shift_type,
+        network_hours: attendanceData.network_hours || existingRecord.network_hours,
+        overtime_hours: attendanceData.overtime_hours || existingRecord.overtime_hours,
+        comment: attendanceData.comment || existingRecord.comment
+      });
+      result = existingRecord;
+    } else {
+      // Create new record
+      result = await Attendance.create({
+        employee_id: attendanceData.employee_id,
+        attendance_date: attendanceData.attendance_date,
+        shift_type: attendanceData.shift_type || null,
+        network_hours: attendanceData.network_hours || null,
+        overtime_hours: attendanceData.overtime_hours || null,
+        comment: attendanceData.comment || null
+      });
+    }
+
+    // Create audit log
+    await Audit.create({
+      table_name: 'Attendance',
+      action: existingRecord ? 'UPDATE' : 'CREATE',
+      changed_by: attendanceData.user_id || 'system',
+      old_data: existingRecord ? JSON.stringify({
+        shift_type: existingRecord.shift_type,
+        network_hours: existingRecord.network_hours,
+        overtime_hours: existingRecord.overtime_hours,
+        comment: existingRecord.comment
+      }) : null,
+      new_data: JSON.stringify({
+        shift_type: attendanceData.shift_type,
+        network_hours: attendanceData.network_hours,
+        overtime_hours: attendanceData.overtime_hours,
+        comment: attendanceData.comment
+      })
+    });
+
     return {
       success: true,
-      data: newAttendance
+      data: result,
+      action: existingRecord ? 'updated' : 'created'
     };
   } catch (error) {
-    console.error('Error adding attendance to MySQL:', error);
+    console.error('Error adding/updating attendance to MySQL:', error);
     return {
       success: false,
       error: error.message
@@ -413,4 +460,11 @@ const addAttendanceToMySQL = async (attendanceData) => {
   }
 };
 
-module.exports = { getEmployeesByGroup, getEmployeesAttendanceByMonthAndGroup, updateEmployeesDetailsFromRedis, getAttendanceSelectedGroupDateMysql,updateAttendanceFromRedisBySystumn ,addAttendanceToMySQL};
+module.exports = { 
+  getEmployeesByGroup, 
+  getEmployeesAttendanceByMonthAndGroup, 
+  updateEmployeesDetailsFromRedis, 
+  getAttendanceSelectedGroupDateMysql,
+  updateAttendanceFromRedisBySystumn,
+  addAttendanceToMySQL
+};

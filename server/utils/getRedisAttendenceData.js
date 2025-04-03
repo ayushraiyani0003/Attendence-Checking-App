@@ -13,9 +13,6 @@ async function getRedisAttendanceData(year, month, groups) {
             const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const key = `attendance:${group}:${date}`;
 
-            // Log the key for debugging
-            // console.log(key);
-
             try {
                 // Await the Redis GET operation
                 const data = await redisClient.get(key); // Fetch the data from Redis
@@ -72,7 +69,8 @@ async function updateRedisAttendanceData(updateData) {
       const fieldMapping = {
         'netHR': 'network_hours',
         'otHR': 'overtime_hours',
-        'shift_type': 'shift_type'
+        'shift_type': 'shift_type',
+        'comment': 'comment'
       };
       
       console.log(fieldMapping);
@@ -92,7 +90,7 @@ async function updateRedisAttendanceData(updateData) {
       console.log(attendanceRecords[employeeRecordIndex][mappedField]);
       
       // Add metadata
-      attendanceRecords[employeeRecordIndex].lastUpdatedBy = updateData.user?.name || 'System';
+      attendanceRecords[employeeRecordIndex].lastUpdatedBy = updateData.name || 'System';
       attendanceRecords[employeeRecordIndex].lastUpdatedAt = new Date().toISOString();
       
       // Store the updated record back in Redis
@@ -278,7 +276,8 @@ const makeAttendenceKeyRedis = (mysqlAttendanceData) => {
                 attendance_date: record.attendance_date,
                 shift_type: record.shift_type || 'D',
                 network_hours: record.network_hours || 0,
-                overtime_hours: record.overtime_hours || 0
+                overtime_hours: record.overtime_hours || 0,
+                comment: record.comment || ""
             }));
 
             return {

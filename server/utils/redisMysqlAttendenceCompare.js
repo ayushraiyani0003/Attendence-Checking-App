@@ -50,7 +50,7 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
 
     // Loop through each employee's attendance data from MySQL
     for (const employee of mysqlAttendanceData) {
-      const { employee_id, attendance_date, shift_type, network_hours, overtime_hours, reporting_group } = employee;
+      const { employee_id, attendance_date, shift_type, network_hours, overtime_hours, comment, reporting_group } = employee;
 
       // console.log("Employee in Redis compare data: ", employee);
       
@@ -106,6 +106,7 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
         otHR: overtime_hours || 0,
         dnShift: shift_type || 'Off',
         lock_status: lockStatus,
+        comment: comment || '',
       };
       
       let redisDataFound = false;
@@ -131,6 +132,7 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
               netHR: redisData.network_hours || attendanceRecord.netHR,
               otHR: redisData.overtime_hours || attendanceRecord.otHR,
               dnShift: redisData.shift_type || attendanceRecord.dnShift,
+              comment: redisData.comment|| attendanceRecord.comment ,
               // Preserve the original lock status from MySQL/determination
               lock_status: lockStatus,
             };

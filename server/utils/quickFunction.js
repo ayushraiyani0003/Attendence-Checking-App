@@ -93,7 +93,8 @@ const processNewEmployeeAttendance = async (employeeId, reportingGroup) => {
         attendance_date: date,
         shift_type: "D", // Default shift type
         network_hours: 0,
-        overtime_hours: 0
+        overtime_hours: 0,
+        comment:""
       };
 
       // Add to MySQL for all dates
