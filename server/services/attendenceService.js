@@ -95,8 +95,9 @@ async function updateEmployeesDetailsFromRedis(redisAttendanceData, user) {
         const needsUpdate = !existingRecord || 
           existingRecord.shift_type !== redisRecord.shift_type ||
           existingRecord.network_hours !== redisRecord.network_hours ||
-          existingRecord.overtime_hours !== redisRecord.overtime_hours;
-
+          existingRecord.overtime_hours !== redisRecord.overtime_hours ||
+          existingRecord.comment !== redisRecord.comment;
+          
         if (needsUpdate) {
           // Prepare audit log
           const auditLog = {
@@ -106,12 +107,14 @@ async function updateEmployeesDetailsFromRedis(redisAttendanceData, user) {
             old_data: existingRecord ? JSON.stringify({
               shift_type: existingRecord.shift_type,
               network_hours: existingRecord.network_hours,
-              overtime_hours: existingRecord.overtime_hours
+              overtime_hours: existingRecord.overtime_hours,
+              comment: existingRecord.comment
             }) : null,
             new_data: JSON.stringify({
               shift_type: redisRecord.shift_type,
               network_hours: redisRecord.network_hours,
-              overtime_hours: redisRecord.overtime_hours
+              overtime_hours: redisRecord.overtime_hours,
+              comment: redisRecord.comment
             })
           };
 

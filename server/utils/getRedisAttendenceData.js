@@ -78,8 +78,11 @@ async function updateRedisAttendanceData(updateData) {
       // Get the mapped field name
       const mappedField = fieldMapping[updateData.field] || updateData.field;
       
-      // Update the specific field - handle different data types appropriately
-      if (updateData.field === 'shift_type') {
+      // Update the specific field based on its type
+      if (updateData.field === 'comment') {
+        // For comments, store as string
+        attendanceRecords[employeeRecordIndex][mappedField] = updateData.newValue;
+      } else if (updateData.field === 'shift_type') {
         // For shift_type, store as string
         attendanceRecords[employeeRecordIndex][mappedField] = updateData.newValue;
       } else {
@@ -87,10 +90,10 @@ async function updateRedisAttendanceData(updateData) {
         attendanceRecords[employeeRecordIndex][mappedField] = parseFloat(updateData.newValue);
       }
       
-      console.log(attendanceRecords[employeeRecordIndex][mappedField]);
+      console.log(`Updated ${mappedField} to:`, attendanceRecords[employeeRecordIndex][mappedField]);
       
       // Add metadata
-      attendanceRecords[employeeRecordIndex].lastUpdatedBy = updateData.name || 'System';
+      attendanceRecords[employeeRecordIndex].lastUpdatedBy = updateData.user?.name || 'System';
       attendanceRecords[employeeRecordIndex].lastUpdatedAt = new Date().toISOString();
       
       // Store the updated record back in Redis
