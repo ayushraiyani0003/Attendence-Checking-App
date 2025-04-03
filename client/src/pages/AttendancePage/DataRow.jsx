@@ -6,11 +6,9 @@ function DataRow({
 }) {
   const [editableCell, setEditableCell] = useState(null);
   const [editValue, setEditValue] = useState({});
+  const [showCommentPopup, setShowCommentPopup] = useState(false);
   const inputRef = useRef(null);
-  console.log(attDateEnd);
-  console.log(attDateStart);
   
-
   // Filter attendance data based on attDateStart and attDateEnd
   const filteredAttendance = React.useMemo(() => {
     if (!row.attendance) return [];
@@ -108,11 +106,6 @@ function DataRow({
             const formattedValue = formatValue(currentValue, currentField);
             // Pass the date instead of colIndex
             const attendanceDate = displayData[colIndex]?.date;
-            console.log(rowIndex);
-            console.log(attendanceDate);
-            console.log(currentField);
-            console.log(formattedValue);
-            
             onCellUpdate(rowIndex, attendanceDate, currentField, formattedValue);
           }
         }
@@ -143,6 +136,25 @@ function DataRow({
     } else if (isAdmin && isShowMetrixData) {
       alert("Editing is not allowed in metrix view mode.");
     }
+  };
+
+  // Handle comment action on double click
+  const handleAddComment = (attendance, index) => {
+    if (!attendance || !attendance.date) return;
+
+    const date = attendance.date;
+    
+    // Create a detailed prompt message
+    const promptMessage = `Add comment for: ${date}\nEmployee: ${row.name}\nPunch Code: ${row.punchCode}\n\nCurrent comment: ${attendance.comment || "None"}\nEnter new comment:`;
+    
+    // Show prompt to add/edit comment
+    const commentText = window.prompt(promptMessage, attendance.comment || "");
+    
+    // If user cancels, return without updating
+    if (commentText === null) return;
+    
+    // Update comment via parent component's onCellUpdate function
+    onCellUpdate(rowIndex, date, "comment", commentText.trim());
   };
 
   // Handle input change with improved validation
@@ -288,14 +300,104 @@ function DataRow({
     }
   };
 
+  // Function to check if row has any comments
+  const hasAnyComments = () => {
+    if (!row.attendance) return false;
+    return row.attendance.some(att => att.comment && att.comment.trim() !== "");
+  };
+
   // Determine whether to show metrix display
   const shouldShowMetrixDisplay = isAdmin && isShowMetrixData;
 
+  // Create comment popup content
+  const commentPopupContent = () => {
+    // Collect all comments for this punch code
+    const comments = row.attendance?.filter(att => att.comment && att.comment.trim() !== "") || [];
+    
+    if (comments.length === 0) return null;
+    
+    return (
+      <div className="comment-popup" style={commentPopupStyle}>
+        <div className="comment-popup-header" style={commentPopupHeaderStyle}>
+          <strong>Comments for {row.punchCode}</strong>
+        </div>
+        <div className="comment-popup-content" style={commentPopupContentStyle}>
+          <table style={commentTableStyle}>
+            <thead>
+              <tr>
+                <th style={commentThStyle}>Date</th>
+                <th style={commentThStyle}>Comment</th>
+              </tr>
+            </thead>
+            <tbody>
+              {comments.map((att, index) => (
+                <tr key={index}>
+                  <td style={commentTdStyle}>{att.date}</td>
+                  <td style={commentTdStyle}>{att.comment}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
+  // Inline styles for comment popup
+  const commentPopupStyle = {
+    position: 'absolute',
+    top: '100%',
+    left: '0',
+    zIndex: 1000,
+    width: '300px',
+    backgroundColor: 'white',
+    border: '1px solid #ccc',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+    borderRadius: '4px',
+    overflow: 'hidden'
+  };
+
+  const commentPopupHeaderStyle = {
+    padding: '8px 12px',
+    backgroundColor: '#f0f0f0',
+    borderBottom: '1px solid #ccc',
+    textAlign: 'center'
+  };
+
+  const commentPopupContentStyle = {
+    maxHeight: '200px',
+    overflowY: 'auto'
+  };
+
+  const commentTableStyle = {
+    width: '100%',
+    borderCollapse: 'collapse'
+  };
+
+  const commentThStyle = {
+    padding: '8px',
+    backgroundColor: '#f5f5f5',
+    borderBottom: '1px solid #ddd',
+    textAlign: 'left'
+  };
+
+  const commentTdStyle = {
+    padding: '8px',
+    borderBottom: '1px solid #eee'
+  };
+
   return (
     <div
-      className={`data-row ${hoveredRow === rowIndex ? "hovered" : ""}`}
-      onMouseEnter={() => setHoveredRow(rowIndex)}
-      onMouseLeave={() => setHoveredRow(null)}
+      className={`data-row ${hoveredRow === rowIndex ? "hovered" : ""} ${hasAnyComments() ? "has-comments" : ""}`}
+      onMouseEnter={() => {
+        setHoveredRow(rowIndex);
+        setShowCommentPopup(hasAnyComments());
+      }}
+      onMouseLeave={() => {
+        setHoveredRow(null);
+        setShowCommentPopup(false);
+      }}
+      style={{ position: 'relative' }}
     >
       <div className="fixed-data-cells">
         <div className="data-cell punch-code">{row.punchCode}</div>
@@ -310,13 +412,21 @@ function DataRow({
           
           // Calculate the original index in the full attendance array
           const originalIndex = displayIndex;
+          
+          // Check if this date has a comment
+          const hasComment = attendance.comment && attendance.comment.trim() !== "";
 
           return (
-            <div key={displayIndex} className="date-cell">
+            <div 
+              key={displayIndex} 
+              className="date-cell"
+              onDoubleClick={() => handleAddComment(attendance, originalIndex)}
+              title={hasComment ? `Comment: ${attendance.comment}` : "Double-click to add comment"}
+            >
               {["netHR", "otHR", "dnShift"].map((field) => {
                 const editKey = `${field}-${originalIndex}`;
                 const isEditing = editableCell === editKey;
-                const canEditThisCell = canEdit(attendance,isAdmin, isShowMetrixData);
+                const canEditThisCell = canEdit(attendance, isAdmin, isShowMetrixData);
 
                 // Get the appropriate value to display
                 let cellValue = attendance[field] || (field === "dnShift" ? "" : "0");
@@ -341,6 +451,10 @@ function DataRow({
                 }
                 if (field === "otHR" && shouldShowMetrixDisplay && attendance.otHRExceeds) {
                   className += " exceeds-threshold";
+                }
+                // Add gray-comment class if this date has a comment
+                if (hasComment) {
+                  className += " gray-comment";
                 }
 
                 return (
@@ -390,6 +504,9 @@ function DataRow({
           </div>
         )}
       </div>
+      
+      {/* Comment popup when hovering over a row with comments */}
+      {showCommentPopup && commentPopupContent()}
     </div>
   );
 }

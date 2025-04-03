@@ -135,3 +135,11 @@
   .submit-button:hover {
     background-color: #357abD;
   }
+
+  .gray-comment {
+    background-color: #f0f0f0;
+  }
+  
+  .has-comments {
+    border-left: 3px solid #1890ff;
+  }
