@@ -20,36 +20,34 @@ import { pageRedirect } from "./utils/constants";
 import { EmployeeProvider } from "./context/EmployeeContext";
 import { UploadProvider } from "./context/UploadContext";
 import ProtectedRoute from "./components/ProtectedRoute";
-import  WebSocketProvider  from "./context/WebSocketContext";
+import WebSocketProvider from "./context/WebSocketContext";
+import UnderMaintenancePage from "./pages/maintainencePage/MaintenancePage";
 import "./App.css";
 
 const App = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [searchText, setSearchText] = useState(''); // State for search text
+  const [searchText, setSearchText] = useState(""); // State for search text
   const [selectedMonthYear, setSelectedMonthYear] = useState(); // State for selected month/year
   const navigate = useNavigate();
   const { isAuthenticated, login, logout, user } = useContext(AuthContext);
 
   useEffect(() => {
     const currentDate = new Date();
-    const options = { year: 'numeric', month: 'short' }; // 'short' gives the abbreviated month
-    const formattedDate = currentDate.toLocaleDateString('en-US', options); // Format as "Mar 2025"
-    
+    const options = { year: "numeric", month: "short" }; // 'short' gives the abbreviated month
+    const formattedDate = currentDate.toLocaleDateString("en-US", options); // Format as "Mar 2025"
+
     setSelectedMonthYear(formattedDate);
   }, []);
-
-
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-    // Handle logout properly
-    const handleLogout = () => {
-      logout();
-      navigate('/login'); // Force navigation to login page
-    };
-
+  // Handle logout properly
+  const handleLogout = () => {
+    logout();
+    navigate("/login"); // Force navigation to login page
+  };
 
   const handleSearchChange = (searchText) => {
     setSearchText(searchText); // Update search text in state
@@ -58,7 +56,6 @@ const App = () => {
   const handleMonthChange = (monthYear) => {
     setSelectedMonthYear(monthYear); // Update selected month/year in state
   };
-
 
   // Redirection logic after login based on the intended destination
   useEffect(() => {
@@ -78,7 +75,7 @@ const App = () => {
   }, [isAuthenticated, user, navigate]);
 
   // console.log(user);
-  
+
   return (
     <AuthProvider>
       {isAuthenticated ? (
@@ -93,7 +90,7 @@ const App = () => {
             />
 
           <div className="flex-1">
-            <CustomHeader toggleSidebar={toggleSidebar} user={user} 
+            <CustomHeader toggleSidebar={toggleSidebar} user={user}
                onSearch={handleSearchChange} // Pass search change handler
                onMonthChange={handleMonthChange} // Pass month/year change handler
             />
@@ -164,6 +161,7 @@ const App = () => {
         </Routes>
       )}
     </AuthProvider>
+    // <UnderMaintenancePage />
   );
 };
 
