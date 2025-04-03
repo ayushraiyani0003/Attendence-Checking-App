@@ -61,7 +61,14 @@ export const validateOtHR = (value) => {
   export const formatValue = (value, column) => {
     if (column === "netHR" || column === "otHR") {
       const parsedFloat = parseFloat(value);
-      return !isNaN(parsedFloat) ? Math.round(parsedFloat) : 0;
+      if (isNaN(parsedFloat)) return 0;
+      
+      // Check if it's a whole number
+      if (parsedFloat % 1 === 0) {
+        return Math.floor(parsedFloat).toString(); // Return as integer
+      } else {
+        return parsedFloat.toString(); // Return with decimal intact
+      }
     }
     return value;
   };
