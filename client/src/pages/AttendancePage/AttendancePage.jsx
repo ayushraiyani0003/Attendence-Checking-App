@@ -5,12 +5,10 @@ import AttendanceHeader from "./AttendanceHeader";
 import AttendencePageSearchFilters from "./AttendencePageSearchFilters";
 import DataRow from "./DataRow";
 import { useWebSocket } from "../../hooks/useWebSocket"; // Import WebSocket hook
-import moment from 'moment-timezone';
 import { getYesterday } from "../../utils/constants";
 
 function AttendancePage({ user, monthYear }) {
   const [hoveredRow, setHoveredRow] = useState(null);
-  const [editableCell, setEditableCell] = useState(null);
   const [filterText, setFilterText] = useState("");
   const [sortConfig, setSortConfig] = useState({
     key: null,
@@ -28,7 +26,6 @@ function AttendancePage({ user, monthYear }) {
   // State for the date range
   const [dateRange, setDateRange] = useState([getYesterday(), getYesterday()]);
   // Add displayWeeks state which is needed by DataRow
-  const [displayWeeks, setDisplayWeeks] = useState(0);
 
   const [columns, setColumns] = useState([
     { id: 'punchCode', label: 'Punch Code', isVisible: true },
@@ -544,7 +541,6 @@ function AttendancePage({ user, monthYear }) {
                     MetrixDiffData={MetrixDiffData}
                     attDateStart={dateRange[0]}
                     attDateEnd={dateRange[1]}
-                    displayWeeks={displayWeeks}
                     isAdmin={isAdmin}
                   />
                 );

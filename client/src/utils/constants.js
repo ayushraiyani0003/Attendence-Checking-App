@@ -1,3 +1,6 @@
+
+import dayjs from 'dayjs';
+
 // Define roles or any other constants you may need
 export const ROLES = {
   ADMIN: "admin",
@@ -35,9 +38,7 @@ export const getTotalWeeksInMonth = (date = new Date()) => {
 };
 
 export const getYesterday = () => {
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  return yesterday;
+  return dayjs().subtract(1, 'day').startOf('day');
 };
 
  // Validation functions

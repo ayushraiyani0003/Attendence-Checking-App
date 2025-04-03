@@ -2,6 +2,7 @@
 import React, { useState, useCallback } from 'react';
 import styled from 'styled-components';
 import { DatePicker } from 'antd';
+import { getYesterday } from "../../utils/constants";
 import dayjs from 'dayjs';
 
 const { RangePicker } = DatePicker;
@@ -10,12 +11,6 @@ const PickerContainer = styled.div`
   margin: 10px;
   width: 300px;
 `;
-
-export const getYesterday = () => {
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  return dayjs(yesterday);
-};
 
 const SimplifiedDatePicker = ({ dateRange, setDateRange }) => {
   const [open, setOpen] = useState(false);

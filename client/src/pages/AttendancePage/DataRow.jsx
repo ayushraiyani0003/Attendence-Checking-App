@@ -2,11 +2,14 @@ import React, { useState, useEffect, useRef } from "react";
 import {exceedsThreshold, validateNetHR, validateOtHR, formatValue, getShiftClass, canEdit} from "../../utils/constants"
 
 function DataRow({
-  row, rowIndex, hoveredRow, isAdmin, setHoveredRow, data, onCellUpdate, user, getFilteredData, attendanceData, displayWeeks, isShowMetrixData, MetrixDiffData, attDateStart, attDateEnd
+  row, rowIndex, hoveredRow, isAdmin, setHoveredRow, data, onCellUpdate, user, getFilteredData, attendanceData, isShowMetrixData, MetrixDiffData, attDateStart, attDateEnd
 }) {
   const [editableCell, setEditableCell] = useState(null);
   const [editValue, setEditValue] = useState({});
   const inputRef = useRef(null);
+  console.log(attDateEnd);
+  console.log(attDateStart);
+  
 
   // Filter attendance data based on attDateStart and attDateEnd
   const filteredAttendance = React.useMemo(() => {
@@ -304,11 +307,9 @@ function DataRow({
       <div className="scrollable-data-cells" id="body-scrollable">
         {displayData.map((attendance, displayIndex) => {
           if (!attendance) return null;
-
+          
           // Calculate the original index in the full attendance array
-          const originalIndex = displayWeeks === 0
-            ? displayIndex
-            : (displayWeeks - 1) * 7 + displayIndex;
+          const originalIndex = displayIndex;
 
           return (
             <div key={displayIndex} className="date-cell">
