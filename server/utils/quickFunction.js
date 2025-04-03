@@ -158,13 +158,6 @@ function compareAttendanceData(metricsData, finalAttendanceData) {
     emp.punchCode === metricsPunchCode
   );
 
-  // if (matchingEmployees.length === 0) {
-  //   return { 
-  //     error: `No employees found with punch code: ${metricsPunchCode}`,
-  //     punchCode: metricsPunchCode
-  //   };
-  // }
-
   // Create simplified differences list
   const allDifferences = [];
 
@@ -241,11 +234,73 @@ function processAllMetricsData(metricsDataArray, finalAttendanceData) {
   return results;
 }
 
+/**
+ * Function to compare total attendance data with metrics data
+ * @param {Array} metricsDataArray - Array of metrics data objects
+ * @param {Object} finalAttendanceData - The attendance data object
+ * @returns {Object} Total differences by punch code
+ */
+function compareAttendanceDataForTotal(metricsDataArray, finalAttendanceData) {
+  // Initialize result object to store differences by punch code
+  const results = {};
+  
+  // Process each metrics data entry
+  metricsDataArray.forEach(metricsData => {
+    // Get the punch code from metrics data
+    const punchCode = metricsData.dataValues.punch_code;
+    
+    // Parse the JSON strings for network and overtime hours
+    const networkHours = JSON.parse(metricsData.dataValues.network_hours);
+    const overtimeHours = JSON.parse(metricsData.dataValues.overtime_hours);
+    
+    // Calculate total hours from metrics data
+    let totalMetricsNetHR = 0;
+    let totalMetricsOtHR = 0;
+    
+    networkHours.forEach(item => {
+      totalMetricsNetHR += parseFloat(item.hours) || 0;
+    });
+    
+    overtimeHours.forEach(item => {
+      totalMetricsOtHR += parseFloat(item.hours) || 0;
+    });
+    
+    // Find matching employees by punch code
+    const matchingEmployees = finalAttendanceData.attendance.filter(emp => 
+      emp.punchCode === punchCode
+    );
+    
+    // For each matching employee, calculate total attendance hours
+    matchingEmployees.forEach(employee => {
+      let totalAttendanceNetHR = 0;
+      let totalAttendanceOtHR = 0;
+      
+      // Sum up all attendance entries
+      employee.attendance.forEach(record => {
+        totalAttendanceNetHR += parseFloat(record.netHR) || 0;
+        totalAttendanceOtHR += parseFloat(record.otHR) || 0;
+      });
+      
+      // Calculate differences
+      const netHRDiff = (totalAttendanceNetHR - totalMetricsNetHR).toFixed(2);
+      const otHRDiff = (totalAttendanceOtHR - totalMetricsOtHR).toFixed(2);
+      
+      // Store the results
+      results[punchCode] = {
+        netHRDiff: parseFloat(netHRDiff),
+        otHRDiff: parseFloat(otHRDiff)
+      };
+    });
+  });
+  
+  return results;
+}
+
 // Export the function to be used in other files
 module.exports = {
   getAttendanceDateRange,
   convertMonthToYearMonthFormat,
   formatDate,
   generateDateRange,
-  processNewEmployeeAttendance, compareAttendanceData, processAllMetricsData
+  processNewEmployeeAttendance, compareAttendanceData, processAllMetricsData, compareAttendanceDataForTotal
 };

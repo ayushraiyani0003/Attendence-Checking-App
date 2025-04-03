@@ -5,7 +5,7 @@ const {
   updateEmployeesDetailsFromRedis,
   getAttendanceSelectedGroupDateMysql
 } = require("../services/attendenceService");
-const { convertMonthToYearMonthFormat ,processAllMetricsData} = require("./quickFunction");
+const { convertMonthToYearMonthFormat ,processAllMetricsData,compareAttendanceDataForTotal} = require("./quickFunction");
 const {
   getRedisAttendanceData,
   updateRedisAttendanceData,
@@ -159,7 +159,10 @@ async function handleAttendanceDataRetrieval(ws, data) {
 
     // get the metrix attendence and send to the clients
     const metrixAttendenceData = await fetchMetricsForMonthYear(month, year);
-    const MetrixAtteDiffrence = await processAllMetricsData(metrixAttendenceData, finalAttendanceData)
+    const MetrixAtteDiffrence = await processAllMetricsData(metrixAttendenceData, finalAttendanceData);
+
+    // const pass the metrixAttendenceData and finalAttendanceData and get the data for each employe punch code from metrix data for total time diff "ot" , "Network hrs"
+    const totalTimeDiff = await compareAttendanceDataForTotal(metrixAttendenceData, finalAttendanceData);
     
     // Send the final attendance data back to the client
     ws.send(JSON.stringify({
@@ -167,7 +170,8 @@ async function handleAttendanceDataRetrieval(ws, data) {
       userRole,
       attendance: finalAttendanceData.attendance,
       lockStatus: lockStatusData,
-      MetrixAtteDiffrence:MetrixAtteDiffrence
+      MetrixAtteDiffrence:MetrixAtteDiffrence,
+      totalTimeDiff: totalTimeDiff
     }));
   } catch (error) {
     console.error('Error retrieving attendance data:', error);
