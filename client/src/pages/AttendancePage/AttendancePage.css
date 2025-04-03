@@ -223,7 +223,7 @@
 }
 .total-data-header{
   display: flex;
-  gap: 15px;
+  gap: 14px;
   width: 100%;
   margin-top: 10px;
   align-items: center;
@@ -243,7 +243,7 @@
 }
 .total-sub-header-cell{
   flex: 1;
-  padding: 6px;
+  padding: 2px;
   text-align: center;
   font-size: 12px;
   white-space: nowrap;
@@ -265,6 +265,10 @@
   min-width: 100%;
   width: 100%;
   margin-bottom: 20px;
+}
+
+.header-cell.total-attendance-header-cell{
+  padding: 2px !important;
 }
 
 
@@ -405,7 +409,7 @@
 }
 .Disply-total-sub-data-cell{
   flex: 1;
-  gap: 12px;
+  gap: 5px;
   text-align: center;
   font-size: 14px;
   background-color: white;
@@ -442,7 +446,7 @@
   background-color: transparent;
   font-size: 14px;
   text-align: center;
-  padding: 0px 15px;
+  padding: 0px 14px;
   margin: 0;
   outline: none;
   box-sizing: border-box;
@@ -927,6 +931,7 @@ RESPONSIVE STYLES FOR ATTENDANCE APP
     width: 200px;
   }
   .header-cell.total-attendance-header-cell{
+    padding: 0!important;
     min-width: 350px;
     width: 350px;
   }

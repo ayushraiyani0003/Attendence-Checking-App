@@ -125,6 +125,7 @@ function AttendanceHeader({ columns, isAdmin, onSort, sortConfig, handleLock, ha
                                 <div className="total-sub-header-cell">N Count</div>
                                 <div className="total-sub-header-cell">E Count</div>
                                 <div className="total-sub-header-cell">Site Count</div>
+                                <div className="total-sub-header-cell">Absent Count</div>
                             </div>
                             <div />
                         </div>
