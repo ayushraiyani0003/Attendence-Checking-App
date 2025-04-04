@@ -12,12 +12,12 @@ const WebSocketProvider = ({ children }) => {
 
     // Handle WebSocket open event
     webSocket.onopen = () => {
-      // console.log("WebSocket connection established.");
+      console.log("WebSocket connection established.");
     };
 
     // Handle WebSocket message event
     webSocket.onmessage = (message) => {
-      // console.log("Received WebSocket message:", message);
+      console.log("Received WebSocket message:", message);
     };
 
     // Handle WebSocket error event
@@ -27,7 +27,7 @@ const WebSocketProvider = ({ children }) => {
 
     // Handle WebSocket close event
     webSocket.onclose = () => {
-      // console.log("WebSocket connection closed.");
+      console.log("WebSocket connection closed.");
     };
 
     // Cleanup WebSocket connection on component unmount
@@ -36,7 +36,7 @@ const WebSocketProvider = ({ children }) => {
         webSocket.close();
       }
     };
-  }, []);
+  }, [API_URL]);
 
   const send = (message) => {
     if (ws && ws.readyState === WebSocket.OPEN) {
@@ -44,7 +44,7 @@ const WebSocketProvider = ({ children }) => {
     } else {
       console.error("WebSocket is not open");
     }
-  };
+  };  
 
   return (
     <WebSocketContext.Provider value={{ ws, send }}>

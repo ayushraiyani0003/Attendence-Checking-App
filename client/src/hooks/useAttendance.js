@@ -1,7 +1,7 @@
-// hooks/useAttendance.js
 import { useState, useEffect, useCallback, useRef } from "react";
 import { getYesterday } from "../utils/constants";
 import dayjs from "dayjs";
+import { toast } from 'react-toastify';
 
 export const useAttendance = (user, monthYear, ws, send) => {
   const [hoveredRow, setHoveredRow] = useState(null);
@@ -67,6 +67,7 @@ export const useAttendance = (user, monthYear, ws, send) => {
     // When the WebSocket connection is established
     const handleOpen = () => {
       setIsWebSocketOpen(true);
+      toast.info("Connected to server");
       ws.send(JSON.stringify({
         action: 'setUserInfo',
         user: {
@@ -81,6 +82,7 @@ export const useAttendance = (user, monthYear, ws, send) => {
     // When the WebSocket connection is closed
     const handleClose = () => {
       setIsWebSocketOpen(false);
+      toast.error("Connection to server lost. Please refresh the page.");
     };
 
     const handleMessage = (event) => {
@@ -97,6 +99,8 @@ export const useAttendance = (user, monthYear, ws, send) => {
           // Check if any date has unlocked status
           const hasUnlockedDate = data.lockStatus?.some(item => item.status === 'unlocked');
           setHasChanges(hasUnlockedDate);
+          
+          toast.success("Attendance data loaded successfully");
           break;
 
         case "attendanceUpdated":
@@ -118,6 +122,20 @@ export const useAttendance = (user, monthYear, ws, send) => {
                 : row
             )
           );
+          
+          // Show toast for attendance update by someone else
+          if (!data.updateDetails.updatedBy || data.updateDetails.updatedBy !== user.name) {
+            toast.info(`${data.updateDetails.field} updated by ${data.updateDetails.updatedBy || 'another user'}`);
+          }
+          break;
+
+        case "attendanceUpdateResult":
+          // Show toast based on update result
+          if (data.success) {
+            toast.success("Attendance updated successfully");
+          } else {
+            toast.error(`Update failed: ${data.details || "Unknown error"}`);
+          }
           break;
 
         case "lockUnlockStatusChanged":
@@ -134,6 +152,7 @@ export const useAttendance = (user, monthYear, ws, send) => {
               }))
             );
             setHasChanges(true);
+            toast.info(`Records unlocked by ${data.changedBy || 'an administrator'}`);
           } else if (data.status === 'locked') {
             setAttendanceData((prevData) =>
               prevData.map((row) => ({
@@ -146,6 +165,19 @@ export const useAttendance = (user, monthYear, ws, send) => {
               }))
             );
             setHasChanges(false);
+            toast.info(`Records locked by ${data.changedBy || 'an administrator'}`);
+          }
+          break;
+
+        case "dataUpdated":
+          toast.success("Data successfully saved to database");
+          break;
+          
+        case "saveDataRedisToMysql":
+          if (data.status === 'success') {
+            toast.success("Changes saved successfully");
+          } else {
+            toast.error(`Failed to save changes: ${data.error || "Unknown error"}`);
           }
           break;
 
@@ -164,6 +196,12 @@ export const useAttendance = (user, monthYear, ws, send) => {
               )
             }))
           );
+          
+          toast.info(`Date ${data.date} ${data.status === "locked" ? "locked" : "unlocked"}`);
+          break;
+
+        case "error":
+          toast.error(`Error: ${data.details || data.message || "Unknown error"}`);
           break;
 
         default:
@@ -173,6 +211,7 @@ export const useAttendance = (user, monthYear, ws, send) => {
 
     const handleError = (error) => {
       console.error("WebSocket error:", error);
+      toast.error("Connection error. Please refresh the page.");
     };
 
     // Assign event handlers
@@ -222,29 +261,27 @@ export const useAttendance = (user, monthYear, ws, send) => {
   // Logic for filtering data
   const getFilteredData = useCallback(() => {
     let isEmpty = false;
-// Filter to include only attendance records within the date range
-let filteredData = attendanceData.map(item => {
-  // Create a copy of the employee item
-  const itemCopy = {...item};
-  
-  // Filter the attendance array to only include dates within the range
-  if (itemCopy.attendance && Array.isArray(itemCopy.attendance)) {
-    itemCopy.attendance = itemCopy.attendance.filter(record => {
-      if (!record.date) return false;
+    // Filter to include only attendance records within the date range
+    let filteredData = attendanceData.map(item => {
+      // Create a copy of the employee item
+      const itemCopy = {...item};
       
-      // Parse both dates to the same format for comparison
-      const recordDate = dayjs(record.date).format('YYYY-DD-MM');
-      const startDate = dayjs(dateRange[0]).format('YYYY-MM-DD');
-      const endDate = dayjs(dateRange[1]).format('YYYY-MM-DD');
+      // Filter the attendance array to only include dates within the range
+      if (itemCopy.attendance && Array.isArray(itemCopy.attendance)) {
+        itemCopy.attendance = itemCopy.attendance.filter(record => {
+          if (!record.date) return false;
+          
+          // Parse both dates to the same format for comparison
+          const recordDate = dayjs(record.date).format('YYYY-DD-MM');
+          const startDate = dayjs(dateRange[0]).format('YYYY-MM-DD');
+          const endDate = dayjs(dateRange[1]).format('YYYY-MM-DD');
+          
+          return recordDate >= startDate && recordDate <= endDate;
+        });
+      }
       
-      // console.log(`Comparing: Record=${record.date} (${recordDate}) with Range=${startDate} to ${endDate}`);
-      
-      return recordDate >= startDate && recordDate <= endDate;
+      return itemCopy;
     });
-  }
-  
-  return itemCopy;
-});
 
     if (filterText) {
       const searchTerm = filterText.toLowerCase();
@@ -293,9 +330,7 @@ let filteredData = attendanceData.map(item => {
         filteredData = filteredData.filter(item =>
           item.punchCode?.toLowerCase() === "new"
         );
-      }else if (view === "night"){
-        
-        
+      } else if (view === "night") {
         filteredData = filteredData.filter(item => {
           // Check if the employee has an attendance array
           if (item.attendance && Array.isArray(item.attendance)) {
@@ -306,8 +341,7 @@ let filteredData = attendanceData.map(item => {
           }
           return false; // No attendance data or not an array
         });
-      }else if (view === "evening"){
-        
+      } else if (view === "evening") {
         filteredData = filteredData.filter(item => {
           // Check if the employee has an attendance array
           if (item.attendance && Array.isArray(item.attendance)) {
@@ -318,7 +352,7 @@ let filteredData = attendanceData.map(item => {
           }
           return false; // No attendance data or not an array
         });
-      }else if(view === "site"){
+      } else if (view === "site") {
         // Filter employees who have comments that start with "site"
         filteredData = filteredData.filter(item => {
           // Check if the employee has an attendance array
@@ -331,9 +365,7 @@ let filteredData = attendanceData.map(item => {
           }
           return false; // No attendance data or not an array
         });
-      }else if(view === "absent") {
-        console.log(filteredData);
-        
+      } else if (view === "absent") {
         // Filter employees who have attendance records with netHR equal to 0
         filteredData = filteredData.filter(item => {
           // Check if the employee has an attendance array
@@ -394,6 +426,7 @@ let filteredData = attendanceData.map(item => {
   const handleCellDataUpdate = (rowIndex, date, field, value) => {
     if (rowIndex < 0 || rowIndex >= attendanceData.length) {
       console.error("Invalid rowIndex:", rowIndex);
+      toast.error("Invalid row selection");
       return;
     }
 
@@ -405,6 +438,7 @@ let filteredData = attendanceData.map(item => {
     // Make sure the attendance entry with the given date exists
     if (columnIndex === -1 || !updatedEmployee.attendance) {
       console.error("Invalid date or missing attendance data:", date);
+      toast.error("Invalid date selection");
       return;
     }
 
@@ -430,6 +464,9 @@ let filteredData = attendanceData.map(item => {
 
       // Send minimal update via WebSocket
       send(updatePayload);
+      
+      // Show toast notification for update being sent
+      toast.info(`Updating ${field} for ${updatedEmployee.name}...`, {autoClose: 2000});
 
       // Set has changes to true
       setHasChanges(true);
@@ -462,13 +499,19 @@ let filteredData = attendanceData.map(item => {
 
     // Send the payload via WebSocket
     send(savePayload);
+    
+    // Show toast for saving
+    toast.info("Saving changes...", {autoClose: 3000});
 
     setHasChanges(false);
   };
 
   // Handle lock/unlock
   const handleLock = (reportingGroup, date) => {
-    if (!isAdmin) return;
+    if (!isAdmin) {
+      toast.error("Only administrators can lock records");
+      return;
+    }
 
     const payload = {
       action: "lockUnlockStatusToggle",
@@ -479,11 +522,15 @@ let filteredData = attendanceData.map(item => {
     };
 
     send(payload);
+    toast.info(`Locking records for ${date}...`, {autoClose: 3000});
     setPopupOpen(false);
   };
 
   const handleUnlock = (reportingGroup, date) => {
-    if (!isAdmin) return;
+    if (!isAdmin) {
+      toast.error("Only administrators can unlock records");
+      return;
+    }
 
     const payload = {
       action: "lockUnlockStatusToggle",
@@ -494,12 +541,14 @@ let filteredData = attendanceData.map(item => {
     };
 
     send(payload);
+    toast.info(`Unlocking records for ${date}...`, {autoClose: 3000});
     setPopupOpen(false);
   };
 
   // Handle reset
   const handleReset = () => {
     setDateRange([getYesterday(), getYesterday()]);
+    toast.info("Date range reset to yesterday");
   };
 
   return {

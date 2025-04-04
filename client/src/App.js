@@ -22,6 +22,8 @@ import { UploadProvider } from "./context/UploadContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import WebSocketProvider from "./context/WebSocketContext";
 import UnderMaintenancePage from "./pages/maintainencePage/MaintenancePage";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import "./App.css";
 
 const App = () => {
@@ -101,6 +103,17 @@ const App = () => {
                 element={
                   <ProtectedRoute isAuthenticated={isAuthenticated}>
                     <WebSocketProvider>
+                    <ToastContainer 
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
                     <AttendencePage user={user} monthYear={selectedMonthYear}/>
                     </WebSocketProvider>
                   </ProtectedRoute>
