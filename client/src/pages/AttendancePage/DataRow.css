@@ -137,7 +137,10 @@
   }
 
   .gray-comment {
-    background-color: #e9dffd;
+    background-color: #d2ebbcc0;
+  }
+  .site-comment {
+    background-color: #814c2869;
   }
   
   .has-comments {

@@ -74,6 +74,9 @@ function DataRow(props) {
           
           // Check if this date has a comment
           const hasComment = attendance.comment && attendance.comment.trim() !== "";
+          const hasSiteComment = attendance.comment && 
+                      attendance.comment.trim() !== "" && 
+                      attendance.comment.trim().toLowerCase().startsWith("site");
 
           return (
             <div 
@@ -115,6 +118,9 @@ function DataRow(props) {
                 if (hasComment && field !== "dnShift") {
                   className += " gray-comment";
                 }
+                if(hasSiteComment && field !== "dnShift"){
+                  className += " site-comment";
+                } 
 
                 return (
                   <div
