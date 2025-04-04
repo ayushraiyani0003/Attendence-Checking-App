@@ -267,24 +267,146 @@ const useDataRow = ({
 
         // Check if the record is locked first
         if (attendance && attendance.lock_status !== "unlocked") {
-            alert("add comment is not allowed. This record is locked.");
+            alert("Editing is not allowed. This record is locked.");
             return;
         }
 
         const date = attendance.date;
 
-        // Create a detailed prompt message
-        const promptMessage = `Add comment for: ${date}\nEmployee: ${row.name}\nPunch Code: ${row.punchCode}\n\nCurrent comment: ${attendance.comment || "None"}\nEnter new comment:`;
+        // Check if the current comment starts with "Site"
+        const currentComment = attendance.comment || "";
+        const isSiteComment = currentComment.trim().toLowerCase().startsWith('site');
 
-        // Show prompt to add/edit comment
-        const commentText = window.prompt(promptMessage, attendance.comment || "");
+        // Create a custom dialog
+        const createCommentDialog = () => {
+            // Create backdrop
+            const backdrop = document.createElement('div');
+            backdrop.className = 'comment-dialog-backdrop';
+            document.body.appendChild(backdrop);
 
-        // If user cancels, return without updating
-        if (commentText === null) return;
+            // Create dialog
+            const dialog = document.createElement('div');
+            dialog.className = 'comment-dialog';
 
-        // Update comment via parent component's onCellUpdate function
-        onCellUpdate(rowIndex, date, "comment", commentText.trim());
+            dialog.innerHTML = `
+        <h3 class="comment-dialog-header">Add Comment</h3>
+        <div class="comment-dialog-info">
+          <p><strong>Employee:</strong> ${row.name}</p>
+          <p><strong>Punch Code:</strong> ${row.punchCode}</p>
+          <p><strong>Date:</strong> ${date}</p>
+        </div>
+        <div class="comment-type-options">
+          <div class="comment-type-option">
+            <input type="radio" id="type-comment" name="commentType" value="comment" ${!isSiteComment ? 'checked' : ''}>
+            <label for="type-comment">Comment</label>
+          </div>
+          <div class="comment-type-option">
+            <input type="radio" id="type-site" name="commentType" value="site" ${isSiteComment ? 'checked' : ''}>
+            <label for="type-site">Site</label>
+          </div>
+        </div>
+        <textarea id="commentText" class="comment-textarea" placeholder="Enter your comment here...">${currentComment}</textarea>
+        <div class="comment-dialog-actions">
+          <button id="cancelBtn" class="comment-dialog-btn comment-dialog-btn-cancel">Cancel</button>
+          <button id="saveBtn" class="comment-dialog-btn comment-dialog-btn-save">Save</button>
+        </div>
+      `;
 
+            document.body.appendChild(dialog);
+
+            return { dialog, backdrop };
+        };
+
+        const { dialog, backdrop } = createCommentDialog();
+
+        // Get elements
+        const commentTextarea = dialog.querySelector('#commentText');
+        const commentTypeRadios = dialog.querySelectorAll('input[name="commentType"]');
+        const saveBtn = dialog.querySelector('#saveBtn');
+        const cancelBtn = dialog.querySelector('#cancelBtn');
+
+        // Function to clean up the dialog
+        const cleanupDialog = () => {
+            document.body.removeChild(dialog);
+            document.body.removeChild(backdrop);
+        };
+
+        // Function to update textarea based on selected type
+        const updateTextarea = () => {
+            const commentType = dialog.querySelector('input[name="commentType"]:checked').value;
+            let commentText = commentTextarea.value;
+
+            if (commentType === 'site') {
+                // If switching to site and doesn't already start with "Site"
+                if (!commentText.trim().toLowerCase().startsWith('site')) {
+                    commentTextarea.value = 'Site ' + commentText;
+                }
+            } else {
+                // If switching to regular comment and starts with "Site"
+                if (commentText.trim().toLowerCase().startsWith('site')) {
+                    commentTextarea.value = commentText.replace(/^site\s*/i, '');
+                }
+            }
+        };
+
+        // Set up event listeners
+        commentTypeRadios.forEach(radio => {
+            radio.addEventListener('change', updateTextarea);
+        });
+
+        // Handle text input to enforce prefix for site comments
+        commentTextarea.addEventListener('input', () => {
+            const commentType = dialog.querySelector('input[name="commentType"]:checked').value;
+            if (commentType === 'site') {
+                const currentText = commentTextarea.value;
+                if (!currentText.trim().toLowerCase().startsWith('site')) {
+                    commentTextarea.value = 'Site ' + currentText;
+
+                    // Move cursor position after the "Site " prefix
+                    setTimeout(() => {
+                        commentTextarea.selectionStart = 5;
+                        commentTextarea.selectionEnd = 5;
+                    }, 0);
+                }
+            }
+        });
+
+        // Handle save button
+        saveBtn.addEventListener('click', () => {
+            // Get the comment text
+            let commentText = commentTextarea.value.trim();
+
+            // Update comment via parent component's onCellUpdate function
+            onCellUpdate(rowIndex, date, "comment", commentText);
+
+            // Clean up
+            cleanupDialog();
+        });
+
+        // Handle cancel button
+        cancelBtn.addEventListener('click', () => {
+            // Clean up
+            cleanupDialog();
+        });
+
+        // Handle backdrop click to close dialog
+        backdrop.addEventListener('click', () => {
+            cleanupDialog();
+        });
+
+        // Handle ESC key to close dialog
+        document.addEventListener('keydown', function escHandler(e) {
+            if (e.key === 'Escape') {
+                cleanupDialog();
+                document.removeEventListener('keydown', escHandler);
+            }
+        });
+
+        // Initial update of textarea
+        updateTextarea();
+
+        // Focus the textarea
+        commentTextarea.focus();
     };
 
     // Handle input change with improved validation
