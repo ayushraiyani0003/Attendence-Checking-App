@@ -118,11 +118,10 @@ function AttendencePageSearchFilters({
               </div>
             </>
           )}
-          <ColumnVisibilityControl  
+          {/* <ColumnVisibilityControl  
   columns={columns}
   onToggleColumn={onToggleColumn}
-
-          />
+          /> */}
           <SimplifiedDatePicker
           dateRange={dateRange}
           setDateRange={setDateRange}
