@@ -22,6 +22,7 @@ import { UploadProvider } from "./context/UploadContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import WebSocketProvider from "./context/WebSocketContext";
 import UnderMaintenancePage from "./pages/maintainencePage/MaintenancePage";
+import NetworkMonitor from "./components/NetworkMonitor/NetworkMonitor";  // Import the new component
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import "./App.css";
@@ -76,10 +77,24 @@ const App = () => {
     }
   }, [isAuthenticated, user, navigate]);
 
-  // console.log(user);
-
   return (
     <AuthProvider>
+      {/* ToastContainer should be at the app level, outside the authentication check */}
+      <ToastContainer 
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
+      
+      {/* NetworkMonitor should be included regardless of authentication */}
+      <NetworkMonitor />
+      
       {isAuthenticated ? (
         <div className="flex">
             <CustomSidebar
@@ -103,18 +118,7 @@ const App = () => {
                 element={
                   <ProtectedRoute isAuthenticated={isAuthenticated}>
                     <WebSocketProvider>
-                    <ToastContainer 
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
-                    <AttendencePage user={user} monthYear={selectedMonthYear}/>
+                      <AttendencePage user={user} monthYear={selectedMonthYear}/>
                     </WebSocketProvider>
                   </ProtectedRoute>
                 }
