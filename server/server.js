@@ -9,7 +9,11 @@ const sequelize = require('./config/db');
 const cronJobs = require('./utils/cronJobs');
 
 const app = express();
+
+// Create server with increased timeout settings
 const server = http.createServer(app);
+server.timeout = 120000; // 2 minutes timeout
+server.keepAliveTimeout = 60000; // 1 minute keep-alive
 
 // Get port from environment variable, with 5003 as fallback
 const PORT = process.env.SERVER_PORT || 5003;
@@ -23,9 +27,16 @@ app.use(cors({
 }));
 
 app.use(cookieParser());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // Increased JSON body limit
 
-initWebSocket(server); // Initialize WebSocket server
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).send('Server is running');
+});
+
+// Initialize WebSocket server with error handling
+const wss = initWebSocket(server);
+console.log('WebSocket server initialized');
 
 // DB connection
 sequelize.authenticate()
@@ -43,6 +54,16 @@ sequelize.authenticate()
 // API routes
 app.use('/api', routes);
 
+// Graceful shutdown handling
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
+});
+
 server.listen(PORT, HOST, () => {
   console.log(`Server running on http://${HOST}:${PORT}`);
+  console.log(`WebSocket server available at ws://${HOST}:${PORT}`);
 });
