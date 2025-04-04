@@ -98,9 +98,14 @@ const useDataRow = ({
     return displayData;
   }, [filteredAttendance, isShowMetrixData, isAdmin, row.punchCode, MetrixDiffData]);
 
-  // Calculate totals whenever displayData changes
+  // Calculate totals whenever filteredAttendance or displayData changes
   useEffect(() => {
-    if (!displayData || displayData.length === 0) {
+    // Choose which data source to use based on the mode
+    // IMPORTANT: Always use filteredAttendance (original data) for calculations
+    // regardless of whether we're in metrix view mode or not
+    const dataToProcess = filteredAttendance;
+    
+    if (!dataToProcess || dataToProcess.length === 0) {
       setTotalNetHR(0);
       setTotalOtHR(0);
       setNightShiftCount(0);
@@ -118,7 +123,7 @@ const useDataRow = ({
     let siteCount = 0;
     let absenceCount = 0;
 
-    displayData.forEach(att => {
+    dataToProcess.forEach(att => {
       // Sum up network hours
       if (att.netHR) {
         const netHRValue = parseFloat(att.netHR);
@@ -168,7 +173,7 @@ const useDataRow = ({
     setSiteCommentCount(siteCount);
     setAbsentCount(absenceCount);
 
-  }, [displayData]);
+  }, [filteredAttendance, isShowMetrixData]); // Only depend on filteredAttendance, not displayData
 
   // Handle clicks outside the input
   useEffect(() => {
@@ -186,8 +191,37 @@ const useDataRow = ({
         // Check if the index is valid in the displayData array
         if (colIndex >= 0 && colIndex < displayData.length) {
           // Get the current value and original value
-          const currentValue = editValue[editKey] || displayData[colIndex]?.[currentField] || "0";
-          const originalValue = displayData[colIndex]?.[currentField] || "0";
+          let currentValue = editValue[editKey] || displayData[colIndex]?.[currentField] || "0";
+          // Convert to string to ensure we can use string methods
+          currentValue = String(currentValue);
+          const originalValue = String(displayData[colIndex]?.[currentField] || "0");
+          
+          // Convert time format to decimal if needed (for final submission)
+          if ((currentField === "netHR" || currentField === "otHR") && currentValue.includes(':')) {
+            const timeFormatRegex = /^(\d+):([0-5]\d)$/;
+            const timeMatch = currentValue.match(timeFormatRegex);
+            
+            if (timeMatch) {
+              const hours = parseInt(timeMatch[1], 10);
+              const minutes = parseInt(timeMatch[2], 10);
+              // Convert minutes to decimal (e.g., 30 minutes = 0.5 hours)
+              const minuteDecimal = minutes / 60;
+              const decimalHours = hours + minuteDecimal;
+              
+              // Use exact decimal representation without rounding
+              if (minutes === 0) {
+                currentValue = hours.toString();
+              } else if (minutes === 30) {
+                currentValue = (hours + 0.5).toString();
+              } else {
+                // For other minute values, use up to 2 decimal places if needed
+                currentValue = decimalHours.toFixed(2).replace(/\.?0+$/, '');
+              }
+            } else {
+              // Invalid time format, revert to original
+              currentValue = originalValue;
+            }
+          }
 
           // Only update if the value has actually changed
           if (currentValue !== originalValue) {
@@ -252,17 +286,30 @@ const useDataRow = ({
 
     // Validate and format input based on field type
     if (column === "netHR" || column === "otHR") {
-      // Allow only numbers and one decimal point
-      value = value.replace(/[^0-9.]/g, "");
+      // Check if user is typing a time format
+      if (value.includes(':')) {
+        // Allow typing time format without auto-conversion
+        // Only validate once complete
+        const completeTimeRegex = /^(\d+):([0-5]\d)$/;
+        const partialTimeRegex = /^(\d+):([0-5])?$/;
+        
+        if (!completeTimeRegex.test(value) && !partialTimeRegex.test(value)) {
+          // Invalid time format, allow only valid characters
+          value = value.replace(/[^0-9:]/g, "");
+        }
+      } else {
+        // For decimal format, allow only numbers and one decimal point
+        value = value.replace(/[^0-9.]/g, "");
 
-      // Ensure only one decimal point
-      const decimalCount = (value.match(/\./g) || []).length;
-      if (decimalCount > 1) {
-        value = value.substring(0, value.lastIndexOf("."));
+        // Ensure only one decimal point
+        const decimalCount = (value.match(/\./g) || []).length;
+        if (decimalCount > 1) {
+          value = value.substring(0, value.lastIndexOf("."));
+        }
       }
 
-      // Apply maximum value constraints
-      if (value !== "") {
+      // Apply maximum value constraints only for fully entered values
+      if (value !== "" && !value.includes(':')) {
         const numValue = parseFloat(value);
         if (!isNaN(numValue)) {
           if (column === "netHR" && numValue > 11) {
@@ -303,8 +350,41 @@ const useDataRow = ({
 
       // Get current edit value
       const editKey = `${column}`;
-      const currentValue = editValue[editKey] || displayData[colIndex]?.[currentField] || "0";
-      const originalValue = displayData[colIndex]?.[currentField] || "0";
+      let currentValue = editValue[editKey] || displayData[colIndex]?.[currentField] || "0";
+      // Convert to string to ensure we can use string methods
+      currentValue = String(currentValue);
+      const originalValue = String(displayData[colIndex]?.[currentField] || "0");
+
+      // Convert time format to decimal if needed (for final submission)
+      if ((currentField === "netHR" || currentField === "otHR") && currentValue.includes(':')) {
+        const timeFormatRegex = /^(\d+):([0-5]\d)$/;
+        const timeMatch = currentValue.match(timeFormatRegex);
+        
+        if (timeMatch) {
+          const hours = parseInt(timeMatch[1], 10);
+          const minutes = parseInt(timeMatch[2], 10);
+          // Convert minutes to decimal (e.g., 30 minutes = 0.5 hours)
+          const minuteDecimal = minutes / 60;
+          const decimalHours = hours + minuteDecimal;
+          
+          // Use exact decimal representation without rounding
+          if (minutes === 0) {
+            currentValue = hours.toString();
+          } else if (minutes === 30) {
+            currentValue = (hours + 0.5).toString();
+          } else {
+            // For other minute values, use up to 2 decimal places if needed
+            currentValue = decimalHours.toFixed(2).replace(/\.?0+$/, '');
+          }
+          
+          // Update the editValue state with the converted value
+          setEditValue(prev => ({ ...prev, [editKey]: currentValue }));
+        } else {
+          // Invalid time format, revert to original
+          currentValue = originalValue;
+          setEditValue(prev => ({ ...prev, [editKey]: currentValue }));
+        }
+      }
 
       // Validate values before saving
       let validationFailed = false;
