@@ -1,6 +1,7 @@
 import {React} from "react";
 import { exceedsThreshold, getShiftClass, canEdit } from "../../utils/constants";
 import "./DataRow.css";
+import "./AddComment.css";
 import CommentPopup from './CommentPopup';
 import useDataRow from "../../hooks/useDataRow";
 
