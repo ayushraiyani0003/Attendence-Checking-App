@@ -1,6 +1,7 @@
 // hooks/useAttendance.js
 import { useState, useEffect, useCallback, useRef } from "react";
 import { getYesterday } from "../utils/constants";
+import dayjs from "dayjs";
 
 export const useAttendance = (user, monthYear, ws, send) => {
   const [hoveredRow, setHoveredRow] = useState(null);
@@ -220,8 +221,30 @@ export const useAttendance = (user, monthYear, ws, send) => {
 
   // Logic for filtering data
   const getFilteredData = useCallback(() => {
-    let filteredData = [...attendanceData];
     let isEmpty = false;
+// Filter to include only attendance records within the date range
+let filteredData = attendanceData.map(item => {
+  // Create a copy of the employee item
+  const itemCopy = {...item};
+  
+  // Filter the attendance array to only include dates within the range
+  if (itemCopy.attendance && Array.isArray(itemCopy.attendance)) {
+    itemCopy.attendance = itemCopy.attendance.filter(record => {
+      if (!record.date) return false;
+      
+      // Parse both dates to the same format for comparison
+      const recordDate = dayjs(record.date).format('YYYY-DD-MM');
+      const startDate = dayjs(dateRange[0]).format('YYYY-MM-DD');
+      const endDate = dayjs(dateRange[1]).format('YYYY-MM-DD');
+      
+      // console.log(`Comparing: Record=${record.date} (${recordDate}) with Range=${startDate} to ${endDate}`);
+      
+      return recordDate >= startDate && recordDate <= endDate;
+    });
+  }
+  
+  return itemCopy;
+});
 
     if (filterText) {
       const searchTerm = filterText.toLowerCase();
@@ -308,8 +331,21 @@ export const useAttendance = (user, monthYear, ws, send) => {
           }
           return false; // No attendance data or not an array
         });
-      }
-      else {
+      }else if(view === "absent") {
+        console.log(filteredData);
+        
+        // Filter employees who have attendance records with netHR equal to 0
+        filteredData = filteredData.filter(item => {
+          // Check if the employee has an attendance array
+          if (item.attendance && Array.isArray(item.attendance)) {
+            // Return true if at least one attendance record has netHR equal to 0
+            return item.attendance.some(record => 
+              record.netHR === 0
+            );
+          }
+          return false; // No attendance data or not an array
+        });
+      } else {
         // Filter by shift (original logic)
         filteredData = filteredData.filter(item =>
           item.attendance?.some(att =>
@@ -344,7 +380,7 @@ export const useAttendance = (user, monthYear, ws, send) => {
     }
 
     return { data: filteredData, isEmpty };
-  }, [attendanceData, filterText, view, MetrixDiffData, sortConfig]);
+  }, [attendanceData, filterText, view, MetrixDiffData, sortConfig, dateRange]);
   
   // Update nodata state
   useEffect(() => {
