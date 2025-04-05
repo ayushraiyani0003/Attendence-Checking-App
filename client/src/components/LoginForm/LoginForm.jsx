@@ -43,19 +43,41 @@ const LoginForm = ({ onLogin }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [alreadyLoggedIn, setAlreadyLoggedIn] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // console.log('Login attempt with in form username:', username, 'and password:', password);
-    onLogin(username, password)
+    setError('');
+    setAlreadyLoggedIn(false);
+    
+    onLogin(username, password, false) // Regular login, not forced
       .then(() => {
         setUsername('');
         setPassword('');
-        setError('');  // Clear error if login is successful
       })
       .catch((error) => {
-        setError('Invalid username or password.');  // Set error message
-        console.error('Login failed:', error);  // Log error
+        // Check if error is because user is already logged in elsewhere
+        if (error.message && error.message.includes('already logged in')) {
+          setAlreadyLoggedIn(true);
+          setError('You are already logged in on another device.');
+        } else {
+          setError('Invalid username or password.');
+        }
+        console.error('Login failed:', error);
+      });
+  };
+
+  const handleForceLogin = () => {
+    onLogin(username, password, true) // Force login
+      .then(() => {
+        setUsername('');
+        setPassword('');
+        setError('');
+        setAlreadyLoggedIn(false);
+      })
+      .catch((error) => {
+        setError('Login failed. Please try again.');
+        console.error('Force login failed:', error);
       });
   };
 
@@ -82,7 +104,20 @@ const LoginForm = ({ onLogin }) => {
           />
           <button type="submit" className="login-button">Login</button>
         </form>
+        
         {error && <div className="error-message">{error}</div>}
+        
+        {alreadyLoggedIn && (
+          <div className="already-logged-in">
+            <p>You can only be logged in on one device at a time.</p>
+            <button 
+              onClick={handleForceLogin} 
+              className="force-login-button"
+            >
+              Continue on this device
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

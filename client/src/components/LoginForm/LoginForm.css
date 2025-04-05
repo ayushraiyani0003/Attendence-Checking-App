@@ -128,9 +128,51 @@ h2 {
   font-size: 14px;
 }
 
+/* New styles for already logged in message - matches your theme */
+.already-logged-in {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: var(--card-bg-light, #f5f7fa);
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  text-align: center;
+}
+
+.already-logged-in p {
+  margin-bottom: 10px;
+  color: var(--text-light);
+  font-size: 14px;
+}
+
+.force-login-button {
+  background-color: var(--warning-color, #f59e0b);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  width: 100%;
+  margin-top: 5px;
+}
+
+.force-login-button:hover {
+  background-color: var(--warning-hover, #d97706);
+}
+
+.force-login-button:focus {
+  outline: none;
+}
+
 @media screen and (max-width: 400px) {
   .login-form {
     width: 100%;
     padding: 25px;
+  }
+  
+  .already-logged-in {
+    padding: 12px;
   }
 }
