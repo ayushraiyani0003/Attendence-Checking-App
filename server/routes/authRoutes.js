@@ -1,15 +1,21 @@
 const express = require('express');
-const { userLogin, validateToken,userLogout } = require('../controllers/authController.js');
-const { authenticateJWT } = require('../middlewares/authMiddleware');  // Import authentication middleware
 const router = express.Router();
+const { 
+  userLogin, 
+  validateToken, 
+  userLogout, 
+  pingSession, 
+  validateSession 
+} = require('../controllers/authController');
+const { authenticateJWT } = require('../middlewares/authMiddleware');
 
-// Handle user login
+// Auth routes
 router.post('/login', userLogin);
-
-// Handle user logout
 router.post('/logout', userLogout);
+router.get('/validate-token', authenticateJWT, validateToken);
 
-// Token validation route
-router.get('/validate-token', authenticateJWT, validateToken);  // Protect the route with JWT authentication middleware
+// Session management routes
+router.post('/ping-session', authenticateJWT, pingSession);
+router.post('/validate-session', authenticateJWT, validateSession);
 
 module.exports = router;
