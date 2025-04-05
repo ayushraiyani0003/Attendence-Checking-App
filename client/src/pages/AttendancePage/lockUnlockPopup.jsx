@@ -24,9 +24,6 @@ function LockUnlockPopup({
         }
     }, [isOpen]);
 
-    // console.log(currentlyLockUnlock);
-
-
     // Add the event listener when the popup is open
     useEffect(() => {
         if (!isOpen) return;
@@ -77,47 +74,52 @@ function LockUnlockPopup({
     };
 
     // Filter out admin users and prepare options for the dropdown
-// Inside your map function where you create user options
-const userOptions = usersRequiringApproval
-    .filter(user => user.user_role !== 'admin') // Filter out admin users
-    .map(user => {
-        // Format the date before comparing
-        const formattedSelectedDate = formatDate(date);
-        
-        // Handle multi-group users without changing the return structure
-        const userGroups = Array.isArray(user.reporting_group) 
-            ? user.reporting_group 
-            : [user.reporting_group];
-        
-        // Check if ANY group is unlocked (we want green if any group is unlocked)
-        const isLocked = userGroups.every(group => {
-            return currentlyLockUnlock.some(item => {
-                // Normalize strings for comparison (lowercase both values)
-                const normalizedItemGroup = String(item.reporting_group).toLowerCase();
-                const normalizedUserGroup = String(group).toLowerCase();
-                
-                // Return true if this specific group is locked
-                return item.date === formattedSelectedDate && 
-                    normalizedItemGroup === normalizedUserGroup &&
-                    item.status === "locked";
+    const userOptions = usersRequiringApproval
+        .filter(user => user.user_role !== 'admin') // Filter out admin users
+        .map(user => {
+            // Format the date before comparing
+            const formattedSelectedDate = formatDate(date);
+            
+            // Handle multi-group users without changing the return structure
+            const userGroups = Array.isArray(user.reporting_group) 
+                ? user.reporting_group 
+                : [user.reporting_group];
+            
+            // Check if ANY group is unlocked (we want green if any group is unlocked)
+            const isLocked = userGroups.every(group => {
+                return currentlyLockUnlock.some(item => {
+                    // Normalize strings for comparison (lowercase both values)
+                    const normalizedItemGroup = String(item.reporting_group).toLowerCase();
+                    const normalizedUserGroup = String(group).toLowerCase();
+                    
+                    // Return true if this specific group is locked
+                    return item.date === formattedSelectedDate && 
+                        normalizedItemGroup === normalizedUserGroup &&
+                        item.status === "locked";
+                });
             });
+            
+            // For display, join multiple groups with commas
+            const displayGroups = Array.isArray(user.reporting_group) 
+                ? user.reporting_group.join(', ') 
+                : user.reporting_group;
+            
+            return {
+                value: user.reporting_group, // Keep original value structure
+                label: `${user.name} - ${displayGroups} ${isLocked ? '🔴' : '🟢'}`,
+                isLocked: isLocked
+            };
         });
-        
-        // console.log(user);
-        // console.log("formattedSelectedDate: " + formattedSelectedDate);
-        
-        // For display, join multiple groups with commas
-        const displayGroups = Array.isArray(user.reporting_group) 
-            ? user.reporting_group.join(', ') 
-            : user.reporting_group;
-        
-        return {
-            value: user.reporting_group, // Keep original value structure
-            label: `${user.name} - ${displayGroups} ${isLocked ? '🔴' : '🟢'}`,
-            isLocked: isLocked
-        };
-    });
 
+    // Add the "All Groups" option at the first position
+    const allGroupsOption = {
+        value: "all_groups",
+        label: "All Groups",
+        isLocked: false // You may want to calculate this based on all groups' lock status
+    };
+    
+    // Insert the "All Groups" option at the beginning of the options array
+    const optionsWithAllGroups = [allGroupsOption, ...userOptions];
 
     const handleUserChange = (selectedOption) => {
         setSelectedUser(selectedOption);
@@ -180,7 +182,7 @@ const userOptions = usersRequiringApproval
                 {/* User selection dropdown */}
                 <div className="user-selection" style={{ marginBottom: "20px" }}>
                     <Select
-                        options={userOptions}
+                        options={optionsWithAllGroups}
                         placeholder="Select user"
                         styles={customStyles}
                         isSearchable={true}
