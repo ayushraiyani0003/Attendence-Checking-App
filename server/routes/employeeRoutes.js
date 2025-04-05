@@ -8,6 +8,7 @@ const {
   deleteEmployee,
   getAllEmployees,
   getEmployee,
+  getEmployeeByGroup
 } = require("../controllers/employeeController");
 
 // Routes for employee management
@@ -16,5 +17,6 @@ router.put("/:employee_id", authenticateJWT, isAdmin, editEmployee); // Edit an 
 router.delete("/:employee_id", authenticateJWT, isAdmin, deleteEmployee); // Delete an employee
 router.get("/", authenticateJWT, isAdmin, getAllEmployees); // Get all employees
 router.get("/:employee_id", authenticateJWT, isAdmin, getEmployee); // Get employee by ID
+router.get("/groups/:groups", authenticateJWT, getEmployeeByGroup); // Get employee by ID
 
 module.exports = router;

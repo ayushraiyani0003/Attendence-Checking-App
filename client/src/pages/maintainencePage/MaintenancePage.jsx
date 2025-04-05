@@ -42,7 +42,7 @@ export default function CustomMaintenancePage() {
               <div style={styles.iconSmall}>
                 <CalendarIcon />
               </div>
-              <p style={styles.timelineText}>Back online: 1:30 PM</p>
+              <p style={styles.timelineText}>Back online: 3:30 PM</p>
             </div>
 
             <div style={styles.timelineItem}>

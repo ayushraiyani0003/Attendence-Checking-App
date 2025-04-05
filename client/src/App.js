@@ -14,6 +14,7 @@ import SettingsPage from "./pages/SettingPage/SettingPage";
 import UploadPage from "./pages/UploadPage/UploadPage";
 import UserListPage from "./pages/UserListPage/UserListPage";
 import DashboardPage from "./pages/DashboardPage/DashboardPage";
+import EmployeeOrderPage from "./pages/employeeOrderPage/EmployeeOrderPage";
 import LogInPage from "./pages/LogInPage/LogInPage";
 import { AuthContext, AuthProvider } from "./context/AuthContext";
 import { pageRedirect } from "./utils/constants";
@@ -78,107 +79,119 @@ const App = () => {
   }, [isAuthenticated, user, navigate]);
 
   return (
-    <AuthProvider>
-      {/* ToastContainer should be at the app level, outside the authentication check */}
-      <ToastContainer 
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
+    // <AuthProvider>
+    //   {/* ToastContainer should be at the app level, outside the authentication check */}
+    //   <ToastContainer 
+    //     position="top-right"
+    //     autoClose={5000}
+    //     hideProgressBar={false}
+    //     newestOnTop
+    //     closeOnClick
+    //     rtl={false}
+    //     pauseOnFocusLoss
+    //     draggable
+    //     pauseOnHover
+    //   />
       
-      {/* NetworkMonitor should be included regardless of authentication */}
-      <NetworkMonitor />
+    //   {/* NetworkMonitor should be included regardless of authentication */}
+    //   <NetworkMonitor />
       
-      {isAuthenticated ? (
-        <div className="flex">
-            <CustomSidebar
-              isOpen={isSidebarOpen}
-              toggleSidebar={toggleSidebar}
-              isAdmin={user?.role === "admin"}
-              userDepartments={user.userReportingGroup}
-              onLogout={handleLogout}
-              pagesRedirect={pageRedirect}
-            />
+    //   {isAuthenticated ? (
+    //     <div className="flex">
+    //         <CustomSidebar
+    //           isOpen={isSidebarOpen}
+    //           toggleSidebar={toggleSidebar}
+    //           isAdmin={user?.role === "admin"}
+    //           userDepartments={user.userReportingGroup}
+    //           onLogout={handleLogout}
+    //           pagesRedirect={pageRedirect}
+    //         />
 
-          <div className="flex-1">
-            <CustomHeader toggleSidebar={toggleSidebar} user={user}
-               onSearch={handleSearchChange} // Pass search change handler
-               onMonthChange={handleMonthChange} // Pass month/year change handler
-            />
-            <Routes>
-              {/* Default page after login (either user or admin based) */}
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute isAuthenticated={isAuthenticated}>
-                    <WebSocketProvider>
-                      <AttendencePage user={user} monthYear={selectedMonthYear}/>
-                    </WebSocketProvider>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute isAuthenticated={isAuthenticated}>
-                      <DashboardPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/employee"
-                element={
-                  <ProtectedRoute isAuthenticated={isAuthenticated}>
-                    <EmployeeProvider>
-                      <EmployeePage />
-                    </EmployeeProvider>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/user-list"
-                element={
-                  <ProtectedRoute isAuthenticated={isAuthenticated}>
-                    <UserListPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/settings"
-                element={
-                  <ProtectedRoute isAuthenticated={isAuthenticated}>
-                    <SettingsPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/upload"
-                element={
-                  <ProtectedRoute isAuthenticated={isAuthenticated}>
-                    <UploadProvider>
-                      <UploadPage />
-                    </UploadProvider>
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </div>
-        </div>
-      ) : (
-        <Routes>
-          <Route path="/login" element={<LogInPage onLogin={login} />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      )}
-    </AuthProvider>
-    // <UnderMaintenancePage />
+    //       <div className="flex-1">
+    //         <CustomHeader toggleSidebar={toggleSidebar} user={user}
+    //            onSearch={handleSearchChange} // Pass search change handler
+    //            onMonthChange={handleMonthChange} // Pass month/year change handler
+    //         />
+    //         <Routes>
+    //           {/* Default page after login (either user or admin based) */}
+    //           <Route
+    //             path="/"
+    //             element={
+    //               <ProtectedRoute isAuthenticated={isAuthenticated}>
+    //                 <WebSocketProvider>
+    //                   <AttendencePage user={user} monthYear={selectedMonthYear}/>
+    //                 </WebSocketProvider>
+    //               </ProtectedRoute>
+    //             }
+    //           />
+    //           <Route
+    //             path="/dashboard"
+    //             element={
+    //               <ProtectedRoute isAuthenticated={isAuthenticated}>
+    //                   <DashboardPage />
+    //               </ProtectedRoute>
+    //             }
+    //           />
+    //           <Route
+    //             path="/employee"
+    //             element={
+    //               <ProtectedRoute isAuthenticated={isAuthenticated}>
+    //                 <EmployeeProvider>
+    //                   <EmployeePage />
+    //                 </EmployeeProvider>
+    //               </ProtectedRoute>
+    //             }
+    //           />
+    //           <Route
+    //             path="/user-list"
+    //             element={
+    //               <ProtectedRoute isAuthenticated={isAuthenticated}>
+    //                 <UserListPage />
+    //               </ProtectedRoute>
+    //             }
+    //           />
+    //           <Route
+    //             path="/settings"
+    //             element={
+    //               <ProtectedRoute isAuthenticated={isAuthenticated}>
+    //                 <SettingsPage />
+    //               </ProtectedRoute>
+    //             }
+    //           />
+    //           <Route
+    //             path="/upload"
+    //             element={
+    //               <ProtectedRoute isAuthenticated={isAuthenticated}>
+    //                 <UploadProvider>
+    //                   <UploadPage />
+    //                 </UploadProvider>
+    //               </ProtectedRoute>
+    //             }
+    //           />
+    //           <Route
+    //             path="/employee-list"
+    //             element={
+    //               <ProtectedRoute isAuthenticated={isAuthenticated}>
+                   
+    //                <EmployeeProvider>
+    //                   <EmployeeOrderPage user={user} />
+                    
+    //                 </EmployeeProvider>
+    //               </ProtectedRoute>
+    //             }
+    //           />
+    //           <Route path="*" element={<Navigate to="/" replace />} />
+    //         </Routes>
+    //       </div>
+    //     </div>
+    //   ) : (
+    //     <Routes>
+    //       <Route path="/login" element={<LogInPage onLogin={login} />} />
+    //       <Route path="*" element={<Navigate to="/login" replace />} />
+    //     </Routes>
+    //   )}
+    // </AuthProvider>
+    <UnderMaintenancePage />
   );
 };
 

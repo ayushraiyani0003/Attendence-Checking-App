@@ -4,6 +4,7 @@ const {
   deleteEmployeeService,
   getAllEmployeesService,
   getEmployeeService,
+  getOnlyGroupsEmployeesService
 } = require("../services/employeeServices"); // Import services
 
 // Create a new employee
@@ -96,6 +97,25 @@ const getAllEmployees = async (req, res) => {
   }
 };
 
+const getEmployeeByGroup = async (req, res) => {
+  console.log("this is call");
+  
+  try {
+    const { groups } = req.parms; // Assuming groups are passed in the request body as an array
+    
+    if (!groups || !Array.isArray(groups)) {
+      return res.status(400).json({ message: "Please provide a valid array of reporting groups" });
+    }
+    
+    const employees = await getOnlyGroupsEmployeesService(groups);
+    res.status(200).json({ employees });
+  } catch (error) {
+    console.error("Error fetching employees:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+
 // Get employee by ID
 const getEmployee = async (req, res) => {
   try {
@@ -116,4 +136,5 @@ module.exports = {
   deleteEmployee,
   getAllEmployees,
   getEmployee,
+  getEmployeeByGroup
 };

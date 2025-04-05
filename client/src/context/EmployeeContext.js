@@ -5,6 +5,7 @@ import {
   addEmployee as createEmployee,
   deleteEmployee as removeEmployee,
   updateEmployee as modifyEmployee,
+  GroupEmployees as fetchGroupEmployees 
 } from "../services/employeeServices"; // Import service functions
 
 const EmployeeContext = createContext();
@@ -23,7 +24,7 @@ export const EmployeeProvider = ({ children }) => {
 
   const fetchEmployeesData = async () => {
     try {
-      const data = await fetchEmployees();
+      const data = await fetchGroupEmployees();
       setEmployees(data);
       setLoading(false);
     } catch (error) {
@@ -77,6 +78,17 @@ export const EmployeeProvider = ({ children }) => {
     }
   };
 
+  const fetchEmployeesByGroup = async (groupsName) => {
+    try {
+      const data = await fetchGroupEmployees(groupsName);
+      setEmployees(data);
+      setLoading(false);
+    } catch (error) {
+      notification.error({ message: "Failed to load employees" });
+      setLoading(false);
+    }
+  }
+
   return (
     <EmployeeContext.Provider
       value={{
@@ -85,6 +97,7 @@ export const EmployeeProvider = ({ children }) => {
         addNewEmployee, // Make sure this is included in the context value
         editEmployee,
         removeEmployeeById,
+        fetchEmployeesByGroup
       }}
     >
       {children}

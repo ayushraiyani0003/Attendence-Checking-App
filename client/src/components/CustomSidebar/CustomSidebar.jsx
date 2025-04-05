@@ -41,17 +41,12 @@ export default function CustomSidebar({ isOpen, toggleSidebar, userDepartments, 
           <div className="sidebar-section">
             <h3 className="section-title"> Departments</h3>
             <ul className="sidebar-list">
-              {isAdmin ? (
                 <li className="sidebar-item">
                   <Link to="/" onClick={toggleSidebar}>Attendance</Link>
                 </li>
-              ) : (
-                userDepartments.map((dept) => (
-                  <li key={dept.name} className="sidebar-item" onClick={toggleSidebar}>
-                     <Link to="/" onClick={toggleSidebar}>{dept}</Link>
-                  </li>
-                ))
-              )}
+                <li className="sidebar-item">
+                  <Link to="/employee-list" onClick={toggleSidebar}>Employee List</Link>
+                </li>
             </ul>
           </div>
           

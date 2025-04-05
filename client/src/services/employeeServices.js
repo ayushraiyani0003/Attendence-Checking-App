@@ -8,6 +8,14 @@ export const getEmployees = async () => {
   return response.data.employees;
 };
 
+export const GroupEmployees = async (groupsName) => {
+  console.log("this is call");
+  const response = await axios.get(`${API_URL}/employees/groups`, {
+    params: { groups: groupsName }
+  });
+  return response.data.employees;
+}
+
 export const addEmployee = async (employeeData) => {
   // console.log("employe data services : " + employeeData);
 

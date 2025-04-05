@@ -68,6 +68,22 @@ const getAllEmployeesService = async () => {
   }
 };
 
+// Service for fetching employees filtered by reporting groups
+const getOnlyGroupsEmployeesService = async (groups) => {
+  try {
+    const employees = await Employee.findAll({
+      where: {
+        reporting_group: {
+          [Op.in]: groups // Use Sequelize's "in" operator to match any of the provided groups
+        }
+      }
+    });
+    return employees;
+  } catch (error) {
+    throw new Error("Error fetching employees: " + error.message);
+  }
+};
+
 // Service for fetching an employee by ID
 const getEmployeeService = async (employeeId) => {
   try {
@@ -87,4 +103,5 @@ module.exports = {
   deleteEmployeeService,
   getAllEmployeesService,
   getEmployeeService,
+  getOnlyGroupsEmployeesService
 };
