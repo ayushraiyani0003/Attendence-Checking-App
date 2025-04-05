@@ -24,7 +24,7 @@ export const EmployeeProvider = ({ children }) => {
 
   const fetchEmployeesData = async () => {
     try {
-      const data = await fetchGroupEmployees();
+      const data = await fetchEmployees();
       setEmployees(data);
       setLoading(false);
     } catch (error) {
