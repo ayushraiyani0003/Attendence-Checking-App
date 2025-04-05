@@ -106,7 +106,7 @@ function LockUnlockPopup({
             
             return {
                 value: user.reporting_group, // Keep original value structure
-                label: `${user.name} - ${displayGroups} ${isLocked ? '🔴' : '🟢'}`,
+                label: ` ${isLocked ? '🔴' : '🟢'} ${user.name} - ${displayGroups}`,
                 isLocked: isLocked
             };
         });
