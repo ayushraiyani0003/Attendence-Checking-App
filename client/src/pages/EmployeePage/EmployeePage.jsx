@@ -3,6 +3,7 @@ import { Table, Input, Button, Select, Space, Typography, Tag, Card, Divider, To
 import { SearchOutlined, DownloadOutlined, UserOutlined, EditOutlined, DeleteOutlined, PlusOutlined, FilterOutlined } from '@ant-design/icons';
 import { useSettings } from '../../context/SettingsContext';
 import useEmployee from '../../hooks/useEmployee';
+import * as XLSX from 'xlsx';
 import './EmployeePage.css';
 
 const { Title } = Typography;
@@ -62,6 +63,70 @@ const EmployeePage = () => {
   const handleDeleteCancel = () => {
     setIsDeleteModalVisible(false);
     setEmployeeToDelete(null);
+  };
+
+  // Function to export employee data to Excel
+  const exportToExcel = () => {
+    try {
+      // Determine which data to export (filtered or all)
+      const dataToExport = filteredData.length > 0 ? filteredData : employees;
+      
+      // Create a new array with only the data we want to export
+      const exportData = dataToExport.map(employee => ({
+        'Punch Code': employee.punch_code,
+        'Name': employee.name,
+        'Department': employee.department,
+        'Designation': employee.designation,
+        'Reporting Group': employee.reporting_group
+      }));
+      
+      // Create a new workbook
+      const workbook = XLSX.utils.book_new();
+      
+      // Convert the data to a worksheet
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      
+      // Add the worksheet to the workbook
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Employees');
+      
+      // Generate Excel file
+      const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+      
+      // Save the file
+      saveAsExcelFile(excelBuffer, 'Employee_Directory');
+      
+      // Show success notification
+      notification.success({
+        message: 'Export Successful',
+        description: `Successfully exported ${exportData.length} employee records.`,
+        placement: 'bottomRight',
+      });
+    } catch (error) {
+      // Show error notification
+      notification.error({
+        message: 'Export Failed',
+        description: 'There was an error exporting the data. Please try again.',
+        placement: 'bottomRight',
+      });
+      console.error("Export error:", error);
+    }
+  };
+
+  // Helper function to save the Excel file
+  const saveAsExcelFile = (buffer, fileName) => {
+    const data = new Blob([buffer], { type: 'application/octet-stream' });
+    const url = window.URL.createObjectURL(data);
+    const link = document.createElement('a');
+    link.href = url;
+    const currentDate = new Date();
+    const formattedDate = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
+    link.download = `${fileName}_${formattedDate}.xlsx`;
+    link.click();
+    // Clean up
+    setTimeout(() => {
+      window.URL.revokeObjectURL(url);
+      link.remove();
+    }, 100);
   };
 
   const columns = [
@@ -225,7 +290,12 @@ const EmployeePage = () => {
               >
                 Add Employee
               </Button>
-              <Button type="default" icon={<DownloadOutlined />} className="export-button">
+              <Button 
+                type="default" 
+                icon={<DownloadOutlined />} 
+                className="export-button"
+                onClick={exportToExcel}
+              >
                 Export
               </Button>
             </div>
