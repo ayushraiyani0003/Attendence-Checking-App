@@ -20,9 +20,6 @@ const createEmployeeService = async (employeeData) => {
 
 // Service for editing an existing employee
 const editEmployeeService = async (employeeId, updatedData) => {
-  console.log(updatedData);
-  console.log(employeeId);
-  
   try {
     const employee = await Employee.findByPk(employeeId);
     if (!employee) {
@@ -35,6 +32,14 @@ const editEmployeeService = async (employeeId, updatedData) => {
     employee.punch_code = updatedData.punch_code;
     employee.designation = updatedData.designation;
     employee.reporting_group = updatedData.reporting_group;
+    
+    // Update the new fields
+    employee.net_hr = updatedData.net_hr;
+    employee.week_off = updatedData.week_off;
+    employee.resign_date = updatedData.resign_date;
+    employee.status = updatedData.status;
+    employee.branch = updatedData.branch;
+    employee.sections = updatedData.sections;
 
     await employee.save();
     return employee;
