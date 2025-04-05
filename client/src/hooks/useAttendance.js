@@ -489,22 +489,37 @@ export const useAttendance = (user, monthYear, ws, send) => {
     setSortConfig({ key, direction });
   };
 
-  // Handle save changes
-  const handleSaveChanges = () => {
-    const savePayload = {
-      action: "saveDataRedisToMysql",
-      monthYear: monthYear,
-      user: user
-    };
-
-    // Send the payload via WebSocket
-    send(savePayload);
+// Handle save changes
+const handleSaveChanges = () => {
+  // For admin users, ask for confirmation twice
+  if (user.role === 'admin') {
+    const firstConfirm = window.confirm("Are you sure you want to save these changes?");
     
-    // Show toast for saving
-    toast.info("Saving changes...", {autoClose: 3000});
+    if (firstConfirm) {
+      const secondConfirm = window.confirm("Please confirm once more that you want to save these changes to the database.");
+      
+      if (!secondConfirm) {
+        return; // Exit if the user cancels the second confirmation
+      }
+    } else {
+      return; // Exit if the user cancels the first confirmation
+    }
+  }
 
-    setHasChanges(false);
+  const savePayload = {
+    action: "saveDataRedisToMysql",
+    monthYear: monthYear,
+    user: user
   };
+
+  // Send the payload via WebSocket
+  send(savePayload);
+  
+  // Show toast for saving
+  toast.info("Saving changes...", {autoClose: 3000});
+
+  setHasChanges(false);
+};
 
   // Handle lock/unlock
   const handleLock = (reportingGroup, date) => {
