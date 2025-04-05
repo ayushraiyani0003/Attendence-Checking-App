@@ -13,7 +13,7 @@ import EmployeePage from "./pages/EmployeePage/EmployeePage";
 import SettingsPage from "./pages/SettingPage/SettingPage";
 import UploadPage from "./pages/UploadPage/UploadPage";
 import UserListPage from "./pages/UserListPage/UserListPage";
-import DashboardPage from "./pages/DashboardPage/DashboardPage";
+import MistakeDashboard from "./pages/DashboardPage/DashboardPage";
 import EmployeeOrderPage from "./pages/employeeOrderPage/EmployeeOrderPage";
 import LogInPage from "./pages/LogInPage/LogInPage";
 import { AuthContext, AuthProvider } from "./context/AuthContext";
@@ -128,7 +128,7 @@ const App = () => {
                 path="/dashboard"
                 element={
                   <ProtectedRoute isAuthenticated={isAuthenticated}>
-                      <DashboardPage />
+                      <MistakeDashboard selectedMonthYear={selectedMonthYear} />
                   </ProtectedRoute>
                 }
               />
