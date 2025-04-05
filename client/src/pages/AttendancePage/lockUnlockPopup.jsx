@@ -111,9 +111,25 @@ function LockUnlockPopup({
             };
         });
 
+    // Extract all unique reporting groups from users
+    const allReportingGroups = [];
+    usersRequiringApproval
+        .filter(user => user.user_role !== 'admin')
+        .forEach(user => {
+            if (Array.isArray(user.reporting_group)) {
+                user.reporting_group.forEach(group => {
+                    if (!allReportingGroups.includes(group)) {
+                        allReportingGroups.push(group);
+                    }
+                });
+            } else if (!allReportingGroups.includes(user.reporting_group)) {
+                allReportingGroups.push(user.reporting_group);
+            }
+        });
+    
     // Add the "All Groups" option at the first position
     const allGroupsOption = {
-        value: "all_groups",
+        value: allReportingGroups, // This will pass all group names as an array
         label: "All Groups",
         isLocked: false // You may want to calculate this based on all groups' lock status
     };
