@@ -100,7 +100,7 @@ const EmployeeOrderPage = (user) => {
       title: 'Punch Code',
       dataIndex: 'punch_code',
       width: 150,
-      render: (text) => <span className="punch-code">{text}</span>,
+      render: (text) => <span className="emp-order-punch-code">{text}</span>,
       align: 'center',
     },
     {
