@@ -31,6 +31,37 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(255),
         allowNull: true,
       },
+      net_hr: {
+        type: DataTypes.FLOAT,
+        allowNull: true,
+        comment: "Net hours an employee works",
+      },
+      week_off: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+        comment: "Weekly off days",
+      },
+      resign_date: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        comment: "Date of resignation if applicable",
+      },
+      status: {
+        type: DataTypes.ENUM('active', 'inactive', 'resigned', 'on_leave'),
+        defaultValue: 'active',
+        allowNull: false,
+        comment: "Current employment status",
+      },
+      branch: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        comment: "Branch location of the employee",
+      },
+      sections: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        comment: "Sections or teams the employee belongs to",
+      },
     },
     {
       tableName: "employees",
