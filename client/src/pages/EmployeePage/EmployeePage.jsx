@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Input, Button, Select, Space, Typography, Tag, Card, Divider, Tooltip, notification, Form, Modal } from 'antd';
+import { Table, Input, Button, Select, Space, Typography, Tag, Card, Divider, Tooltip, notification, Form, Modal, DatePicker, Switch } from 'antd';
 import { SearchOutlined, DownloadOutlined, UserOutlined, EditOutlined, DeleteOutlined, PlusOutlined, FilterOutlined } from '@ant-design/icons';
 import { useSettings } from '../../context/SettingsContext';
 import useEmployee from '../../hooks/useEmployee';
@@ -10,8 +10,8 @@ const { Title } = Typography;
 const { Option } = Select;
 
 const EmployeePage = () => {
-  const { departments, designations, reportingGroups, loading: settingsLoading } = useSettings();
-  const { employees, loading, addEmployee, editEmployee, removeEmployee } = useEmployee();
+  const { departments = [], designations = [], reportingGroups = [], branches = [], sections = [], loading: settingsLoading } = useSettings();
+  const { employees = [], loading, addEmployee, editEmployee, removeEmployee } = useEmployee();
   const [filteredData, setFilteredData] = useState([]);
   const [searchText, setSearchText] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -25,19 +25,24 @@ const EmployeePage = () => {
 
   // Improved search functionality to handle mixed types
   useEffect(() => {
-    if (!employees.length) return;
+    if (!employees || !employees.length) {
+      setFilteredData([]);
+      return;
+    }
 
     const lowerSearchText = searchText.toLowerCase();
     const filtered = employees.filter(item => {
       // Convert punch_code to string to handle mixed types
-      const punchCodeStr = String(item.punch_code);
+      const punchCodeStr = String(item.punch_code || '');
 
       return (
         (item.name && item.name.toLowerCase().includes(lowerSearchText)) ||
         (item.department && item.department.toLowerCase().includes(lowerSearchText)) ||
         (item.designation && item.designation.toLowerCase().includes(lowerSearchText)) ||
         (item.reporting_group && item.reporting_group.toLowerCase().includes(lowerSearchText)) ||
-        (punchCodeStr && punchCodeStr.includes(lowerSearchText))
+        (item.branch && item.branch.toLowerCase().includes(lowerSearchText)) ||
+        (item.sections && item.sections.toLowerCase().includes(lowerSearchText)) ||
+        punchCodeStr.includes(lowerSearchText)
       );
     });
 
@@ -77,7 +82,13 @@ const EmployeePage = () => {
         'Name': employee.name,
         'Department': employee.department,
         'Designation': employee.designation,
-        'Reporting Group': employee.reporting_group
+        'Reporting Group': employee.reporting_group,
+        'Net Hours': employee.net_hr,
+        'Week Off': employee.week_off,
+        'Resign Date': employee.resign_date,
+        'Status': employee.status,
+        'Branch': employee.branch,
+        'Sections': employee.sections
       }));
       
       // Create a new workbook
@@ -136,8 +147,8 @@ const EmployeePage = () => {
       key: 'punch_code',
       sorter: (a, b) => {
         // Handle mixed type sorting
-        const aVal = String(a.punch_code);
-        const bVal = String(b.punch_code);
+        const aVal = String(a.punch_code || '');
+        const bVal = String(b.punch_code || '');
         return aVal.localeCompare(bVal);
       },
       render: (text) => <span className="employee-page-punch-code">{text}</span>,
@@ -146,7 +157,7 @@ const EmployeePage = () => {
       title: 'Name',
       dataIndex: 'name',
       key: 'name',
-      sorter: (a, b) => a.name.localeCompare(b.name),
+      sorter: (a, b) => (a.name || '').localeCompare(b.name || ''),
       render: (text) => (
         <Space className="employee-name" size={4}>
           <UserOutlined />
@@ -158,7 +169,7 @@ const EmployeePage = () => {
       title: 'Department',
       dataIndex: 'department',
       key: 'department',
-      filters: departments.map((dept) => ({ text: dept.name, value: dept.name })),
+      filters: departments && departments.length ? departments.map((dept) => ({ text: dept.name, value: dept.name })) : [],
       onFilter: (value, record) => record.department === value,
       render: (text) => <Tag>{text}</Tag>,
     },
@@ -166,24 +177,91 @@ const EmployeePage = () => {
       title: 'Designation',
       dataIndex: 'designation',
       key: 'designation',
-      filters: designations.map((desig) => ({ text: desig.designation_name, value: desig.designation_name })),
+      filters: designations && designations.length ? designations.map((desig) => ({ text: desig.designation_name, value: desig.designation_name })) : [],
       onFilter: (value, record) => record.designation === value,
+      render: (text) => <span>{text}</span>,
+    },
+    {
+      title: 'Net Hours',
+      dataIndex: 'net_hr',
+      key: 'net_hr',
+      sorter: (a, b) => (a.net_hr || 0) - (b.net_hr || 0),
+      render: (text) => <span>{text}</span>,
+    },
+    {
+      title: 'Week Off',
+      dataIndex: 'week_off',
+      key: 'week_off',
+      filters: [
+        { text: 'Sunday', value: 'Sunday' },
+        { text: 'Monday', value: 'Monday' },
+        { text: 'Tuesday', value: 'Tuesday' },
+        { text: 'Wednesday', value: 'Wednesday' },
+        { text: 'Thursday', value: 'Thursday' },
+        { text: 'Friday', value: 'Friday' },
+        { text: 'Saturday', value: 'Saturday' },
+      ],
+      onFilter: (value, record) => record.week_off === value,
+      render: (text) => <Tag color="blue">{text}</Tag>,
+    },
+    {
+      title: 'Branch',
+      dataIndex: 'branch',
+      key: 'branch',
+      filters: branches && branches.length ? branches.map((branch) => ({ text: branch.name, value: branch.name })) : [],
+      onFilter: (value, record) => record.branch === value,
+      render: (text) => <span>{text}</span>,
+    },
+    {
+      title: 'Sections',
+      dataIndex: 'sections',
+      key: 'sections',
+      filters: sections && sections.length ? sections.map((section) => ({ text: section.name, value: section.name })) : [],
+      onFilter: (value, record) => record.sections === value,
       render: (text) => <span>{text}</span>,
     },
     {
       title: 'Reporting Group',
       dataIndex: 'reporting_group',
       key: 'reporting_group',
-      filters: reportingGroups.map((group) => ({ text: group.groupname, value: group.groupname })),
+      filters: reportingGroups && reportingGroups.length ? reportingGroups.map((group) => ({ text: group.groupname, value: group.groupname })) : [],
       onFilter: (value, record) => record.reporting_group === value,
       render: (text) => {
-        const shiftColors = {
-          Morning: 'green',
-          Afternoon: 'blue',
-          Night: 'purple',
-        };
-        return <Tag color={shiftColors[text]}>{text}</Tag>;
+        
+        return <Tag color={'default'}>{text}</Tag>;
       },
+    },
+    {
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      filters: [
+        { text: 'active', value: 'active' },
+        { text: 'inactive', value: 'inactive' },
+        { text: 'resigned', value: 'resigned' },
+        { text: 'on_leave', value: 'on_leave' },
+      ],
+      onFilter: (value, record) => record.status === value,
+      render: (status) => {
+        const statusColors = {
+          active: 'green',
+          inactive: 'red',
+          resigned: 'orange',
+          on_leave: 'blue'
+        };
+        return <Tag color={statusColors[status] || 'default'}>{status || 'N/A'}</Tag>;
+      },
+    },
+    {
+      title: 'Resign Date',
+      dataIndex: 'resign_date',
+      key: 'resign_date',
+      sorter: (a, b) => {
+        if (!a.resign_date) return 1;
+        if (!b.resign_date) return -1;
+        return new Date(a.resign_date) - new Date(b.resign_date);
+      },
+      render: (text) => text ? <span>{text}</span> : <span>-</span>,
     },
     {
       title: 'Actions',
@@ -245,7 +323,10 @@ const EmployeePage = () => {
 
   const handleEditEmployee = (employee) => {
     setSelectedEmployee(employee);
-    form.setFieldsValue(employee);
+    form.setFieldsValue({
+      ...employee,
+      resign_date: employee.resign_date ? employee.resign_date : null
+    });
     setIsModalVisible(true);
   };
 
@@ -270,7 +351,7 @@ const EmployeePage = () => {
           <div className="actions-container">
             <div className="search-section">
               <Input
-                placeholder="Search by name, department, designation, reporting group, or punch code..."
+                placeholder="Search by name, department, designation, reporting group, branch, section or punch code..."
                 prefix={<SearchOutlined className="search-icon" />}
                 onChange={(e) => handleSearch(e.target.value)}
                 className="search-input"
@@ -326,7 +407,7 @@ const EmployeePage = () => {
             summary={() => (
               <Table.Summary fixed>
                 <Table.Summary.Row>
-                  <Table.Summary.Cell index={0} colSpan={6} className="table-summary">
+                  <Table.Summary.Cell index={0} colSpan={12} className="table-summary">
                     {loading ? 'Loading data...' : `Showing ${filteredData.length} of ${employees.length} employees`}
                   </Table.Summary.Cell>
                 </Table.Summary.Row>
@@ -355,7 +436,7 @@ const EmployeePage = () => {
 
           <Form.Item label="Department" name="department" rules={[{ required: true, message: 'Please select the department!' }]}>
             <Select placeholder="Select department">
-              {departments.map((dept) => (
+              {departments && departments.map((dept) => (
                 <Option key={dept.id} value={dept.name}>
                   {dept.name}
                 </Option>
@@ -365,7 +446,7 @@ const EmployeePage = () => {
 
           <Form.Item label="Designation" name="designation" rules={[{ required: true, message: 'Please select the designation!' }]}>
             <Select placeholder="Select designation">
-              {designations.map((desig) => (
+              {designations && designations.map((desig) => (
                 <Option key={desig.id} value={desig.designation_name}>
                   {desig.designation_name}
                 </Option>
@@ -375,12 +456,62 @@ const EmployeePage = () => {
 
           <Form.Item label="Reporting Group" name="reporting_group" rules={[{ required: true, message: 'Please select the reporting group!' }]}>
             <Select placeholder="Select reporting group">
-              {reportingGroups.map((group) => (
+              {reportingGroups && reportingGroups.map((group) => (
                 <Option key={group.id} value={group.groupname}>
                   {group.groupname}
                 </Option>
               ))}
             </Select>
+          </Form.Item>
+          
+          {/* New form fields for the additional columns */}
+          <Form.Item label="Net Hours" name="net_hr" rules={[{ required: true, message: 'Please enter net hours!' }]}>
+            <Input type="number" placeholder="Enter net hours" />
+          </Form.Item>
+
+          <Form.Item label="Week Off" name="week_off" rules={[{ required: true, message: 'Please select week off day!' }]}>
+            <Select placeholder="Select week off day">
+              <Option value="Sunday">Sunday</Option>
+              <Option value="Monday">Monday</Option>
+              <Option value="Tuesday">Tuesday</Option>
+              <Option value="Wednesday">Wednesday</Option>
+              <Option value="Thursday">Thursday</Option>
+              <Option value="Friday">Friday</Option>
+              <Option value="Saturday">Saturday</Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item label="Branch" name="branch" rules={[{ required: true, message: 'Please select branch!' }]}>
+            <Select placeholder="Select branch">
+              {branches && branches.map((branch) => (
+                <Option key={branch.id} value={branch.name}>
+                  {branch.name}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Form.Item label="Sections" name="sections" rules={[{ required: true, message: 'Please select section!' }]}>
+            <Select placeholder="Select section">
+              {sections && sections.map((section) => (
+                <Option key={section.id} value={section.name}>
+                  {section.name}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Form.Item label="Status" name="status">
+            <Select placeholder="Select status">
+              <Option value="active">Active</Option>
+              <Option value="inactive">Inactive</Option>
+              <Option value="resigned">Resigned</Option>
+              <Option value="on_leave">On Leave</Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item label="Resign Date" name="resign_date">
+            <DatePicker format="YYYY-MM-DD" style={{ width: '100%' }} />
           </Form.Item>
 
           <Form.Item>
@@ -407,7 +538,7 @@ const EmployeePage = () => {
         okButtonProps={{ danger: true }}
       >
         <p>Are you sure you want to delete employee <strong>{employeeToDelete?.name}</strong>?</p>
-        <p>This action cannot be undo.</p>
+        <p>This action cannot be undone.</p>
       </Modal>
     </div>
   );

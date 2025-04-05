@@ -9,7 +9,8 @@ const useEmployee = () => {
     addNewEmployee,
     editEmployee,
     removeEmployeeById,
-  } = useEmployeeContext(); // Make sure this hook is correctly accessing context
+    fetchEmployeesByGroup
+  } = useEmployeeContext();
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -20,7 +21,22 @@ const useEmployee = () => {
 
   const addEmployee = async (employeeData) => {
     try {
-      await addNewEmployee(employeeData); // This should call the context function
+      // Make sure all fields are included
+      const completeEmployeeData = {
+        name: employeeData.name,
+        department: employeeData.department,
+        punch_code: employeeData.punch_code,
+        designation: employeeData.designation,
+        reporting_group: employeeData.reporting_group,
+        net_hr: employeeData.net_hr,
+        week_off: employeeData.week_off,
+        resign_date: employeeData.resign_date,
+        status: employeeData.status || 'active',
+        branch: employeeData.branch,
+        sections: employeeData.sections
+      };
+      
+      await addNewEmployee(completeEmployeeData);
     } catch (error) {
       notification.error({ message: "Failed to add employee" });
     }
@@ -28,7 +44,22 @@ const useEmployee = () => {
 
   const editEmployeeById = async (employeeId, updatedData) => {
     try {
-      await editEmployee(employeeId, updatedData); // This should call the context function
+      // Make sure all fields are included in the update
+      const completeUpdateData = {
+        name: updatedData.name,
+        department: updatedData.department,
+        punch_code: updatedData.punch_code,
+        designation: updatedData.designation,
+        reporting_group: updatedData.reporting_group,
+        net_hr: updatedData.net_hr,
+        week_off: updatedData.week_off,
+        resign_date: updatedData.resign_date,
+        status: updatedData.status,
+        branch: updatedData.branch,
+        sections: updatedData.sections
+      };
+      
+      await editEmployee(employeeId, completeUpdateData);
     } catch (error) {
       notification.error({ message: "Failed to update employee" });
     }
@@ -36,9 +67,17 @@ const useEmployee = () => {
 
   const removeEmployeeByIdHandler = async (employeeId) => {
     try {
-      await removeEmployeeById(employeeId); // This should call the context function
+      await removeEmployeeById(employeeId);
     } catch (error) {
       notification.error({ message: "Failed to delete employee" });
+    }
+  };
+  
+  const getEmployeesByGroup = async (groupsName) => {
+    try {
+      await fetchEmployeesByGroup(groupsName);
+    } catch (error) {
+      notification.error({ message: "Failed to fetch employees by group" });
     }
   };
 
@@ -49,6 +88,7 @@ const useEmployee = () => {
     addEmployee,
     editEmployee: editEmployeeById,
     removeEmployee: removeEmployeeByIdHandler,
+    getEmployeesByGroup
   };
 };
 

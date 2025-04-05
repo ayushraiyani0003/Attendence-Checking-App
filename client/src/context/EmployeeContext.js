@@ -35,8 +35,22 @@ export const EmployeeProvider = ({ children }) => {
 
   const addNewEmployee = async (employeeData) => {
     try {
-      // console.log(employeeData);
-      const newEmployee = await createEmployee(employeeData);
+      // Prepare employee data with all fields including new ones
+      const completeEmployeeData = {
+        name: employeeData.name,
+        department: employeeData.department,
+        punch_code: employeeData.punch_code,
+        designation: employeeData.designation,
+        reporting_group: employeeData.reporting_group,
+        net_hr: employeeData.net_hr,
+        week_off: employeeData.week_off,
+        resign_date: employeeData.resign_date,
+        status: employeeData.status || 'active',
+        branch: employeeData.branch,
+        sections: employeeData.sections
+      };
+      
+      const newEmployee = await createEmployee(completeEmployeeData);
       setEmployees([...employees, newEmployee]);
 
       notification.success({
@@ -50,7 +64,22 @@ export const EmployeeProvider = ({ children }) => {
 
   const editEmployee = async (employeeId, updatedData) => {
     try {
-      const updatedEmployee = await modifyEmployee(employeeId, updatedData);
+      // Ensure all fields are included in the update
+      const completeUpdateData = {
+        name: updatedData.name,
+        department: updatedData.department,
+        punch_code: updatedData.punch_code,
+        designation: updatedData.designation,
+        reporting_group: updatedData.reporting_group,
+        net_hr: updatedData.net_hr,
+        week_off: updatedData.week_off,
+        resign_date: updatedData.resign_date,
+        status: updatedData.status,
+        branch: updatedData.branch,
+        sections: updatedData.sections
+      };
+      
+      const updatedEmployee = await modifyEmployee(employeeId, completeUpdateData);
       setEmployees(
         employees.map((emp) =>
           emp.employee_id === employeeId ? updatedEmployee : emp
@@ -94,7 +123,7 @@ export const EmployeeProvider = ({ children }) => {
       value={{
         employees,
         loading,
-        addNewEmployee, // Make sure this is included in the context value
+        addNewEmployee,
         editEmployee,
         removeEmployeeById,
         fetchEmployeesByGroup
