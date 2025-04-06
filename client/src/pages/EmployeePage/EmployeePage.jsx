@@ -10,7 +10,7 @@ const { Title } = Typography;
 const { Option } = Select;
 
 const EmployeePage = () => {
-  const { departments = [], designations = [], reportingGroups = [], branches = [], sections = [], loading: settingsLoading } = useSettings();
+  const { departments = [], designations = [], reportingGroups = [], loading: settingsLoading } = useSettings();
   const { employees = [], loading, addEmployee, editEmployee, removeEmployee } = useEmployee();
   const [filteredData, setFilteredData] = useState([]);
   const [searchText, setSearchText] = useState('');
@@ -20,6 +20,8 @@ const EmployeePage = () => {
   // Add state for delete confirmation modal
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState(null);
+  const branches = ["Sunchaser Structure Pvt Ltd."];
+  const sections = ["HADAMTALA","WINGS","KOTHARIYA"];
 
   const [form] = Form.useForm();
 
@@ -483,21 +485,21 @@ const EmployeePage = () => {
 
           <Form.Item label="Branch" name="branch" rules={[{ required: true, message: 'Please select branch!' }]}>
             <Select placeholder="Select branch">
-              {branches && branches.map((branch) => (
-                <Option key={branch.id} value={branch.name}>
-                  {branch.name}
-                </Option>
-              ))}
+            {branches && branches.map((branch, index) => (
+  <Option key={index} value={branch}>
+    {branch}
+  </Option>
+))}
             </Select>
           </Form.Item>
 
           <Form.Item label="Sections" name="sections" rules={[{ required: true, message: 'Please select section!' }]}>
             <Select placeholder="Select section">
-              {sections && sections.map((section) => (
-                <Option key={section.id} value={section.name}>
-                  {section.name}
-                </Option>
-              ))}
+            {sections && sections.map((section, index) => (
+  <Option key={index} value={section}>
+    {section}
+  </Option>
+))}
             </Select>
           </Form.Item>
 
