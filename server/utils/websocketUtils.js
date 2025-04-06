@@ -402,44 +402,173 @@ async function handleAttendanceUpdate(ws, data, broadcastToClients) {
  * @param {Object} data - Request data
  * @param {Function} broadcastToClients - Function to broadcast updates
  */
+// Add additional logging to track the execution flow
+// Fixed saveDataRedisToMysql function
 async function saveDataRedisToMysql(ws, data, broadcastToClients) {
   try {
+    console.log('Starting saveDataRedisToMysql with data:', JSON.stringify(data));
+    
     if (!data.monthYear) {
+      console.error('Missing monthYear in request data');
       throw new Error('Month/Year is required');
     }
     
     const { year, month } = convertMonthToYearMonthFormat(data.monthYear);
-    const userGroup = Array.isArray(data.user.userReportingGroup) 
-      ? data.user.userReportingGroup[0] 
-      : data.user.userReportingGroup;
+    console.log(`Converted ${data.monthYear} to year=${year}, month=${month}`);
+    
+    // Format date string for status update
+    const formattedDateString = `${year}-${month.toString().padStart(2, '0')}-01`;
+    
+    // Ensure userReportingGroup is always an array
+    let userGroups = data.user.userReportingGroup;
+    if (!Array.isArray(userGroups)) {
+      userGroups = [userGroups];
+    }
+    
+    console.log(`Using userGroups: ${userGroups.join(', ')}`);
       
-    console.log(`Saving Redis data to MySQL for ${month}/${year}, group ${userGroup}`);
-
-    // Fetch attendance data from Redis
-    const redisAttendanceData = await getRedisAttendanceData(year, month, userGroup);
+    // Fetch attendance data from Redis - passing the entire array of groups
+    console.log(`Fetching Redis data for ${year}/${month}/${userGroups.join(', ')}`);
+    const redisAttendanceData = await getRedisAttendanceData(year, month, userGroups);
+    
+    // Check that we have Redis data
+    if (!redisAttendanceData) {
+      console.warn('No Redis data found for the specified criteria');
+      throw new Error('No attendance data found in Redis for the specified month/year and groups');
+    }
+    
+    // Transform data structure if needed
+    let formattedRedisData = [];
+    // Track all unique dates found in the Redis data for locking later
+    const uniqueDatesToLock = new Set();
+    
+    if (Array.isArray(redisAttendanceData)) {
+      // Process each item in the array to match the expected structure for updateEmployeesDetailsFromRedis
+      redisAttendanceData.forEach(item => {
+        if (item.data) {
+          // Get the group and date information
+          const group = item.group || userGroups[0];
+          
+          // Use the date directly from the item if available
+          let date = item.date || formattedDateString;
+          
+          // If we don't have a date in the item, try to extract it from the key
+          if (!item.date && item.key && typeof item.key === 'string') {
+            // Try to extract date from key like ":attendance:Report:2025-04-05"
+            const dateMatch = item.key.match(/(\d{4}-\d{2}-\d{2})$/);
+            if (dateMatch && dateMatch[1]) {
+              date = dateMatch[1];
+            }
+          }
+          
+          // Add date to uniqueDatesToLock set
+          uniqueDatesToLock.add(date);
+          
+          // Format each item to match the expected structure
+          formattedRedisData.push({
+            group: group,
+            date: date,
+            data: typeof item.data === 'string' ? item.data : JSON.stringify(item.data)
+          });
+        }
+      });
+      
+      console.log(`Transformed Redis data into expected format with ${formattedRedisData.length} group records`);
+    } else if (redisAttendanceData.attendance && Array.isArray(redisAttendanceData.attendance)) {
+      // If we have a single object with attendance array, convert it to the expected format
+      // First check if we have a date in the object
+      let date = redisAttendanceData.date || formattedDateString;
+      
+      // If no date property, try to extract it from the key
+      if (!redisAttendanceData.date && redisAttendanceData.key && typeof redisAttendanceData.key === 'string') {
+        const dateMatch = redisAttendanceData.key.match(/(\d{4}-\d{2}-\d{2})$/);
+        if (dateMatch && dateMatch[1]) {
+          date = dateMatch[1];
+        }
+      }
+      
+      // Add date to uniqueDatesToLock set
+      uniqueDatesToLock.add(date);
+      
+      formattedRedisData.push({
+        group: redisAttendanceData.group || userGroups[0],
+        date: date,
+        data: JSON.stringify(redisAttendanceData.attendance)
+      });
+      
+      console.log(`Transformed single Redis object into expected format with 1 group record containing ${redisAttendanceData.attendance.length} attendance entries`);
+    }
+    
+    // Final validation of the formatted data
+    if (formattedRedisData.length === 0) {
+      console.warn('No valid attendance records found after processing Redis data');
+      throw new Error('No valid attendance records found after processing Redis data');
+    }
 
     // Save data to MySQL
-    await updateEmployeesDetailsFromRedis(redisAttendanceData, data.user);
+    console.log('Saving Redis data to MySQL...');
+    const updateResult = await updateEmployeesDetailsFromRedis(formattedRedisData, data.user);
+    console.log('MySQL update result:', updateResult);
 
-    // Delete Redis data for the specific group
-    await deleteRedisGroupKeys(userGroup, year, month);
+    // Delete Redis data for the specific groups
+    console.log(`Deleting Redis keys for groups ${userGroups.join(', ')}`);
+    await deleteRedisGroupKeys(userGroups, year, month);
+    console.log('Redis keys deleted successfully');
 
-    // Determine if the operation was performed by an admin
-    const isAdminOperation = data.user.role === 'admin';
+    // Change the status to lock in DB - only for the specific dates found in Redis data
+    console.log(`Setting status to "locked" only for dates found in Redis data`);
 
-    // Broadcast updated data to all relevant clients
-    // When an admin performs the operation, it should be broadcast to all admins
-    // and only the users in the affected group
+    // If no specific dates were found in the data or keys, use the default date
+    if (uniqueDatesToLock.size === 0) {
+      console.log(`No specific dates found in Redis data. Using default date: ${formattedDateString}`);
+      uniqueDatesToLock.add(formattedDateString);
+    }
+
+    console.log(`Dates to lock: ${Array.from(uniqueDatesToLock).join(', ')}`);
+    const lockStatusPromises = [];
+
+    // Lock only the specific dates found in the Redis data
+    for (const dateString of uniqueDatesToLock) {
+      console.log(`Locking date: ${dateString} for groups: ${userGroups.join(', ')}`);
+      
+      // Process each date - collecting promises but not awaiting yet
+      lockStatusPromises.push(
+        setStatusFromDateGroup(userGroups, dateString, "locked", data.user)
+          .catch(err => {
+            console.error(`Error locking date ${dateString}:`, err);
+            return { success: false, date: dateString, error: err.message };
+          })
+      );
+    }
+
+    // Wait for all status updates to complete
+    const statusResults = await Promise.all(lockStatusPromises);
+    console.log(`Completed locking ${statusResults.length} dates found in Redis data`);
+
+    // Count successful updates
+    const successfulUpdates = statusResults.filter(result => result.success).length;
+    console.log(`Successfully locked ${successfulUpdates} dates of ${statusResults.length} total`);
+
+    // If there were any failures, log them
+    const failedUpdates = statusResults.filter(result => !result.success);
+    if (failedUpdates.length > 0) {
+      console.warn(`Failed to lock ${failedUpdates.length} dates`);
+      failedUpdates.forEach(failure => {
+        console.warn(`Failed date: ${failure.date}, Error: ${failure.error}`);
+      });
+    }
+
+    // Send response and broadcast update to each group
+    console.log('Broadcasting update to clients');
     broadcastToClients({
       action: 'dataUpdated',
       year,
       month,
       monthYear: data.monthYear,
-      userReportingGroup: userGroup,
-      adminOperation: isAdminOperation,
+      userReportingGroup: userGroups,
       message: 'Data successfully saved and Redis cache cleared',
       updatedBy: data.user.name
-    }, ws, [userGroup], false, true);
+    }, ws, userGroups, false, true);
 
     // Send success response to the original sender
     ws.send(JSON.stringify({
@@ -447,12 +576,14 @@ async function saveDataRedisToMysql(ws, data, broadcastToClients) {
       status: 'success',
       year,
       month,
-      monthYear: data.monthYear
+      monthYear: data.monthYear,
+      groups: userGroups
     }));
     
-    console.log(`Successfully saved Redis data to MySQL for ${month}/${year}, group ${userGroup}`);
+    console.log(`Successfully completed saveDataRedisToMysql operation`);
   } catch (error) {
     console.error('Error in saveDataRedisToMysql:', error);
+    console.error('Full error stack:', error.stack);
 
     // Send error response to the original sender
     ws.send(JSON.stringify({
@@ -462,7 +593,6 @@ async function saveDataRedisToMysql(ws, data, broadcastToClients) {
     }));
   }
 }
-
 /**
  * Toggles lock/unlock status for attendance records
  * @param {WebSocket} ws - WebSocket connection

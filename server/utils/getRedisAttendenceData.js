@@ -25,7 +25,6 @@ async function getRedisAttendanceData(year, month, groups) {
             }
         }
     }
-
     return result;
 }
 // Function to update attendance data in Redis

@@ -75,12 +75,41 @@ async function updateEmployeesDetailsFromRedis(redisAttendanceData, user) {
   try {
     // Prepare to store audit logs
     const auditLogs = [];
-
+    
+    // Check if redisAttendanceData is iterable
+    if (!Array.isArray(redisAttendanceData)) {
+      throw new TypeError('redisAttendanceData must be an array');
+    }
+    
+    console.log(`Processing ${redisAttendanceData.length} group records from Redis`);
+    
     // Iterate through each group's data in Redis
     for (const redisGroup of redisAttendanceData) {
-      // Parse the data from string to JSON
-      const attendanceRecords = JSON.parse(redisGroup.data);
-
+      // Ensure we have valid data
+      if (!redisGroup.data) {
+        console.warn('Skipping Redis group with no data:', redisGroup);
+        continue;
+      }
+      
+      // Parse the data from string to JSON if needed
+      let attendanceRecords;
+      try {
+        attendanceRecords = typeof redisGroup.data === 'string' 
+          ? JSON.parse(redisGroup.data) 
+          : redisGroup.data;
+          
+        if (!Array.isArray(attendanceRecords)) {
+          console.warn('Attendance records is not an array, skipping:', redisGroup);
+          continue;
+        }
+        
+        console.log(`Processing ${attendanceRecords.length} attendance records for group ${redisGroup.group}`);
+      } catch (parseError) {
+        console.error('Error parsing Redis data:', parseError);
+        console.error('Problematic data:', redisGroup.data);
+        continue;
+      }
+      
       // Process each attendance record
       for (const redisRecord of attendanceRecords) {
         // Find existing MySQL record
@@ -90,9 +119,9 @@ async function updateEmployeesDetailsFromRedis(redisAttendanceData, user) {
             attendance_date: redisRecord.attendance_date
           }
         });
-
+        
         // Check if the record needs updating
-        const needsUpdate = !existingRecord || 
+        const needsUpdate = !existingRecord ||
           existingRecord.shift_type !== redisRecord.shift_type ||
           existingRecord.network_hours !== redisRecord.network_hours ||
           existingRecord.overtime_hours !== redisRecord.overtime_hours ||
@@ -103,7 +132,7 @@ async function updateEmployeesDetailsFromRedis(redisAttendanceData, user) {
           const auditLog = {
             table_name: 'Attendance',
             action: existingRecord ? 'UPDATE' : 'CREATE',
-            changed_by: user.username, 
+            changed_by: user.username,
             old_data: existingRecord ? JSON.stringify({
               shift_type: existingRecord.shift_type,
               network_hours: existingRecord.network_hours,
@@ -117,7 +146,7 @@ async function updateEmployeesDetailsFromRedis(redisAttendanceData, user) {
               comment: redisRecord.comment
             })
           };
-
+          
           // Update or create record
           if (existingRecord) {
             await existingRecord.update({
@@ -136,24 +165,25 @@ async function updateEmployeesDetailsFromRedis(redisAttendanceData, user) {
               comment: redisRecord.comment || null
             });
           }
-
+          
           // Add to audit logs
           auditLogs.push(auditLog);
         }
       }
-
+      
+      try{
       // Update lock status for the reporting groups
       if (user.userReportingGroup && user.userReportingGroup.length > 0) {
         // Find the group name for the current Redis data
         const groupName = redisGroup.group;
-
+        
         // Check if the group is in user's reporting groups
         if (user.userReportingGroup.includes(groupName)) {
           // Update lock status for the specific date and group
           await AttendanceDateLockStatus.update(
-            { 
-              status: 'locked', 
-              locked_by: user.username 
+            {
+              status: 'locked',
+              locked_by: user.username
             },
             {
               where: {
@@ -163,14 +193,19 @@ async function updateEmployeesDetailsFromRedis(redisAttendanceData, user) {
             }
           );
         }
-      }
     }
-
+  console.log("scucssesfully changed");
+  
+  }catch {
+      console.log("Error updating lock status");
+    }
+    }
+    
     // Bulk create audit logs if any
     if (auditLogs.length > 0) {
       await Audit.bulkCreate(auditLogs);
     }
-
+    
     return {
       success: true,
       updatedRecords: auditLogs.length

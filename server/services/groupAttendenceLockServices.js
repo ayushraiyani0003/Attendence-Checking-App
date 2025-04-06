@@ -1,5 +1,5 @@
 const { AttendanceDateLockStatus } = require('../models'); // Assuming you have the models directory
-const { Op } = require('sequelize');
+const { Op, sequelize  } = require('sequelize');
 const moment = require('moment');
 
 // Function to get lock status data based on month and group
@@ -50,49 +50,119 @@ async function getLockStatusDataForMonthAndGroup(groups, month, year) {
   }
 }
 
-// Function to set status from date and group
 async function setStatusFromDateGroup(groups, date, status, user) {
   try {
+    console.log(date);
+    
     // Ensure the date is in the correct format
     const formattedDate = moment(date).format('YYYY-MM-DD');
-
+    
     // Log to verify the values being passed
+    console.log('Setting status with values:');
     console.log('Formatted Date:', formattedDate);
     console.log('Groups:', groups);
-    console.log('UserName:', user.username);
-    console.log('status:', status);
+    console.log('Status:', status);
+    console.log('User:', user ? user.username : 'undefined');
     
-    // Bulk update for all specified groups and the specific date
-    const [updatedRows] = await AttendanceDateLockStatus.update(
-      { 
-        status: status,      // New status to set
-        locked_by: user.username  // Locking the record by the user
-      },
-      {
-        where: {
-          attendance_date: formattedDate,
-          reporting_group_name: {
-            [Op.in]: groups // Ensure the values match correctly
-          }
+    // Ensure groups is an array
+    const groupsArray = Array.isArray(groups) ? groups : [groups];
+    
+    if (groupsArray.length === 0) {
+      console.error('No groups provided for status update');
+      return {
+        success: false,
+        updatedRows: 0,
+        totalRecordsProcessed: 0,
+        error: 'No groups provided'
+      };
+    }
+    
+    // Check if records exist first
+    const existingRecords = await AttendanceDateLockStatus.findAll({
+      where: {
+        attendance_date: formattedDate,
+        reporting_group_name: {
+          [Op.in]: groupsArray
         }
       }
-    );
-
-    // If no rows were updated, log this or handle it as needed
-    if (updatedRows === 0) {
-      console.error('No records updated, no new records created.');
+    });
+    
+    console.log(`Found ${existingRecords.length} existing records for date: ${formattedDate} and groups: ${groupsArray.join(', ')}`);
+    
+    // Track which records need to be created
+    const existingGroups = existingRecords.map(record => record.reporting_group_name);
+    const groupsToCreate = groupsArray.filter(group => !existingGroups.includes(group));
+    
+    // If there are groups that need records created
+    if (groupsToCreate.length > 0) {
+      console.log(`Creating new records for groups: ${groupsToCreate.join(', ')}`);
+      
+      const newRecords = groupsToCreate.map(group => ({
+        attendance_date: formattedDate,
+        reporting_group_name: group,
+        status: status,
+        locked_by: user ? user.username : null
+      }));
+      
+      try {
+        // Create new records
+        const createdRecords = await AttendanceDateLockStatus.bulkCreate(newRecords);
+        console.log(`Created ${createdRecords.length} new status records`);
+      } catch (createError) {
+        console.error('Error creating records:', createError);
+        // Continue execution even if creation fails
+      }
     }
-
+    
+    // Now update existing records
+    if (existingGroups.length > 0) {
+      console.log(`Updating existing records for groups: ${existingGroups.join(', ')}`);
+      
+      const [updatedRows] = await AttendanceDateLockStatus.update(
+        {
+          status: status,
+          locked_by: user ? user.username : null
+        },
+        {
+          where: {
+            attendance_date: formattedDate,
+            reporting_group_name: {
+              [Op.in]: existingGroups
+            }
+          }
+        }
+      );
+      
+      console.log(`Updated ${updatedRows} existing records`);
+    }
+    
+    // Double-check that all records are now as expected
+    const finalRecords = await AttendanceDateLockStatus.findAll({
+      where: {
+        attendance_date: formattedDate,
+        reporting_group_name: {
+          [Op.in]: groupsArray
+        }
+      }
+    });
+    
+    console.log(`Final check: ${finalRecords.length} records found with status '${status}'`);
+    
     return {
-      updatedRows: updatedRows,
-      totalRecordsProcessed: groups.length
+      success: true,
+      updatedRows: existingGroups.length,
+      createdRows: groupsToCreate.length,
+      totalRecordsProcessed: groupsArray.length
     };
   } catch (error) {
     console.error('Error setting status for date and group:', error);
-    throw error;
+    console.error('Full error stack:', error.stack);
+    return {
+      success: false,
+      error: error.message
+    };
   }
 }
-
 
 
 
