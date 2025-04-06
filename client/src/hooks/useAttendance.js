@@ -93,7 +93,7 @@ export const useAttendance = (user, monthYear, ws, send) => {
         case "attendanceData":
           setAttendanceData(data.attendance);
           setLockStatusData(data.lockStatus);
-          setMetrixDiffData(data.MetrixAtteDiffrence || []);
+          setMetrixDiffData(data.metricsAttendanceDifference || []);
           setTotalDiffData(data.totalTimeDiff || []);
 
           // Check if any date has unlocked status
@@ -565,6 +565,7 @@ const handleSaveChanges = () => {
     setDateRange([getYesterday(), getYesterday()]);
     toast.info("Date range reset to yesterday");
   };
+console.log(MetrixDiffData);
 
   return {
     // States
