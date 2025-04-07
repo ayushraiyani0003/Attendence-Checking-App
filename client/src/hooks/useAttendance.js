@@ -18,6 +18,7 @@ export const useAttendance = (user, monthYear, ws, send) => {
   const [TotalDiffData, setTotalDiffData] = useState([]);
   const [isWebSocketOpen, setIsWebSocketOpen] = useState(false);
   const [showMetrics, setShowMetrics] = useState(true);
+  const [showDiff, setShowDiff] = useState(false);
   const [popupOpen, setPopupOpen] = useState(false);
   const [nodata, setNodata] = useState(false);
   const [dateRange, setDateRange] = useState([getYesterday(), getYesterday()]);
@@ -583,7 +584,9 @@ console.log(MetrixDiffData);
     TotalDiffData,
     isWebSocketOpen,
     showMetrics,
+    showDiff,
     setShowMetrics,
+    setShowDiff,
     popupOpen,
     setPopupOpen,
     nodata,

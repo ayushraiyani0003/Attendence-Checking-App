@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 // At the top with your other imports
-import { validateNetHR, validateOtHR, formatValue, canEdit } from "../utils/constants";
+import { validateNetHR, validateOtHR, formatValue, canEdit, createPasswordModal } from "../utils/constants";
 
 /**
  * Custom hook for DataRow component logic
  */
 const useDataRow = ({
     row, rowIndex, hoveredRow, isAdmin, setHoveredRow, data, onCellUpdate,
-    getFilteredData, attendanceData, isShowMetrixData, MetrixDiffData, attDateStart, attDateEnd, TotalDiffData
+    getFilteredData, attendanceData, isShowMetrixData,isShowDiffData, MetrixDiffData, attDateStart, attDateEnd, TotalDiffData
 }) => {
     const [editableCell, setEditableCell] = useState(null);
     const [editValue, setEditValue] = useState({});
@@ -47,7 +47,7 @@ const useDataRow = ({
     // Process data to display based on isShowMetrixData flag
     const displayData = React.useMemo(() => {
         // If not showing metrix data or user is not admin, return regular filtered attendance
-        if (!isShowMetrixData || !isAdmin) return filteredAttendance;
+        if (!isShowDiffData || !isAdmin) return filteredAttendance;
 
         // Create a copy of filtered attendance to modify
         const displayData = filteredAttendance.map(att => ({ ...att }));
@@ -96,7 +96,7 @@ const useDataRow = ({
         });
 
         return displayData;
-    }, [filteredAttendance, isShowMetrixData, isAdmin, row.punchCode, MetrixDiffData]);
+    }, [filteredAttendance, isShowDiffData, isAdmin, row.punchCode, MetrixDiffData]);
 
     // Calculate totals whenever filteredAttendance or displayData changes
     useEffect(() => {
@@ -247,16 +247,36 @@ const useDataRow = ({
 
     // Handle edit action
     const handleEdit = (field, attendance, index) => {
-        if (canEdit(attendance, isAdmin, isShowMetrixData)) {
-            setEditableCell(`${field}-${index}`);
-            // Initialize edit value with current cell value
-            setEditValue(prev => ({
-                ...prev,
-                [`${field}-${index}`]: attendance[field]
-            }));
+        if (canEdit(attendance, isAdmin, isShowDiffData)) {
+            if (isAdmin) {
+                // Create a custom password modal
+                createPasswordModal((enteredPassword) => {
+                    // This is the callback function that runs after password is entered
+                    if (enteredPassword === "ptpl75750") {
+                        // Password is correct, allow editing
+                        setEditableCell(`${field}-${index}`);
+                        // Initialize edit value with current cell value
+                        setEditValue(prev => ({
+                            ...prev,
+                            [`${field}-${index}`]: attendance[field]
+                        }));
+                    } else {
+                        // Password is incorrect
+                        alert("Incorrect password. Editing access denied.");
+                    }
+                });
+            } else {
+                // Non-admin users with edit permission can edit directly
+                setEditableCell(`${field}-${index}`);
+                // Initialize edit value with current cell value
+                setEditValue(prev => ({
+                    ...prev,
+                    [`${field}-${index}`]: attendance[field]
+                }));
+            }
         } else if (attendance && attendance.lock_status !== "unlocked") {
             alert("Editing is not allowed. This record is locked.");
-        } else if (isAdmin && isShowMetrixData) {
+        } else if (isAdmin && isShowDiffData) {
             alert("Editing is not allowed in metrix view mode.");
         }
     };
@@ -616,24 +636,78 @@ const useDataRow = ({
         }
     };
 
-    // Process the difference data when it changes
+    // Calculate total differences from MetrixDiffData
     useEffect(() => {
-        if (TotalDiffData) {
-            // Initialize empty objects
-            const netDiffs = {};
-            const otDiffs = {};
-
-            // Process each punch code in the totalDiffData
-            Object.keys(TotalDiffData).forEach(punchCode => {
-                netDiffs[punchCode] = TotalDiffData[punchCode].netHRDiff;
-                otDiffs[punchCode] = TotalDiffData[punchCode].otHRDiff;
-            });
-
-            // Update state with the processed data
-            setNetDiffValue(netDiffs);
-            setOtDiffValue(otDiffs);
+        // Skip if no punch code
+        if (!row.punchCode) {
+            setNetDiffValue({});
+            setOtDiffValue({});
+            return;
         }
-    }, [TotalDiffData]);
+        
+        // Process MetrixDiffData to sum up differences
+        if (MetrixDiffData && MetrixDiffData.length > 0) {
+            // Filter for this employee
+            const employeeMetrixData = MetrixDiffData.filter(
+                item => item.punchCode === row.punchCode
+            );
+            
+            console.log(`Found ${employeeMetrixData.length} metrix records for ${row.punchCode}`);
+            
+            if (employeeMetrixData.length > 0) {
+                // Initialize totals
+                let totalNetHRDiff = 0;
+                let totalOtHRDiff = 0;
+                
+                // Calculate total differences for this employee
+                employeeMetrixData.forEach(metrixItem => {
+                    // For each date, add up the difference values
+                    if (metrixItem.netHRDiff !== undefined) {
+                        const netHRDiffValue = parseFloat(metrixItem.netHRDiff);
+                        if (!isNaN(netHRDiffValue)) {
+                            totalNetHRDiff += netHRDiffValue;
+                        }
+                    }
+                    
+                    if (metrixItem.otHRDiff !== undefined) {
+                        const otHRDiffValue = parseFloat(metrixItem.otHRDiff);
+                        if (!isNaN(otHRDiffValue)) {
+                            totalOtHRDiff += otHRDiffValue;
+                        }
+                    }
+                });
+                
+                // Format to 2 decimal places
+                const formattedNetHRDiff = totalNetHRDiff.toFixed(2);
+                const formattedOtHRDiff = totalOtHRDiff.toFixed(2);
+                
+                console.log(`Total differences for ${row.punchCode}:`, {
+                    netHRDiff: formattedNetHRDiff,
+                    otHRDiff: formattedOtHRDiff
+                });
+                
+                // Update state with the totals
+                setNetDiffValue({ 
+                    [row.punchCode]: formattedNetHRDiff,
+                    'total': formattedNetHRDiff 
+                });
+                
+                setOtDiffValue({ 
+                    [row.punchCode]: formattedOtHRDiff,
+                    'total': formattedOtHRDiff 
+                });
+            } else {
+                // No data for this employee, reset diff values
+                setNetDiffValue({ [row.punchCode]: '0.00', 'total': '0.00' });
+                setOtDiffValue({ [row.punchCode]: '0.00', 'total': '0.00' });
+            }
+        } else {
+            // No metrix data at all, reset diff values
+            setNetDiffValue({ [row.punchCode]: '0.00', 'total': '0.00' });
+            setOtDiffValue({ [row.punchCode]: '0.00', 'total': '0.00' });
+        }
+        
+    }, [row.punchCode, MetrixDiffData]);
 
     // Return state and handlers
     return {

@@ -41,6 +41,15 @@ export const getYesterday = () => {
   return dayjs().subtract(1, 'day').startOf('day');
 };
 
+export const getCurrentMonthStartEndDate = () => {
+  const startOfMonth = dayjs().startOf('month');
+  const endOfMonth = dayjs().endOf('month');
+  return {
+    start: startOfMonth.format('YYYY-MM-DD'),
+    end: endOfMonth.format('YYYY-MM-DD'),
+  };
+};
+
  // Validation functions
  export const exceedsThreshold = (value) => {
   if (!value) return false;
@@ -84,14 +93,110 @@ export const validateOtHR = (value) => {
     return "";
   };
 
-  export const canEdit = (attendance, isAdmin, isShowMetrixData) => {
+  export const canEdit = (attendance, isAdmin, isShowDiffData) => {
     if (!attendance) return false;
     // Check if the record is unlocked
     const isUnlocked = attendance.lock_status === "unlocked";
     // Admin can edit if unlocked and not in metrix view
     if (isAdmin) {
-      return isUnlocked && !isShowMetrixData;
+      return isUnlocked && !isShowDiffData;
     }
     // Non-admin users can edit if the record is unlocked
     return isUnlocked;
   };
+
+// Function to create a custom password modal
+  export function createPasswordModal(callback) {
+      // Create modal container
+      const modalContainer = document.createElement('div');
+      modalContainer.style.position = 'fixed';
+      modalContainer.style.left = '0';
+      modalContainer.style.top = '0';
+      modalContainer.style.width = '100%';
+      modalContainer.style.height = '100%';
+      modalContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+      modalContainer.style.display = 'flex';
+      modalContainer.style.justifyContent = 'center';
+      modalContainer.style.alignItems = 'center';
+      modalContainer.style.zIndex = '1000';
+  
+      // Create modal content
+      const modalContent = document.createElement('div');
+      modalContent.style.backgroundColor = 'white';
+      modalContent.style.padding = '20px';
+      modalContent.style.borderRadius = '5px';
+      modalContent.style.width = '300px';
+      
+      // Add header
+      const header = document.createElement('h3');
+      header.textContent = 'Enter Admin Password';
+      header.style.marginTop = '0';
+      
+      // Add password input
+      const passwordInput = document.createElement('input');
+      passwordInput.type = 'password'; // This automatically masks input with asterisks
+      passwordInput.placeholder = 'Enter password';
+      passwordInput.style.width = '100%';
+      passwordInput.style.padding = '8px';
+      passwordInput.style.marginTop = '10px';
+      passwordInput.style.marginBottom = '15px';
+      passwordInput.style.boxSizing = 'border-box';
+      
+      // Add button container
+      const buttonContainer = document.createElement('div');
+      buttonContainer.style.display = 'flex';
+      buttonContainer.style.justifyContent = 'space-between';
+      
+      // Add submit button
+      const submitButton = document.createElement('button');
+      submitButton.textContent = 'Submit';
+      submitButton.style.padding = '8px 15px';
+      submitButton.style.backgroundColor = '#4CAF50';
+      submitButton.style.color = 'white';
+      submitButton.style.border = 'none';
+      submitButton.style.borderRadius = '4px';
+      submitButton.style.cursor = 'pointer';
+      
+      // Add cancel button
+      const cancelButton = document.createElement('button');
+      cancelButton.textContent = 'Cancel';
+      cancelButton.style.padding = '8px 15px';
+      cancelButton.style.backgroundColor = '#f44336';
+      cancelButton.style.color = 'white';
+      cancelButton.style.border = 'none';
+      cancelButton.style.borderRadius = '4px';
+      cancelButton.style.cursor = 'pointer';
+      
+      // Add event listeners
+      submitButton.addEventListener('click', () => {
+          const enteredPassword = passwordInput.value;
+          document.body.removeChild(modalContainer);
+          callback(enteredPassword);
+      });
+      
+      cancelButton.addEventListener('click', () => {
+          document.body.removeChild(modalContainer);
+          callback(null); // Pass null to indicate cancellation
+      });
+      
+      // Allow Enter key to submit
+      passwordInput.addEventListener('keyup', (event) => {
+          if (event.key === 'Enter') {
+              submitButton.click();
+          }
+      });
+      
+      // Assemble modal
+      buttonContainer.appendChild(cancelButton);
+      buttonContainer.appendChild(submitButton);
+      
+      modalContent.appendChild(header);
+      modalContent.appendChild(passwordInput);
+      modalContent.appendChild(buttonContainer);
+      
+      modalContainer.appendChild(modalContent);
+      
+      // Add to document and focus
+      document.body.appendChild(modalContainer);
+      passwordInput.focus();
+  }
