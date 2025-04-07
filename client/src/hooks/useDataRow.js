@@ -742,7 +742,7 @@ const useDataRow = ({
 const exceedsThreshold = (diffValue) => {
     if (!diffValue) return false;
     const numValue = parseFloat(diffValue);
-    return !isNaN(numValue) && Math.abs(numValue) >= 0.5;
+    return !isNaN(numValue) && Math.abs(numValue) > 0.25;
 };
 
 export default useDataRow;
