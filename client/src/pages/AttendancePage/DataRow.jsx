@@ -7,7 +7,7 @@ import useDataRow from "../../hooks/useDataRow";
 
 function DataRow(props) {
   const {
-    row, rowIndex, hoveredRow, isAdmin, setHoveredRow, user
+    row, rowIndex, hoveredRow, isAdmin, setHoveredRow, user,
   } = props;
 
   // Use custom hook for logic
@@ -36,8 +36,11 @@ function DataRow(props) {
     setShowCommentPopup
   } = useDataRow(props);
 
+  console.log("Net Diff Values:", netDiffValue);
+  console.log("OT Diff Values:", otDiffValue);
+  
   // Determine whether to show metrix display
-  const shouldShowMetrixDisplay = isAdmin && props.isShowMetrixData;
+  const shouldShowMetrixDisplay = isAdmin && props.isShowDiffData;
 
   // Helper function to determine diff background color
   const getDiffBgClass = (value) => {
@@ -89,7 +92,7 @@ function DataRow(props) {
               {["netHR", "otHR", "dnShift"].map((field) => {
                 const editKey = `${field}-${originalIndex}`;
                 const isEditing = editableCell === editKey;
-                const canEditThisCell = canEdit(attendance, isAdmin, props.isShowMetrixData);
+                const canEditThisCell = canEdit(attendance, isAdmin, props.isShowDiffData);
 
                 // Get the appropriate value to display
                 let cellValue = attendance[field] || (field === "dnShift" ? "" : "0");
@@ -164,12 +167,10 @@ function DataRow(props) {
               <div className="total sub-disply-total">{totalNetHR.toFixed(2)}</div>
               <div className="total sub-disply-total">{totalOtHR.toFixed(2)}</div>
               <div className={`total sub-disply-total ${getDiffBgClass(netDiffValue[row.punchCode])}`}>
-                {netDiffValue[row.punchCode] !== undefined ?
-                  netDiffValue[row.punchCode].toFixed(2) : '0.00'}
+                {netDiffValue[row.punchCode] || '0.00'}
               </div>
               <div className={`total sub-disply-total ${getDiffBgClass(otDiffValue[row.punchCode])}`}>
-                {otDiffValue[row.punchCode] !== undefined ?
-                  otDiffValue[row.punchCode].toFixed(2) : '0.00'}
+                {otDiffValue[row.punchCode] || '0.00'}
               </div>
               <div className="total sub-disply-total">{nightShiftCount}</div>
               <div className="total sub-disply-total">{eveningShiftCount}</div>

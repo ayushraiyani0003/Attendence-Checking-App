@@ -13,7 +13,9 @@ function AttendencePageSearchFilters({
   handleSaveChanges,
   isAdmin,
   showMetrics,
+  showDiff,
   setShowMetrics,
+  setShowDiff,
   dateRange, 
   setDateRange,
   columns, 
@@ -107,6 +109,61 @@ function AttendencePageSearchFilters({
                         height: "16px",
                         width: "16px",
                         left: showMetrics ? "20px" : "4px",
+                        bottom: "2px",
+                        backgroundColor: "white",
+                        transition: "0.4s",
+                        borderRadius: "50%"
+                      }}
+                    />
+                  </span>
+                </label>
+              </div>
+              <div className="metrics-toggle" style={{ display: "flex", alignItems: "center", marginRight: "12px" }}>
+                <span style={{ marginRight: "8px" }}>
+                  {showDiff ? "Hide Diff" : "Show Diff"}
+                </span>
+                <label
+                  className="toggle-switch"
+                  style={{
+                    position: "relative",
+                    display: "inline-block",
+                    width: "40px",
+                    height: "20px",
+                    cursor: "pointer"
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={showDiff}
+                    onChange={() => setShowDiff(!showDiff)}
+                    style={{
+                      opacity: 0,
+                      width: 0,
+                      height: 0
+                    }}
+                  />
+                  <span
+                    className="slider"
+                    style={{
+                      position: "absolute",
+                      cursor: "pointer",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      backgroundColor: showDiff ? "#4a90e2" : "#ccc",
+                      transition: "0.4s",
+                      borderRadius: "34px"
+                    }}
+                  >
+                    <span
+                      className="slider-button"
+                      style={{
+                        position: "absolute",
+                        content: '""',
+                        height: "16px",
+                        width: "16px",
+                        left: showDiff ? "20px" : "4px",
                         bottom: "2px",
                         backgroundColor: "white",
                         transition: "0.4s",

@@ -26,7 +26,9 @@ function AttendancePage({ user, monthYear }) {
     TotalDiffData,
     isWebSocketOpen,
     showMetrics,
+    showDiff,
     setShowMetrics,
+    setShowDiff,
     popupOpen,
     setPopupOpen,
     nodata,
@@ -102,7 +104,9 @@ function AttendancePage({ user, monthYear }) {
           handleSaveChanges={handleSaveChanges}
           isAdmin={isAdmin}
           showMetrics={showMetrics}
+          showDiff={showDiff}
           setShowMetrics={setShowMetrics}
+          setShowDiff={setShowDiff}
           dateRange={dateRange}
           setDateRange={setDateRange}
           columns={columns}
@@ -160,6 +164,7 @@ function AttendancePage({ user, monthYear }) {
                     dataContainerRef={dataContainerRef}
                     attendanceData={attendanceData}
                     isShowMetrixData={showMetrics}
+                    isShowDiffData={showDiff}
                     MetrixDiffData={MetrixDiffData}
                     attDateStart={dateRange[0]}
                     attDateEnd={dateRange[1]}
