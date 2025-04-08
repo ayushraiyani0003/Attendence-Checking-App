@@ -7,6 +7,11 @@ import {maxMonthOFCurrent} from '../utils/constants'
  * @param {string} currentMonth - The selected month in format 'MMM YYYY'
  * @returns {Object} Report settings and methods
  */
+/**
+ * Hook to manage report settings and generation
+ * @param {string} currentMonth - The selected month in format 'MMM YYYY'
+ * @returns {Object} Report settings and methods
+ */
 export const useReportSettings = (currentMonth) => {
   // Report type selection
   const [selectedReportType, setSelectedReportType] = useState('Net Hr');
@@ -99,47 +104,51 @@ export const useReportSettings = (currentMonth) => {
   }, [availableReportOptions]);
   
   // Generate report function
-  const generateReport = useCallback(async () => {
-    setIsLoading(true);
+ // Updated generateReport function in useReportSettings hook
+const generateReport = useCallback(async () => {
+  setIsLoading(true);
+  
+  try {
+    // Get selected options as array
+    const selectedOptionsArray = Object.entries(selectedOptions)
+      .filter(([_, selected]) => selected)
+      .map(([option]) => option);
     
-    try {
-      // Get selected options as array
-      const selectedOptionsArray = Object.entries(selectedOptions)
-        .filter(([_, selected]) => selected)
-        .map(([option]) => option);
-      
-      // Format options as comma-separated string
-      const options = selectedOptionsArray.join(',');
-      
-      // Parse month and year
-      const { month, year } = parseMonthYear();
-      
-      // Convert date range to string format if available
-      let dateRangeString = null;
-      if (dateRange.startDate && dateRange.endDate) {
-        const formatDate = (date) => {
-          return date.toISOString().split('T')[0]; // YYYY-MM-DD
-        };
-        dateRangeString = `${formatDate(dateRange.startDate)},${formatDate(dateRange.endDate)}`;
-      }
-      
-      // Call API to generate report
-      await getReports(
-        selectedReportType,
-        options,
-        month,
-        year,
-        dateRange,
-        employeeType
-      );
-      
-      console.log(`[useReportSettings] Report generated successfully for ${currentMonth}`);
-    } catch (error) {
-      console.error('[useReportSettings] Error generating report:', error);
-    } finally {
+    // Format options as comma-separated string
+    const options = selectedOptionsArray.join(',');
+    
+    // Parse month and year
+    const { month, year } = parseMonthYear();
+    
+    if (!month || !year) {
+      console.error('[useReportSettings] Invalid month or year');
       setIsLoading(false);
+      return;
     }
-  }, [selectedReportType, selectedOptions, dateRange, employeeType, currentMonth, parseMonthYear]);
+    
+    // Call the getReports service
+    // This will handle the file download without opening a new tab
+    const result = await getReports(
+      selectedReportType,
+      options,
+      month,
+      year,
+      dateRange,
+      employeeType
+    );
+    
+    // The getReports function now returns an object with success status
+    console.log(`[useReportSettings] Report download result:`, result);
+    
+    // No need to open in new tab anymore
+    // The getReports function handles the file download directly
+    
+  } catch (error) {
+    console.error('[useReportSettings] Error generating report:', error);
+  } finally {
+    setIsLoading(false);
+  }
+}, [selectedReportType, selectedOptions, dateRange, employeeType, currentMonth, parseMonthYear]);
   
   return {
     selectedReportType,
@@ -159,11 +168,6 @@ export const useReportSettings = (currentMonth) => {
   };
 };
 
-/**
- * Hook to manage data fetching for the dashboard
- * @param {string} currentMonth - The selected month in format 'MMM YYYY'
- * @returns {Object} Data fetching methods and state
- */
 /**
  * Hook to manage data fetching for the dashboard
  * @param {string} currentMonth - The selected month in format 'MMM YYYY'
