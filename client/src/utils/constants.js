@@ -200,3 +200,17 @@ export const validateOtHR = (value) => {
       document.body.appendChild(modalContainer);
       passwordInput.focus();
   }
+
+  export function maxMonthOFCurrent() {
+    // Get the first day of the current month
+    const firstDayOfMonth = dayjs().startOf('month').format('YYYY-MM-DD');
+    
+    // Get yesterday's date
+    const yesterday = dayjs().subtract(1, 'day').format('YYYY-MM-DD');
+    
+    return {
+      startDate: firstDayOfMonth,
+      endDate: yesterday
+    };
+  }
+  
