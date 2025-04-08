@@ -1,6 +1,5 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
-  BrowserRouter,
   Routes,
   Route,
   Navigate,
@@ -26,23 +25,23 @@ import { SessionProvider } from "./context/SessionsContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import WebSocketProvider from "./context/WebSocketContext";
 import UnderMaintenancePage from "./pages/maintainencePage/MaintenancePage";
-import NetworkMonitor from "./components/NetworkMonitor/NetworkMonitor";  // Import the new component
+import NetworkMonitor from "./components/NetworkMonitor/NetworkMonitor";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import "./App.css";
 
-const App = () => {
+// Create a separate component for the authenticated layout
+const AuthenticatedLayout = ({ user }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [searchText, setSearchText] = useState(""); // State for search text
-  const [selectedMonthYear, setSelectedMonthYear] = useState(); // State for selected month/year
+  const [searchText, setSearchText] = useState("");
+  const [selectedMonthYear, setSelectedMonthYear] = useState("");
   const navigate = useNavigate();
-  const { isAuthenticated, login, logout, user } = useContext(AuthContext);
-
+  const { logout } = useContext(AuthContext);
+  
   useEffect(() => {
     const currentDate = new Date();
-    const options = { year: "numeric", month: "short" }; // 'short' gives the abbreviated month
-    const formattedDate = currentDate.toLocaleDateString("en-US", options); // Format as "Mar 2025"
-
+    const options = { year: "numeric", month: "short" };
+    const formattedDate = currentDate.toLocaleDateString("en-US", options);
     setSelectedMonthYear(formattedDate);
   }, []);
 
@@ -50,166 +49,143 @@ const App = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-  // Handle logout properly
-  const handleLogout = () => {
-    logout();
-    navigate("/login"); // Force navigation to login page
-  };
-
   const handleSearchChange = (searchText) => {
-    setSearchText(searchText); // Update search text in state
+    setSearchText(searchText);
   };
 
   const handleMonthChange = (monthYear) => {
-    setSelectedMonthYear(monthYear); // Update selected month/year in state
+    setSelectedMonthYear(monthYear);
+  };
+  
+  // Handle logout properly
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
   };
 
-  // Redirection logic after login based on the intended destination
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      // Only redirect if the current path is not the default one after login
-      const currentPath = window.location.pathname;
-
-      if (currentPath === "/" || currentPath === "/login") {
-        // Redirect to the appropriate dashboard after login
-        if (user.role === "admin") {
-          navigate("/");
-        } else {
-          navigate("/");
-        }
-      }
-    }
-  }, [isAuthenticated, user, navigate]);
-
-  console.log(user.userReportingGroup);
-  
-
   return (
-    <AuthProvider>
-      {/* ToastContainer should be at the app level, outside the authentication check */}
-      <ToastContainer
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
+    <div className="flex">
+      <CustomSidebar
+        isOpen={isSidebarOpen}
+        toggleSidebar={toggleSidebar}
+        isAdmin={user?.role === "admin"}
+        userDepartments={user.userReportingGroup}
+        onLogout={handleLogout}
+        pagesRedirect={pageRedirect}
       />
 
-      {/* NetworkMonitor should be included regardless of authentication */}
-      <NetworkMonitor />
-
-      {isAuthenticated ? (
-        <div className="flex">
-          <CustomSidebar
-            isOpen={isSidebarOpen}
-            toggleSidebar={toggleSidebar}
-            isAdmin={user?.role === "admin"}
-            userDepartments={user.userReportingGroup}
-            onLogout={handleLogout}
-            pagesRedirect={pageRedirect}
+      <div className="flex-1">
+        <CustomHeader 
+          toggleSidebar={toggleSidebar} 
+          user={user}
+          onSearch={handleSearchChange}
+          onMonthChange={handleMonthChange}
+        />
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute isAuthenticated={true}>
+                <WebSocketProvider>
+                  <AttendencePage user={user} monthYear={selectedMonthYear} />
+                </WebSocketProvider>
+              </ProtectedRoute>
+            }
           />
+          <Route
+            path="/dashboard"
+            element={
+              <DashboardProvider>
+                <MistakeDashboard selectedMonthYear={selectedMonthYear} />
+              </DashboardProvider>
+            }
+          />
+          <Route
+            path="/employee"
+            element={
+              <EmployeeProvider userRole={user.userRole} userReportingGroup={user.userReportingGroup}>
+                <EmployeePage />
+              </EmployeeProvider>
+            }
+          />
+          <Route
+            path="/user-list"
+            element={<UserListPage />}
+          />
+          <Route
+            path="/settings"
+            element={<SettingsPage />}
+          />
+          <Route
+            path="/upload"
+            element={
+              <UploadProvider>
+                <UploadPage />
+              </UploadProvider>
+            }
+          />
+          <Route
+            path="/employee-list"
+            element={
+              <EmployeeProvider userRole={user.userRole} userReportingGroup={user.userReportingGroup}>
+                <EmployeeOrderPage user={user} />
+              </EmployeeProvider>
+            }
+          />
+          <Route
+            path="/sessions"
+            element={
+              <SessionProvider>
+                <SessionManagement />
+              </SessionProvider>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </div>
+    </div>
+  );
+};
 
-          <div className="flex-1">
-            <CustomHeader toggleSidebar={toggleSidebar} user={user}
-              onSearch={handleSearchChange} // Pass search change handler
-              onMonthChange={handleMonthChange} // Pass month/year change handler
-            />
-            <Routes>
-              {/* Default page after login (either user or admin based) */}
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute isAuthenticated={isAuthenticated}>
-                    <WebSocketProvider>
-                      <AttendencePage user={user} monthYear={selectedMonthYear} />
-                    </WebSocketProvider>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute isAuthenticated={isAuthenticated}>
+// Main App component
+const App = () => {
+  return (
+    <AuthProvider>
+      <>
+        <ToastContainer
+          position="top-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+        />
+        <NetworkMonitor />
 
-                    <DashboardProvider>
-                      <MistakeDashboard selectedMonthYear={selectedMonthYear} />
+        <AppContent />
+      </>
+    </AuthProvider>
+  );
+};
 
-                    </DashboardProvider>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/employee"
-                element={
-                  <ProtectedRoute isAuthenticated={isAuthenticated}>
-                    <EmployeeProvider userRole={user.userRole} userReportingGroup={user.userReportingGroup}>
-                      <EmployeePage />
-                    </EmployeeProvider>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/user-list"
-                element={
-                  <ProtectedRoute isAuthenticated={isAuthenticated}>
-                    <UserListPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/settings"
-                element={
-                  <ProtectedRoute isAuthenticated={isAuthenticated}>
-                    <SettingsPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/upload"
-                element={
-                  <ProtectedRoute isAuthenticated={isAuthenticated}>
-                    <UploadProvider>
-                      <UploadPage />
-                    </UploadProvider>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/employee-list"
-                element={
-                  <ProtectedRoute isAuthenticated={isAuthenticated}>
-                    <EmployeeProvider userRole={user.userRole} userReportingGroup={user.userReportingGroup}>
-                      <EmployeeOrderPage user={user} />
-                    </EmployeeProvider>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/sessions"
-                element={
-                  <ProtectedRoute isAuthenticated={isAuthenticated}>
-                    <SessionProvider>
-                    <SessionManagement />
-                    </SessionProvider>
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </div>
-        </div>
+// Content component that uses AuthContext
+const AppContent = () => {
+  const { isAuthenticated, user, login } = useContext(AuthContext);
+  
+  return (
+    <>
+      {isAuthenticated ? (
+        <AuthenticatedLayout user={user} />
       ) : (
         <Routes>
           <Route path="/login" element={<LogInPage onLogin={login} />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       )}
-    </AuthProvider>
-    // <UnderMaintenancePage />
+    </>
   );
 };
 
