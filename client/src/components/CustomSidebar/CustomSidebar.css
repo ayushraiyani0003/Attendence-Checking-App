@@ -28,7 +28,7 @@
   }
   
   /* Close Button */
-  .close-btn {
+  .site-close-btn {
     background: none;
     border: none;
     color: var(--card-bg);
@@ -41,7 +41,7 @@
     justify-content: center;
   }
   
-  .close-btn:hover {
+  .site-close-btn:hover {
     background-color: var(--gray-700);
     transform: rotate(90deg);
   }

@@ -43,6 +43,15 @@
   transform: scale(1.1);
 }
 
+.header-logo{
+  margin-top: 25px;
+  padding: 3px;
+  border-radius: 10px;
+  width: 60%;
+height: auto; /* Maintain aspect ratio of the logo */
+display: inline-block; /* Ensure that background color applies just around the logo */
+}
+
 .hamburger-menu .line {
   height: 2px;
   background-color: var(--card-bg);

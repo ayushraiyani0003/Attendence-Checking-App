@@ -32,7 +32,7 @@ export default function CustomSidebar({ isOpen, toggleSidebar, userDepartments, 
         >
           <div className="sidebar-header">
             <h2><img src={logo} alt="Logo" className="sidebar-logo" /></h2>
-            <button onClick={toggleSidebar} className="close-btn">
+            <button onClick={toggleSidebar} className="site-close-btn">
               <X size={24} />
             </button>
           </div>

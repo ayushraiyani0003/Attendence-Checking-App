@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import logo from '../../assets/sunchaser.png'; 
 import "./CustomHeader.css";
 
 const CustomDropdown = ({ options, defaultValue, onChange }) => {
@@ -134,13 +135,15 @@ function CustomHeader({ toggleSidebar, user, onSearch, onMonthChange }) {
           <div className="line"></div>
           <div className="line"></div>
         </div>
-        <input
+        {/* <input
           type="text"
           className="search-box"
-          placeholder="sunchaser / HR"
+          placeholder=""
           value={searchText}
           onChange={handleSearchChange}
-        />
+        /> */}
+<h2><img src={logo} alt="Logo" className="header-logo" /></h2>
+
       </div>
       <div className="header-right">
         <CustomDropdown 
