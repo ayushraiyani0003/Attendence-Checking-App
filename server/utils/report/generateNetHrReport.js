@@ -548,7 +548,7 @@ async function generateNetHrReport(finalAttendanceData, metricsData, month, year
     success: true,
     filepath: filepath,
     filename: filename,
-    message: `Network Hours report generated successfully for ${filteredEmployees.length} employees.`,
+    message: `Network Hours report generated successfully for employees.`,
     type: 'file' // Indicate it's a file response
   };
 }

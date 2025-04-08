@@ -616,8 +616,10 @@ async function generateNightShiftReport(finalAttendanceData, metricsData, numeri
   
   return {
     success: true,
-    filePath,
-    fileName
+    filepath: filePath,
+    filename: fileName,
+    message: `Absent report generated successfully for employees.`,
+    type: 'file' // Add this to indicate it's a file response
   };
 }
 

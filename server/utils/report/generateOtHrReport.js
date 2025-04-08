@@ -534,8 +534,8 @@ async function generateOtHrReport(finalAttendanceData, metricsData, month, year,
     success: true,
     filepath: filepath,
     filename: filename,
-    message: `OT Hours report generated successfully for ${filteredEmployees.length} employees.`,
-    type: 'file' // Indicate it's a file response
+    message: `Absent report generated successfully for employees.`,
+    type: 'file' // Add this to indicate it's a file response
   };
 }
 
