@@ -4,8 +4,8 @@ const fs = require('fs');
 const dayjs = require('dayjs');
 
 async function generateAbsentReport(finalAttendanceData, metricsData, month, year, options, dateRange, employeeType, employeeDetails) {
-  console.log("Generating absent report...");
-  console.log("Report options:", options);
+  // console.log("Generating absent report...");
+  // console.log("Report options:", options);
   
   // Parse start and end dates with dayjs
   let startDate, endDate;
@@ -27,8 +27,8 @@ async function generateAbsentReport(finalAttendanceData, metricsData, month, yea
       throw new Error("Invalid date values in dateRange");
     }
     
-    console.log("Start date:", startDate.format("YYYY-MM-DD"));
-    console.log("End date:", endDate.format("YYYY-MM-DD"));
+    // console.log("Start date:", startDate.format("YYYY-MM-DD"));
+    // console.log("End date:", endDate.format("YYYY-MM-DD"));
   } catch (error) {
     console.error("Error parsing dates:", error);
     throw error;
@@ -46,14 +46,14 @@ async function generateAbsentReport(finalAttendanceData, metricsData, month, yea
     currentDate = currentDate.add(1, 'day');
   }
   
-  console.log("Total days in range:", allDates.length);
-  console.log("Days in range:", allDates.map(d => d.format('YYYY-MM-DD')));
+  // console.log("Total days in range:", allDates.length);
+  // console.log("Days in range:", allDates.map(d => d.format('YYYY-MM-DD')));
   
   // Create a map to store attendance data by employee
   const attendanceByEmployee = {};
   
   // Process attendance data
-  console.log("Processing attendance data...");
+  // console.log("Processing attendance data...");
   finalAttendanceData.forEach(attendance => {
     const employeeId = attendance.employee_id;
     
@@ -63,24 +63,24 @@ async function generateAbsentReport(finalAttendanceData, metricsData, month, yea
     
     const attendanceDate = dayjs(attendance.attendance_date).format('YYYY-MM-DD');
     attendanceByEmployee[employeeId][attendanceDate] = attendance.network_hours;
-    console.log(`Employee ${employeeId} on ${attendanceDate}: ${attendance.network_hours} hours`);
+    // console.log(`Employee ${employeeId} on ${attendanceDate}: ${attendance.network_hours} hours`);
   });
   
   // Extract unique employee IDs from attendance data
   const uniqueEmployeeIds = [...new Set(finalAttendanceData.map(a => a.employee_id))];
-  console.log("Unique employee IDs from attendance:", uniqueEmployeeIds);
+  // console.log("Unique employee IDs from attendance:", uniqueEmployeeIds);
   
   // Check if we have employeeDetails to use
   let employeesData = [];
   if (Array.isArray(employeeDetails) && employeeDetails.length > 0) {
-    console.log("Using employeeDetails array");
+    // console.log("Using employeeDetails array");
     employeesData = employeeDetails;
   } else if (Array.isArray(employeeType) && employeeType.length > 0) {
-    console.log("Using employeeType array");
+    // console.log("Using employeeType array");
     employeesData = employeeType;
   } else {
     // Create simple employee objects for each employee ID
-    console.log("Creating basic employee objects from attendance data");
+    // console.log("Creating basic employee objects from attendance data");
     uniqueEmployeeIds.forEach(id => {
       employeesData.push({
         dataValues: {
@@ -95,11 +95,11 @@ async function generateAbsentReport(finalAttendanceData, metricsData, month, yea
     });
   }
   
-  console.log(`Working with ${employeesData.length} employees`);
+  // console.log(`Working with ${employeesData.length} employees`);
   
   // Filter based on report options
   if (employeeType === "Faulty Employees") {
-    console.log("Faulty Employees report not implemented for absent report");
+    // console.log("Faulty Employees report not implemented for absent report");
     return {
       success: false,
       message: "Faulty Employees report not implemented for absent report"
@@ -111,12 +111,12 @@ async function generateAbsentReport(finalAttendanceData, metricsData, month, yea
       if (!emp || !emp.dataValues) return false;
       return emp.dataValues.punch_code && emp.dataValues.punch_code.toLowerCase() === "new";
     });
-    console.log(`Filtered to ${employeesData.length} new employees`);
+    // console.log(`Filtered to ${employeesData.length} new employees`);
   }
   
   // Filter for employees who were absent at least once
   const employeesWithAbsences = [];
-  console.log("\nChecking for absences:");
+  // console.log("\nChecking for absences:");
   
   // For each employee in the data
   for (const employeeData of employeesData) {
@@ -133,15 +133,15 @@ async function generateAbsentReport(finalAttendanceData, metricsData, month, yea
       employeeId = employeeData;
       employeeName = `Employee ${employeeId}`;
     } else {
-      console.log("Skipping employee with missing data:", employeeData);
+      // console.log("Skipping employee with missing data:", employeeData);
       continue;
     }
     
-    console.log(`\nChecking Employee ID ${employeeId} (${employeeName}):`);
+    // console.log(`\nChecking Employee ID ${employeeId} (${employeeName}):`);
     
     // If employee ID is not in attendance data and options is not "All Employees", skip
     if (!uniqueEmployeeIds.includes(employeeId) && options !== "All Employees") {
-      console.log(`  No attendance records for employee ${employeeId}, skipping`);
+      // console.log(`  No attendance records for employee ${employeeId}, skipping`);
       continue;
     }
     
@@ -155,15 +155,15 @@ async function generateAbsentReport(finalAttendanceData, metricsData, month, yea
       
       if (networkHours === 0) {
         absentDays.push(dateString);
-        console.log(`  ${dateString}: ABSENT (${networkHours} hours)`);
+        // console.log(`  ${dateString}: ABSENT (${networkHours} hours)`);
       } else {
-        console.log(`  ${dateString}: Present (${networkHours} hours)`);
+        // console.log(`  ${dateString}: Present (${networkHours} hours)`);
       }
     }
     
-    console.log(`  Total absent days: ${absentDays.length}`);
+    // console.log(`  Total absent days: ${absentDays.length}`);
     if (absentDays.length > 0) {
-      console.log(`  Absent days: ${absentDays.join(', ')}`);
+      // console.log(`  Absent days: ${absentDays.join(', ')}`);
       
       // Create a standardized employee object
       const standardizedEmployee = {
@@ -181,11 +181,11 @@ async function generateAbsentReport(finalAttendanceData, metricsData, month, yea
     }
   }
   
-  console.log(`\nTotal employees with absences: ${employeesWithAbsences.length}`);
+  // console.log(`\nTotal employees with absences: ${employeesWithAbsences.length}`);
   
   // If no employees were absent, return early
   if (employeesWithAbsences.length === 0) {
-    console.log("No employees were absent during the date range.");
+    // console.log("No employees were absent during the date range.");
     return {
       success: true,
       message: "No employees were absent during the selected date range."
@@ -481,20 +481,21 @@ async function generateAbsentReport(finalAttendanceData, metricsData, month, yea
   // Generate filename
   const startDateStr = startDate.format('YYYY-MM-DD');
   const endDateStr = endDate.format('YYYY-MM-DD');
-  const filename = `absent_report_${employeeType}_${startDateStr}_to_${endDateStr}.xlsx`;
+  const filename = `absent_report_${startDateStr}_to_${endDateStr}.xlsx`;
   const filepath = path.join(reportsDir, filename);
   
   // Save the workbook
   await workbook.xlsx.writeFile(filepath);
   
-  console.log(`Absent report saved to: ${filepath}`);
+  // console.log(`Absent report saved to: ${filepath}`);
   
-  // Return the file path (can be converted to a URL or link as needed)
+  // Return the file path information
   return {
     success: true,
     filepath: filepath,
     filename: filename,
-    message: `Absent report generated successfully for ${employeesWithAbsences.length} employees.`
+    message: `Absent report generated successfully for ${employeesWithAbsences.length} employees.`,
+    type: 'file' // Add this to indicate it's a file response
   };
 }
 
