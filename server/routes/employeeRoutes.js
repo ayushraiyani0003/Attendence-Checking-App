@@ -11,12 +11,13 @@ const {
   getEmployeeByGroup
 } = require("../controllers/employeeController");
 
+router.get("/groups", authenticateJWT, getEmployeeByGroup); // Get employee by ID
+
 // Routes for employee management
 router.post("/", authenticateJWT, isAdmin, createEmployee); // Create an employee
 router.put("/:employee_id", authenticateJWT, isAdmin, editEmployee); // Edit an employee
 router.delete("/:employee_id", authenticateJWT, isAdmin, deleteEmployee); // Delete an employee
 router.get("/", authenticateJWT, isAdmin, getAllEmployees); // Get all employees
 router.get("/:employee_id", authenticateJWT, isAdmin, getEmployee); // Get employee by ID
-router.get("/groups/:groups", authenticateJWT, getEmployeeByGroup); // Get employee by ID
 
 module.exports = router;

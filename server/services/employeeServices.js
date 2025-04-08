@@ -1,5 +1,6 @@
 const { Employee } = require("../models"); // Import the Employee model
-const {processNewEmployeeAttendance} =require("../utils/quickFunction");
+const { Op } = require("sequelize"); // Import Sequelize operators
+const { processNewEmployeeAttendance } = require("../utils/quickFunction");
 
 // Service for creating a new employee
 const createEmployeeService = async (employeeData) => {
@@ -76,6 +77,8 @@ const getAllEmployeesService = async () => {
 // Service for fetching employees filtered by reporting groups
 const getOnlyGroupsEmployeesService = async (groups) => {
   try {
+    // console.log("Getting employees for groups:", groups);
+    
     const employees = await Employee.findAll({
       where: {
         reporting_group: {
@@ -83,14 +86,19 @@ const getOnlyGroupsEmployeesService = async (groups) => {
         }
       }
     });
+    
+    // console.log(`Found ${employees.length} employees in the specified groups`);
     return employees;
   } catch (error) {
-    throw new Error("Error fetching employees: " + error.message);
+    console.error("Service error:", error);
+    throw new Error("Error fetching employees by group: " + error.message);
   }
 };
 
 // Service for fetching an employee by ID
 const getEmployeeService = async (employeeId) => {
+  // console.log("Fetching employee with ID:", employeeId);
+  
   try {
     const employee = await Employee.findByPk(employeeId);
     if (!employee) {

@@ -132,25 +132,38 @@ const getAllEmployees = async (req, res) => {
 };
 
 const getEmployeeByGroup = async (req, res) => {
-  console.log("this is call");
+  // console.log("getEmployeeByGroup called");
   
   try {
-    const { groups } = req.params; // Fixed typo: req.parms to req.params
+    // Get groups from query parameters
+    const { groups } = req.query;
     
-    if (!groups || !Array.isArray(groups)) {
-      return res.status(400).json({ message: "Please provide a valid array of reporting groups" });
+    if (!groups) {
+      return res.status(400).json({ message: "Please provide reporting groups" });
     }
     
-    const employees = await getOnlyGroupsEmployeesService(groups);
+    // If groups is sent as an array from the query
+    let groupsArray = groups;
+    
+    // If groups is not an array, try to convert it to an array
+    if (!Array.isArray(groups)) {
+      groupsArray = [groups];
+    }
+    
+    // console.log("Groups to fetch:", groupsArray);
+    
+    const employees = await getOnlyGroupsEmployeesService(groupsArray);
     res.status(200).json({ employees });
   } catch (error) {
-    console.error("Error fetching employees:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error("Error fetching employees by group:", error);
+    res.status(500).json({ message: "Internal server error", error: error.message });
   }
 };
 
 // Get employee by ID
 const getEmployee = async (req, res) => {
+  // console.log("getEmployee called");
+  
   try {
     const { employee_id } = req.params;
 
