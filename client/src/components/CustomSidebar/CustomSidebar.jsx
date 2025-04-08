@@ -39,7 +39,7 @@ export default function CustomSidebar({ isOpen, toggleSidebar, userDepartments, 
           
           {/* Departments section - Displayed for both user and admin */}
           <div className="sidebar-section">
-            <h3 className="section-title"> Departments</h3>
+            <h3 className="sidebar-section-title">Quick Links</h3>
             <ul className="sidebar-list">
                 <li className="sidebar-item">
                   <Link to="/" onClick={toggleSidebar}>Attendance</Link>
@@ -53,7 +53,7 @@ export default function CustomSidebar({ isOpen, toggleSidebar, userDepartments, 
           {/* Admin links section - Only shows if isAdmin is true */}
           {isAdmin && (
             <div className="sidebar-section">
-              <h3 className="section-title">Admin Controls</h3>
+              <h3 className="sidebar-sidebar-section-title">Admin Controls</h3>
               <ul className="sidebar-list">
                 {Object.keys(pagesRedirect).map((page) => (
                   <li key={page} className="sidebar-item">
@@ -68,7 +68,7 @@ export default function CustomSidebar({ isOpen, toggleSidebar, userDepartments, 
 
           {/* Display logout option */}
           <div className="sidebar-section">
-            <h3 className="section-title">Admin Controls</h3>
+            <h3 className="sidebar-section-title">Admin Controls</h3>
             <ul className="sidebar-list">
               <li className="sidebar-item" onClick={onLogout}>
                 Logout
