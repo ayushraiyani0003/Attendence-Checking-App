@@ -102,7 +102,7 @@
   }
   
   .sidebar-item a:hover {
-    color: var(--info-color);
+    background-color: var(--gray-700);
   }
   
   /* Overlay (Background when sidebar is open) */
