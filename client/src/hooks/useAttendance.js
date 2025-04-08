@@ -34,6 +34,17 @@ export const useAttendance = (user, monthYear, ws, send) => {
 
   const isAdmin = user.role === "admin";
 
+  // Helper function to convert DD/MM/YYYY to a Date object for sorting
+  const convertDateForSorting = (dateString) => {
+    if (!dateString) return null;
+    
+    // Parse the date string in DD/MM/YYYY format
+    const [day, month, year] = dateString.split('/');
+    
+    // Create a date object (months are 0-indexed in JavaScript)
+    return new Date(year, month - 1, day);
+  };
+
   const toggleColumn = (columnId) => {
     setColumns(columns.map(column =>
       column.id === columnId
@@ -92,7 +103,31 @@ export const useAttendance = (user, monthYear, ws, send) => {
       // Handle different types of broadcast messages
       switch (data.action || data.type) {
         case "attendanceData":
-          setAttendanceData(data.attendance);
+          // Sort each employee's attendance array by date before setting state
+          let sortedAttendanceData = data.attendance;
+          if (sortedAttendanceData && Array.isArray(sortedAttendanceData)) {
+            sortedAttendanceData = sortedAttendanceData.map(employee => {
+              if (employee.attendance && Array.isArray(employee.attendance)) {
+                // Create a copy and sort attendance by date
+                const sortedAttendance = [...employee.attendance].sort((a, b) => {
+                  const dateA = convertDateForSorting(a.date);
+                  const dateB = convertDateForSorting(b.date);
+                  
+                  // Handle null values
+                  if (!dateA && !dateB) return 0;
+                  if (!dateA) return 1;
+                  if (!dateB) return -1;
+                  
+                  return dateA - dateB;
+                });
+                
+                return { ...employee, attendance: sortedAttendance };
+              }
+              return employee;
+            });
+          }
+          
+          setAttendanceData(sortedAttendanceData);
           setLockStatusData(data.lockStatus);
           setMetrixDiffData(data.metricsAttendanceDifference || []);
           setTotalDiffData(data.totalTimeDiff || []);
@@ -106,23 +141,41 @@ export const useAttendance = (user, monthYear, ws, send) => {
 
         case "attendanceUpdated":
           // Update specific employee's attendance
-          setAttendanceData((prevData) =>
-            prevData.map((row) =>
-              row.id === data.updateDetails.employeeId
-                ? {
+          setAttendanceData((prevData) => {
+            const updatedData = prevData.map((row) => {
+              if (row.id === data.updateDetails.employeeId) {
+                // Update the specific attendance record
+                const updatedAttendance = row.attendance.map(att =>
+                  att.date === data.updateDetails.editDate
+                    ? {
+                      ...att,
+                      [data.updateDetails.field]: data.updateDetails.newValue
+                    }
+                    : att
+                );
+                
+                // Sort the updated attendance array by date
+                const sortedAttendance = [...updatedAttendance].sort((a, b) => {
+                  const dateA = convertDateForSorting(a.date);
+                  const dateB = convertDateForSorting(b.date);
+                  
+                  if (!dateA && !dateB) return 0;
+                  if (!dateA) return 1;
+                  if (!dateB) return -1;
+                  
+                  return dateA - dateB;
+                });
+                
+                return {
                   ...row,
-                  attendance: row.attendance.map(att =>
-                    att.date === data.updateDetails.editDate
-                      ? {
-                        ...att,
-                        [data.updateDetails.field]: data.updateDetails.newValue
-                      }
-                      : att
-                  )
-                }
-                : row
-            )
-          );
+                  attendance: sortedAttendance
+                };
+              }
+              return row;
+            });
+            
+            return updatedData;
+          });
           
           // Show toast for attendance update by someone else
           if (!data.updateDetails.updatedBy || data.updateDetails.updatedBy !== user.name) {
@@ -278,6 +331,19 @@ export const useAttendance = (user, monthYear, ws, send) => {
           const endDate = dayjs(dateRange[1]).format('YYYY-MM-DD');
           
           return recordDate >= startDate && recordDate <= endDate;
+        });
+        
+        // Sort attendance records by date
+        itemCopy.attendance = itemCopy.attendance.sort((a, b) => {
+          const dateA = convertDateForSorting(a.date);
+          const dateB = convertDateForSorting(b.date);
+          
+          // Handle null values
+          if (!dateA && !dateB) return 0;
+          if (!dateA) return 1;
+          if (!dateB) return -1;
+          
+          return dateA - dateB;
         });
       }
       
@@ -462,6 +528,19 @@ export const useAttendance = (user, monthYear, ws, send) => {
 
       // Update local state
       updatedEmployee.attendance[columnIndex][field] = value;
+      
+      // Sort the attendance array after update
+      updatedEmployee.attendance.sort((a, b) => {
+        const dateA = convertDateForSorting(a.date);
+        const dateB = convertDateForSorting(b.date);
+        
+        // Handle null values
+        if (!dateA && !dateB) return 0;
+        if (!dateA) return 1;
+        if (!dateB) return -1;
+        
+        return dateA - dateB;
+      });
 
       // Send minimal update via WebSocket
       send(updatePayload);
@@ -566,7 +645,6 @@ const handleSaveChanges = () => {
     setDateRange([getYesterday(), getYesterday()]);
     toast.info("Date range reset to yesterday");
   };
-console.log(MetrixDiffData);
 
   return {
     // States

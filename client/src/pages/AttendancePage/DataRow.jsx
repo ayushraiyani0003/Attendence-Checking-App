@@ -35,9 +35,6 @@ function DataRow(props) {
     handleShowCommentPopup,
     setShowCommentPopup
   } = useDataRow(props);
-
-  console.log("Net Diff Values:", netDiffValue);
-  console.log("OT Diff Values:", otDiffValue);
   
   // Determine whether to show metrix display
   const shouldShowMetrixDisplay = isAdmin && props.isShowDiffData;
