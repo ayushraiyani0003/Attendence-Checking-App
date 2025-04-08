@@ -15,12 +15,14 @@ import UploadPage from "./pages/UploadPage/UploadPage";
 import UserListPage from "./pages/UserListPage/UserListPage";
 import MistakeDashboard from "./pages/DashboardPage/DashboardPage";
 import EmployeeOrderPage from "./pages/employeeOrderPage/EmployeeOrderPage";
+import SessionManagement from "./pages/sessionManagment/SessionManagement";
 import LogInPage from "./pages/LogInPage/LogInPage";
 import { AuthContext, AuthProvider } from "./context/AuthContext";
 import { pageRedirect } from "./utils/constants";
 import { EmployeeProvider } from "./context/EmployeeContext";
 import { UploadProvider } from "./context/UploadContext";
 import { DashboardProvider } from "./context/DashboardContext";
+import { SessionProvider } from "./context/SessionsContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import WebSocketProvider from "./context/WebSocketContext";
 import UnderMaintenancePage from "./pages/maintainencePage/MaintenancePage";
@@ -82,7 +84,7 @@ const App = () => {
   return (
     <AuthProvider>
       {/* ToastContainer should be at the app level, outside the authentication check */}
-      <ToastContainer 
+      <ToastContainer
         position="top-right"
         autoClose={5000}
         hideProgressBar={false}
@@ -93,25 +95,25 @@ const App = () => {
         draggable
         pauseOnHover
       />
-      
+
       {/* NetworkMonitor should be included regardless of authentication */}
       <NetworkMonitor />
-      
+
       {isAuthenticated ? (
         <div className="flex">
-            <CustomSidebar
-              isOpen={isSidebarOpen}
-              toggleSidebar={toggleSidebar}
-              isAdmin={user?.role === "admin"}
-              userDepartments={user.userReportingGroup}
-              onLogout={handleLogout}
-              pagesRedirect={pageRedirect}
-            />
+          <CustomSidebar
+            isOpen={isSidebarOpen}
+            toggleSidebar={toggleSidebar}
+            isAdmin={user?.role === "admin"}
+            userDepartments={user.userReportingGroup}
+            onLogout={handleLogout}
+            pagesRedirect={pageRedirect}
+          />
 
           <div className="flex-1">
             <CustomHeader toggleSidebar={toggleSidebar} user={user}
-               onSearch={handleSearchChange} // Pass search change handler
-               onMonthChange={handleMonthChange} // Pass month/year change handler
+              onSearch={handleSearchChange} // Pass search change handler
+              onMonthChange={handleMonthChange} // Pass month/year change handler
             />
             <Routes>
               {/* Default page after login (either user or admin based) */}
@@ -120,7 +122,7 @@ const App = () => {
                 element={
                   <ProtectedRoute isAuthenticated={isAuthenticated}>
                     <WebSocketProvider>
-                      <AttendencePage user={user} monthYear={selectedMonthYear}/>
+                      <AttendencePage user={user} monthYear={selectedMonthYear} />
                     </WebSocketProvider>
                   </ProtectedRoute>
                 }
@@ -130,7 +132,7 @@ const App = () => {
                 element={
                   <ProtectedRoute isAuthenticated={isAuthenticated}>
 
-<DashboardProvider>
+                    <DashboardProvider>
                       <MistakeDashboard selectedMonthYear={selectedMonthYear} />
 
                     </DashboardProvider>
@@ -173,18 +175,28 @@ const App = () => {
                   </ProtectedRoute>
                 }
               />
-              {/* <Route
+              <Route
                 path="/employee-list"
                 element={
                   <ProtectedRoute isAuthenticated={isAuthenticated}>
-                   
-                   <EmployeeProvider>
+
+                    <EmployeeProvider>
                       <EmployeeOrderPage user={user} />
-                    
+
                     </EmployeeProvider>
                   </ProtectedRoute>
                 }
-              /> */}
+              />
+              <Route
+                path="/sessions"
+                element={
+                  <ProtectedRoute isAuthenticated={isAuthenticated}>
+                    <SessionProvider>
+                    <SessionManagement />
+                    </SessionProvider>
+                  </ProtectedRoute>
+                }
+              />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </div>
