@@ -20,6 +20,7 @@ import { AuthContext, AuthProvider } from "./context/AuthContext";
 import { pageRedirect } from "./utils/constants";
 import { EmployeeProvider } from "./context/EmployeeContext";
 import { UploadProvider } from "./context/UploadContext";
+import { DashboardProvider } from "./context/DashboardContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import WebSocketProvider from "./context/WebSocketContext";
 import UnderMaintenancePage from "./pages/maintainencePage/MaintenancePage";
@@ -128,7 +129,11 @@ const App = () => {
                 path="/dashboard"
                 element={
                   <ProtectedRoute isAuthenticated={isAuthenticated}>
+
+<DashboardProvider>
                       <MistakeDashboard selectedMonthYear={selectedMonthYear} />
+
+                    </DashboardProvider>
                   </ProtectedRoute>
                 }
               />
