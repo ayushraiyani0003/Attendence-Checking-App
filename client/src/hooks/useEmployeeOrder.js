@@ -22,7 +22,7 @@ const useEmployeeOrder = (userReportingGroup) => {
 
   // Local storage key for order data
   const getStorageKey = useCallback(() => 
-    `employee_order_${userReportingGroup || 'default'}`, 
+    `employee_order_default`, 
     [userReportingGroup]
   );
 
