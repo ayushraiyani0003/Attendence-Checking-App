@@ -18,7 +18,6 @@ const Session = sequelize.define('Session', {
   sessionId: {
     type: DataTypes.STRING(64),
     allowNull: false,
-    unique: true
   },
   deviceId: {
     type: DataTypes.STRING(255),
@@ -54,13 +53,23 @@ const Session = sequelize.define('Session', {
 // Clean up old sessions (optional)
 // This can be a cron job or a scheduled task in your application
 Session.cleanupOldSessions = async function() {
-  const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+  const oneDaysAgo = new Date(Date.now() - 1 * 24 * 60 * 60 * 1000);
   await Session.destroy({
     where: {
       [Sequelize.Op.or]: [
         { isActive: false },
-        { lastActive: { [Sequelize.Op.lt]: twoDaysAgo } }
+        { lastActive: { [Sequelize.Op.lt]: oneDaysAgo } }
       ]
+    }
+  });
+};
+
+// Auto delete all sessions after 1 week
+Session.cleanupWeekOldSessions = async function() {
+  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  await Session.destroy({
+    where: {
+      createdAt: { [Sequelize.Op.lt]: oneWeekAgo }
     }
   });
 };

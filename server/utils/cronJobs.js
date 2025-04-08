@@ -2,7 +2,8 @@ const cron = require("node-cron");
 const { generateDailyAttendance } = require("../controllers/attendanceController");
 const { getReportingGroupData } = require("../controllers/reportingGroupController")
 const { getAllAttendenceDataFromRedis,deleteRedisGroupKeysForSelectedDate } = require("./getRedisAttendenceData");
-const {updateAttendanceFromRedisBySystumn} = require("../services/attendenceService")
+const {updateAttendanceFromRedisBySystumn} = require("../services/attendenceService");
+const Session = require("../models/session")
 
 // Cron job to generate attendance at 12:00 AM every day
 cron.schedule('0 30 0 * * *', () => {
@@ -65,5 +66,25 @@ cron.schedule('30 14 * * *', async () => {
     }
   } catch (error) {
     console.error('Error in cron job:', error);
+  }
+});
+
+cron.schedule('0 0 * * *', async () => {
+  try {
+    console.log('Running daily session cleanup...');
+    await Session.cleanupOldSessions();
+    console.log('Daily session cleanup completed');
+  } catch (error) {
+    console.error('Error in daily session cleanup:', error);
+  }
+});
+
+cron.schedule('0 0 * * *', async () => {
+  try {
+    console.log('Running weekly session cleanup...');
+    await Session.cleanupWeekOldSessions();
+    console.log('Weekly session cleanup completed');
+  } catch (error) {
+    console.error('Error in weekly session cleanup:', error);
   }
 });
