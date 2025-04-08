@@ -1,32 +1,53 @@
+const db = require('../models/index');
 const attendanceService = require('../services/attendenceService');
 const metricsService = require('../services/metricsService');
+const { getAllEmployeesService } = require('../services/employeeServices');
+const { authenticateJWT, isAdmin } = require('../middlewares/authMiddleware');
+const { getRedisAttendanceData } = require("../utils/getRedisAttendenceData");
+const { combineAttendanceData } = require("../utils/combineAtt");
+const { findMismatchesByGroup } = require("../utils/findMistamatch");
+const { generateNetHrReport, generateOtHrReport, generateSiteExpenseReport, generateEveningShiftReport, generateNightShiftReport, generateDetailedGroupReport, generateAbsentReport } = require("../utils/report");
 
 // Get graph data for the dashboard
-exports.getDashboardGraphs = [ async (req, res) => {
+exports.getDashboardGraphs = [async (req, res) => {
   try {
+
     // Get month and year from the request query
-    const { month, year } = req.query;
-    
-    // Validate input
+    let { month, year } = req.query;
+    console.log("this is a dashboard " + month + " and " + year);
+    // const month = 4;
+    // const year = 2025;
+
+    // If month and year are not provided, use current month and year
     if (!month || !year) {
+      const currentDate = new Date();
+      month = month || (currentDate.getMonth() + 1).toString();
+      year = year || currentDate.getFullYear().toString();
+      console.log(`Using default month: ${month}, year: ${year}`);
+    }
+
+    // Convert to numbers to ensure proper handling
+    const numericMonth = parseInt(month, 10);
+    const numericYear = parseInt(year, 10);
+
+    // Basic validation 
+    if (isNaN(numericMonth) || numericMonth < 1 || numericMonth > 12 ||
+      isNaN(numericYear) || numericYear < 2000 || numericYear > 2100) {
       return res.status(400).json({
         success: false,
-        message: "Month and year parameters are required"
+        message: "Invalid month or year parameters"
       });
     }
-    
+
     // Get raw dashboard data using helper function
-    const rawData = await getData(parseInt(month), parseInt(year));
-    
-    // Format data in the required structure
-    const formattedData = formatDashboardData(rawData);
-    
+    const rawData = await getData(numericMonth, numericYear);
+
     // Return successful response with data
     return res.status(200).json({
       success: true,
-      data: formattedData
+      data: rawData
     });
-    
+
   } catch (error) {
     console.error("Error fetching dashboard graph data:", error);
     return res.status(500).json({
@@ -37,176 +58,216 @@ exports.getDashboardGraphs = [ async (req, res) => {
   }
 }];
 
-// Format dashboard data in the required structure
-const formatDashboardData = (rawData) => {
-  // Extract employees from attendance data
-  const allEmployees = [];
-  rawData.attendance.byGroup.forEach(group => {
-    group.records.forEach(record => {
-      if (!allEmployees.includes(record.employee_id)) {
-        allEmployees.push(record.employee_id);
-      }
-    });
-  });
-  
-  // Get departments from employees
-  const departmentCounts = {};
-  const reportingGroupCounts = {};
-  
-  // Count employees by department and reporting group
-  rawData.attendance.byGroup.forEach(group => {
-    // Initialize reporting group count
-    const groupName = group.groupName;
-    reportingGroupCounts[groupName] = 0;
-    
-    // Process unique employees in this group
-    const processedEmployees = new Set();
-    
-    group.records.forEach(record => {
-      // Only count each employee once
-      if (!processedEmployees.has(record.employee_id)) {
-        processedEmployees.add(record.employee_id);
-        
-        // Increment reporting group count
-        reportingGroupCounts[groupName]++;
-        
-        // Get employee department
-        // Note: This assumes the department info is in the record
-        // You may need to fetch this info separately if not available
-        const department = record.department || 'Unknown';
-        
-        // Increment department count
-        if (!departmentCounts[department]) {
-          departmentCounts[department] = 0;
-        }
-        departmentCounts[department]++;
-      }
-    });
-  });
-  
-  // Format departments and reporting groups as arrays of objects
-  const departmentsArray = Object.entries(departmentCounts).map(([key, value]) => {
-    return { [key]: value };
-  });
-  
-  const reportingGroupsArray = Object.entries(reportingGroupCounts).map(([key, value]) => {
-    return { [key]: value };
-  });
-  
-  // Return the formatted data
-  return {
-    departments: departmentsArray,
-    reporting_groups: reportingGroupsArray,
-    // Keep the chart data as is
-    charts: {
-      attendance: rawData.attendance,
-      metrics: rawData.metrics,
-      period: rawData.period
-    }
-  };
-};
-
 // Helper function to get dashboard data
 const getData = async (month, year) => {
+  console.log(month + "-" + year);
+
   try {
     // 1. First, get all reporting groups from settings
     const reportingGroups = await db.ReportingGroup.findAll();
+
+    // Extract group IDs for service call
     const reportingGroupIds = reportingGroups.map(group => group.id);
-    
-    // 2. Get employees attendance data for the month by reporting groups
+
+    // Extract group names for the desired array of strings
+    const reportingGroupNames = reportingGroups.map(group => group.dataValues.groupname);
+
+    if (!reportingGroupIds || reportingGroupIds.length === 0) {
+      console.warn("No reporting groups found. Using empty array.");
+    }
+    // 2. Get employees attendance data for the month by reporting groups from mysql
     const attendanceData = await attendanceService.getEmployeesAttendanceByMonthAndGroup(
-      reportingGroupIds, 
-      year, 
+      reportingGroupNames || [],
+      year,
       month
     );
-    
+
+    // get teh attedence data from the redis db also
+    const redisData = await getRedisAttendanceData(year, month, reportingGroupNames);
+
+    // combine and get the final attendence data for comparision.
+    const finalAttendanceData = combineAttendanceData(attendanceData, redisData);
     // 3. Get metrics data for the month
     const metricsData = await metricsService.fetchMetricsForMonthYear(month, year);
-    
-    // 4. Process and organize the data for dashboard visualization
-    // Group attendance by reporting group for analysis
-    const attendanceByGroup = attendanceData.reduce((groups, record) => {
-      const groupId = record.reporting_group;
-      if (!groups[groupId]) {
-        groups[groupId] = [];
-      }
-      groups[groupId].push(record);
-      return groups;
-    }, {});
-    
-    // Map reporting group IDs to names for better readability
-    const groupNameMap = reportingGroups.reduce((map, group) => {
-      map[group.id] = group.name;
-      return map;
-    }, {});
-    
-    // Create formatted response object with both attendance and metrics data
-    return {
-      attendance: {
-        byGroup: Object.keys(attendanceByGroup).map(groupId => ({
-          groupId,
-          groupName: groupNameMap[groupId] || 'Unknown Group',
-          records: attendanceByGroup[groupId],
-          summary: summarizeAttendanceData(attendanceByGroup[groupId])
-        })),
-        overall: summarizeAttendanceData(attendanceData)
-      },
-      metrics: metricsData,
-      reportingGroups: reportingGroups,
-      period: {
-        month,
-        year
-      }
-    };
-    
+
+    // Initialize empty metrics if not returned
+    if (!metricsData) {
+      console.warn(`No metrics data returned for month ${month}, year ${year}`);
+    }
+
+    // 4. calculate the diff between the finalAttendanceData and metricsData
+    const mismatchBygroup = findMismatchesByGroup(finalAttendanceData, metricsData);
+    console.log(mismatchBygroup);
+
+    return mismatchBygroup;
   } catch (error) {
     console.error("Error in getData function:", error);
     throw error;
   }
 };
 
-// Helper function to summarize attendance data
-const summarizeAttendanceData = (attendanceRecords) => {
-  if (!attendanceRecords || attendanceRecords.length === 0) {
-    return {
-      totalDays: 0,
-      presentDays: 0,
-      absentDays: 0,
-      lateDays: 0,
-      presentPercentage: 0,
-      latePercentage: 0
-    };
-  }
-  
-  // Count different attendance statuses
-  const counts = attendanceRecords.reduce((acc, record) => {
-    if (record.status === 'Present') {
-      acc.presentDays++;
-      if (record.is_late) {
-        acc.lateDays++;
-      }
-    } else if (record.status === 'Absent') {
-      acc.absentDays++;
-    }
-    return acc;
-  }, { presentDays: 0, absentDays: 0, lateDays: 0 });
-  
-  const totalDays = attendanceRecords.length;
-  
-  return {
-    totalDays,
-    presentDays: counts.presentDays,
-    absentDays: counts.absentDays,
-    lateDays: counts.lateDays,
-    presentPercentage: (counts.presentDays / totalDays) * 100,
-    latePercentage: (counts.lateDays / totalDays) * 100
-  };
-};
+exports.getDashboardReports = [authenticateJWT, isAdmin, async (req, res) => {
+  try {
+    console.log("my report is called");
 
-// Get dashboard reports - Keep as is
-exports.getDashboardReports = [ async (req, res) => {
-  // Implementation unchanged
-  // ...
+    // Get parameters from the request query
+    let { month, year, reportType, options, dateRange, employeeType } = req.query;
+    console.log("date range i  print " + options);
+    // month year is look like 4 and 2025 in numeric formated format
+
+
+    // Convert to numbers to ensure proper handling
+    const numericMonth = parseInt(month, 10);
+    const numericYear = parseInt(year, 10);
+
+    // Basic validation 
+    if (isNaN(numericMonth) || numericMonth < 1 || numericMonth > 12 ||
+      isNaN(numericYear) || numericYear < 2000 || numericYear > 2100) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid month or year parameters"
+      });
+    }
+
+
+    // 1. First, get all reporting groups from settings
+    const reportingGroups = await db.ReportingGroup.findAll();
+
+    // Extract group IDs for service call
+    const reportingGroupIds = reportingGroups.map(group => group.id);
+
+    // Extract group names for the desired array of strings
+    const reportingGroupNames = reportingGroups.map(group => group.dataValues.groupname);
+
+    if (!reportingGroupIds || reportingGroupIds.length === 0) {
+      console.warn("No reporting groups found. Using empty array.");
+    }
+    const employeeDetails = await getAllEmployeesService();
+
+
+    // 2. Get employees attendance data for the month by reporting groups from mysql
+    const attendanceData = await attendanceService.getEmployeesAttendanceByMonthAndGroup(
+      reportingGroupNames || [],
+      numericYear,
+      numericMonth
+    );
+
+    // get teh attedence data from the redis db also
+    const redisData = await getRedisAttendanceData(numericYear, numericMonth, reportingGroupNames);
+
+    // combine and get the final attendence data for comparision.
+    const finalAttendanceData = combineAttendanceData(attendanceData, redisData);
+    // 3. Get metrics data for the month
+    const metricsData = await metricsService.fetchMetricsForMonthYear(numericMonth, numericYear);
+
+    // Initialize empty metrics if not returned
+    if (!metricsData) {
+      console.warn(`No metrics data returned for month ${month}, year ${year}`);
+    }
+
+
+    // Initialize result variable
+    let reportData = null;
+
+    console.log(dateRange);
+    console.log(reportType);
+    // Main switch case for report types
+    switch (reportType) {
+      case 'Net Hr':
+        reportData = await generateNetHrReport(finalAttendanceData, metricsData, numericMonth, numericYear, options, dateRange, employeeType, employeeDetails);
+        break;
+
+      case 'OT Hr':
+        reportData = await generateOtHrReport(finalAttendanceData, metricsData, numericMonth, numericYear, options, dateRange, employeeType, employeeDetails);
+        break;
+
+      case 'Site expence':
+        reportData = await generateSiteExpenseReport(finalAttendanceData, metricsData, numericMonth, numericYear, options, dateRange, employeeType, employeeDetails);
+        break;
+
+      case 'Evening shift':
+        reportData = await generateEveningShiftReport(finalAttendanceData, metricsData, numericMonth, numericYear, options, dateRange, employeeType, employeeDetails);
+        break;
+
+      case 'Night shift':
+        reportData = await generateNightShiftReport(finalAttendanceData, metricsData, numericMonth, numericYear, options, dateRange, employeeType, employeeDetails);
+        break;
+
+      case 'Absent':
+        reportData = await generateAbsentReport(finalAttendanceData, metricsData, numericMonth, numericYear, options, dateRange, employeeType, employeeDetails);
+        break;
+
+      case 'Detailed Group Report':
+        reportData = await generateDetailedGroupReport(finalAttendanceData, metricsData, numericMonth, numericYear, options, dateRange, employeeType, employeeDetails);
+        break;
+
+      default:
+        return res.status(400).json({
+          success: false,
+          message: "Invalid report type",
+        });
+    }
+
+    // Check if the report generation was successful
+    if (!reportData.success) {
+      return res.status(400).json({
+        success: false,
+        message: reportData.message || "Error generating report"
+      });
+    }
+
+    // If there's no filepath (some reports might only return a message)
+    if (!reportData.filepath) {
+      return res.status(200).json({
+        success: true,
+        message: reportData.message
+      });
+    }
+    // Send the file for download
+    try {
+      // Determine the content type based on the file extension
+      const isZipFile = reportData.filename.toLowerCase().endsWith('.zip');
+      
+      // Set the appropriate Content-Type header
+      if (isZipFile) {
+        res.setHeader('Content-Type', 'application/zip');
+      } else {
+        // Default to Excel file type
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      }
+      
+      // Set the Content-Disposition header for download
+      res.setHeader('Content-Disposition', `attachment; filename="${reportData.filename}"`);
+    
+      // Send the file
+      return res.sendFile(reportData.filepath, { root: '/' }, (err) => {
+        if (err) {
+          console.error("Error sending file:", err);
+          return res.status(500).json({
+            success: false,
+            message: "Error downloading the report",
+            error: err.message
+          });
+        }
+      });
+    } catch (error) {
+      console.error("Error sending file:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Error processing the report file",
+        error: error.message
+      });
+    }
+    
+
+  } catch (error) {
+    console.error("Error generating dashboard reports:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to generate reports",
+      error: error.message
+    });
+  }
 }];
 
 module.exports = exports;
