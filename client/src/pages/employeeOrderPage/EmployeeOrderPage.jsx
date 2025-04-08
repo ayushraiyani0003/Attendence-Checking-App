@@ -12,8 +12,6 @@ const SortableRow = sortableElement(props => <tr {...props} />);
 const SortableContainer = sortableContainer(props => <tbody {...props} />);
 
 const EmployeeOrderPage = (user) => {
-  // You can set default groups or get them from props/context if needed
-  const [groups, setGroups] = useState(['Tech Team A', 'Design Team']);
   
   const {
     employees,
