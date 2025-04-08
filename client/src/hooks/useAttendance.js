@@ -3,6 +3,11 @@ import { getYesterday } from "../utils/constants";
 import dayjs from "dayjs";
 import { toast } from 'react-toastify';
 
+// Helper function to get the storage key for employee order
+const getStorageKey = () => {
+  return `employee_order_default`;
+};
+
 export const useAttendance = (user, monthYear, ws, send) => {
   const [hoveredRow, setHoveredRow] = useState(null);
   const [filterText, setFilterText] = useState("");
@@ -43,6 +48,40 @@ export const useAttendance = (user, monthYear, ws, send) => {
     
     // Create a date object (months are 0-indexed in JavaScript)
     return new Date(year, month - 1, day);
+  };
+
+  // Helper function to sort attendance data based on saved employee order
+  const sortEmployeesByCustomOrder = (data) => {
+    // Try to get saved order from localStorage
+    const savedOrderJson = localStorage.getItem(getStorageKey());
+    
+    if (!savedOrderJson) {
+      return data; // Return original data if no saved order exists
+    }
+    
+    try {
+      // Parse the saved order JSON
+      const savedOrder = JSON.parse(savedOrderJson);
+      
+      // Create a map for quick lookup of display order by employee ID
+      const orderMap = new Map();
+      savedOrder.forEach(item => {
+        orderMap.set(item.employeeId, item.displayOrder);
+      });
+      
+      // Sort the attendance data based on the saved order
+      return [...data].sort((a, b) => {
+        // Get display orders (default to a high number if not found)
+        const orderA = orderMap.has(a.id) ? orderMap.get(a.id) : Number.MAX_SAFE_INTEGER;
+        const orderB = orderMap.has(b.id) ? orderMap.get(b.id) : Number.MAX_SAFE_INTEGER;
+        
+        // Sort by display order
+        return orderA - orderB;
+      });
+    } catch (error) {
+      console.error("Error parsing saved employee order:", error);
+      return data; // Return original data if error occurs
+    }
   };
 
   const toggleColumn = (columnId) => {
@@ -125,6 +164,9 @@ export const useAttendance = (user, monthYear, ws, send) => {
               }
               return employee;
             });
+            
+            // Apply custom employee ordering based on localStorage
+            sortedAttendanceData = sortEmployeesByCustomOrder(sortedAttendanceData);
           }
           
           setAttendanceData(sortedAttendanceData);
@@ -174,7 +216,8 @@ export const useAttendance = (user, monthYear, ws, send) => {
               return row;
             });
             
-            return updatedData;
+            // Apply custom employee ordering again after update
+            return sortEmployeesByCustomOrder(updatedData);
           });
           
           // Show toast for attendance update by someone else
@@ -183,6 +226,7 @@ export const useAttendance = (user, monthYear, ws, send) => {
           }
           break;
 
+        // ... rest of the cases remain unchanged
         case "attendanceUpdateResult":
           // Show toast based on update result
           if (data.success) {
@@ -195,29 +239,31 @@ export const useAttendance = (user, monthYear, ws, send) => {
         case "lockUnlockStatusChanged":
           // Handle lock/unlock status changes
           if (data.status === 'unlocked') {
-            setAttendanceData((prevData) =>
-              prevData.map((row) => ({
+            setAttendanceData((prevData) => {
+              const updatedData = prevData.map((row) => ({
                 ...row,
                 attendance: row.attendance.map(att => ({
                   ...att,
                   isLocked: false,
                   lock_status: 'unlocked'
                 }))
-              }))
-            );
+              }));
+              return sortEmployeesByCustomOrder(updatedData);
+            });
             setHasChanges(true);
             toast.info(`Records unlocked by ${data.changedBy || 'an administrator'}`);
           } else if (data.status === 'locked') {
-            setAttendanceData((prevData) =>
-              prevData.map((row) => ({
+            setAttendanceData((prevData) => {
+              const updatedData = prevData.map((row) => ({
                 ...row,
                 attendance: row.attendance.map(att => ({
                   ...att,
                   isLocked: true,
                   lock_status: 'locked'
                 }))
-              }))
-            );
+              }));
+              return sortEmployeesByCustomOrder(updatedData);
+            });
             setHasChanges(false);
             toast.info(`Records locked by ${data.changedBy || 'an administrator'}`);
           }
@@ -236,8 +282,8 @@ export const useAttendance = (user, monthYear, ws, send) => {
           break;
 
         case "attendanceLockStatus":
-          setAttendanceData((prevData) =>
-            prevData.map((row) => ({
+          setAttendanceData((prevData) => {
+            const updatedData = prevData.map((row) => ({
               ...row,
               attendance: row.attendance.map(att =>
                 att.date === data.date
@@ -248,8 +294,9 @@ export const useAttendance = (user, monthYear, ws, send) => {
                   }
                   : att
               )
-            }))
-          );
+            }));
+            return sortEmployeesByCustomOrder(updatedData);
+          });
           
           toast.info(`Date ${data.date} ${data.status === "locked" ? "locked" : "unlocked"}`);
           break;
@@ -476,6 +523,9 @@ export const useAttendance = (user, monthYear, ws, send) => {
         }
         return 0;
       });
+    } else {
+      // If not using any other sort, maintain custom order
+      filteredData = sortEmployeesByCustomOrder(filteredData);
     }
 
     return { data: filteredData, isEmpty };
@@ -552,11 +602,14 @@ export const useAttendance = (user, monthYear, ws, send) => {
       setHasChanges(true);
 
       // Update the local state
-      setAttendanceData(prevData =>
-        prevData.map((employee, index) =>
+      setAttendanceData(prevData => {
+        const updatedData = prevData.map((employee, index) =>
           index === rowIndex ? updatedEmployee : employee
-        )
-      );
+        );
+        
+        // Apply custom ordering to the updated data
+        return sortEmployeesByCustomOrder(updatedData);
+      });
     }
   };
 
@@ -569,37 +622,37 @@ export const useAttendance = (user, monthYear, ws, send) => {
     setSortConfig({ key, direction });
   };
 
-// Handle save changes
-const handleSaveChanges = () => {
-  // For admin users, ask for confirmation twice
-  if (user.role === 'admin') {
-    const firstConfirm = window.confirm("Are you sure you want to save these changes?");
-    
-    if (firstConfirm) {
-      const secondConfirm = window.confirm("Please confirm once more that you want to save these changes to the database.");
+  // Handle save changes
+  const handleSaveChanges = () => {
+    // For admin users, ask for confirmation twice
+    if (user.role === 'admin') {
+      const firstConfirm = window.confirm("Are you sure you want to save these changes?");
       
-      if (!secondConfirm) {
-        return; // Exit if the user cancels the second confirmation
+      if (firstConfirm) {
+        const secondConfirm = window.confirm("Please confirm once more that you want to save these changes to the database.");
+        
+        if (!secondConfirm) {
+          return; // Exit if the user cancels the second confirmation
+        }
+      } else {
+        return; // Exit if the user cancels the first confirmation
       }
-    } else {
-      return; // Exit if the user cancels the first confirmation
     }
-  }
 
-  const savePayload = {
-    action: "saveDataRedisToMysql",
-    monthYear: monthYear,
-    user: user
+    const savePayload = {
+      action: "saveDataRedisToMysql",
+      monthYear: monthYear,
+      user: user
+    };
+
+    // Send the payload via WebSocket
+    send(savePayload);
+    
+    // Show toast for saving
+    toast.info("Saving changes...", {autoClose: 3000});
+
+    setHasChanges(false);
   };
-
-  // Send the payload via WebSocket
-  send(savePayload);
-  
-  // Show toast for saving
-  toast.info("Saving changes...", {autoClose: 3000});
-
-  setHasChanges(false);
-};
 
   // Handle lock/unlock
   const handleLock = (reportingGroup, date) => {
@@ -684,6 +737,7 @@ const handleSaveChanges = () => {
     handleCellDataUpdate,
     handleLock,
     handleUnlock,
-    handleReset
+    handleReset,
+    sortEmployeesByCustomOrder
   };
 };
