@@ -106,13 +106,13 @@ const EmployeeOrderPage = (user) => {
     {
       title: 'Name',
       dataIndex: 'name',
-      width: 200,
+      width: 380,
       align: 'center',
     },
     {
       title: 'Department',
       dataIndex: 'department',
-      width: 150,
+      width: 180,
       align: 'center',
     },
     {
@@ -123,7 +123,7 @@ const EmployeeOrderPage = (user) => {
     },
     {
       title: 'Reporting Group',
-      dataIndex: 'reportingGroup',
+      dataIndex: 'reporting_group',
       width: 200,
       align: 'center',
     },
@@ -166,7 +166,7 @@ const EmployeeOrderPage = (user) => {
       {contextHolder}
       
       <div className="employee-order-header">
-        <div className="header-title">
+        <div className="employee-header-title">
           <h1>Employee Order Management</h1>
           <Tooltip title="Click and drag rows to reorder employees">
             <InfoCircleOutlined className="info-icon" />
@@ -204,7 +204,7 @@ const EmployeeOrderPage = (user) => {
             pagination={false}
             loading={loading}
             components={components}
-            className="employee-table"
+            className="employee-short-table"
             bordered={false}
             size="middle"
             showHeader={true}

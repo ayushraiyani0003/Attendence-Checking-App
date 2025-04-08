@@ -3,7 +3,14 @@ import { useEmployeeContext } from '../context/EmployeeContext';
 import { arrayMoveImmutable } from 'array-move';
 
 const useEmployeeOrder = (userReportingGroup) => {
-  const { employees, loading, fetchEmployeesByGroup } = useEmployeeContext();
+  const { 
+    employees, 
+    loading, 
+    fetchEmployeesByGroup, 
+    fetchEmployeesData, 
+    isAdmin 
+  } = useEmployeeContext();
+  
   const [orderedEmployees, setOrderedEmployees] = useState([]);
   const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [searchText, setSearchText] = useState('');
@@ -22,7 +29,12 @@ const useEmployeeOrder = (userReportingGroup) => {
   // Fetch employees when the hook mounts or reporting group changes
   useEffect(() => {
     const loadEmployees = async () => {
-      if (userReportingGroup) {
+      // If user is admin, they can see all employees
+      if (isAdmin) {
+        await fetchEmployeesData();
+      } 
+      // If user is not admin and has a reporting group, only show their group's employees
+      else if (userReportingGroup) {
         await fetchEmployeesByGroup(userReportingGroup);
       }
     };
@@ -31,7 +43,7 @@ const useEmployeeOrder = (userReportingGroup) => {
     // Reset the data processed flag when reporting group changes
     dataProcessedRef.current = false;
     initialLoadRef.current = true;
-  }, [userReportingGroup, fetchEmployeesByGroup]);
+  }, [userReportingGroup, fetchEmployeesByGroup, fetchEmployeesData, isAdmin]);
 
   // Apply saved order to employees
   const applySavedOrder = useCallback((employeeList) => {
@@ -220,6 +232,7 @@ const useEmployeeOrder = (userReportingGroup) => {
     saveOrder,
     resetOrder,
     hasChanges,
+    isAdmin,
   };
 };
 

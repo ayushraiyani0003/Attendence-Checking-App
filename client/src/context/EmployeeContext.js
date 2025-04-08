@@ -14,13 +14,31 @@ export const useEmployeeContext = () => {
   return useContext(EmployeeContext);
 };
 
-export const EmployeeProvider = ({ children }) => {
+export const EmployeeProvider = ({ children, userRole, userReportingGroup }) => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
+  const isAdmin = userRole === 'admin';
 
   useEffect(() => {
-    fetchEmployeesData();
-  }, []);
+    fetchInitialEmployees();
+  }, [userRole, userReportingGroup]);
+
+  const fetchInitialEmployees = async () => {
+    try {
+      // If user is admin, fetch all employees, otherwise fetch only their reporting group
+      if (isAdmin) {
+        await fetchEmployeesData();
+      } else if (userReportingGroup) {
+        await fetchEmployeesByGroup(userReportingGroup);
+      } else {
+        notification.warning({ message: "No reporting group assigned" });
+        setLoading(false);
+      }
+    } catch (error) {
+      notification.error({ message: "Failed to load employees" });
+      setLoading(false);
+    }
+  };
 
   const fetchEmployeesData = async () => {
     try {
@@ -116,7 +134,7 @@ export const EmployeeProvider = ({ children }) => {
       notification.error({ message: "Failed to load employees" });
       setLoading(false);
     }
-  }
+  };
 
   return (
     <EmployeeContext.Provider
@@ -126,7 +144,9 @@ export const EmployeeProvider = ({ children }) => {
         addNewEmployee,
         editEmployee,
         removeEmployeeById,
-        fetchEmployeesByGroup
+        fetchEmployeesByGroup,
+        fetchEmployeesData,
+        isAdmin
       }}
     >
       {children}

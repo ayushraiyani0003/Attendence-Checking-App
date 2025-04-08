@@ -81,6 +81,9 @@ const App = () => {
     }
   }, [isAuthenticated, user, navigate]);
 
+  console.log(user.userReportingGroup);
+  
+
   return (
     <AuthProvider>
       {/* ToastContainer should be at the app level, outside the authentication check */}
@@ -143,7 +146,7 @@ const App = () => {
                 path="/employee"
                 element={
                   <ProtectedRoute isAuthenticated={isAuthenticated}>
-                    <EmployeeProvider>
+                    <EmployeeProvider userRole={user.userRole} userReportingGroup={user.userReportingGroup}>
                       <EmployeePage />
                     </EmployeeProvider>
                   </ProtectedRoute>
@@ -179,10 +182,8 @@ const App = () => {
                 path="/employee-list"
                 element={
                   <ProtectedRoute isAuthenticated={isAuthenticated}>
-
-                    <EmployeeProvider>
+                    <EmployeeProvider userRole={user.userRole} userReportingGroup={user.userReportingGroup}>
                       <EmployeeOrderPage user={user} />
-
                     </EmployeeProvider>
                   </ProtectedRoute>
                 }

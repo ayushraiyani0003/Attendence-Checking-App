@@ -7,7 +7,7 @@ const WebSocketProvider = ({ children }) => {
   const [ws, setWs] = useState(null);
 
   useEffect(() => {
-    const webSocket = new WebSocket(`wss://${API_URL}`); // Make sure this is correct URL
+    const webSocket = new WebSocket(`ws://${API_URL}`); // Make sure this is correct URL
     setWs(webSocket);
 
     // Handle WebSocket open event
