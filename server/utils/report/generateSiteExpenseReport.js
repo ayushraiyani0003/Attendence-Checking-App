@@ -132,7 +132,13 @@ async function generateSiteExpenseReport(finalAttendanceData, metricsData, month
   await workbook.xlsx.writeFile(filePath);
   
   console.log("Report generation completed successfully.");
-  return filePath;
+  return {
+    success: true,
+    filepath: filePath,
+    filename: filename,
+    message: `Absent report generated successfully for employees.`,
+    type: 'file' // Add this to indicate it's a file response
+  };
 }
 
 /**
