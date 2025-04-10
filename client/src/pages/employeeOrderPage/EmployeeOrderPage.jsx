@@ -1,8 +1,9 @@
-import React, { useEffect,useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Table, Button, Input, Space, message, Tooltip, Modal } from 'antd';
-import { SearchOutlined, SaveOutlined, InfoCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { SearchOutlined, SaveOutlined, InfoCircleOutlined, ExclamationCircleOutlined, DownloadOutlined } from '@ant-design/icons';
 import { sortableContainer, sortableElement } from 'react-sortable-hoc';
 import useEmployeeOrder from '../../hooks/useEmployeeOrder';
+import { generateEmployeeExcel } from '../../utils/exportEmployeesList'; // Import the simplified excel export utility
 import './EmployeeOrderPage.css';
 
 // Create a sortable row element
@@ -26,6 +27,7 @@ const EmployeeOrderPage = (user) => {
   } = useEmployeeOrder(user.userReportingGroup);
   
   const [messageApi, contextHolder] = message.useMessage();
+  const [downloadLoading, setDownloadLoading] = useState(false);
 
   // Handler for sort end event
   const onSortEnd = ({ oldIndex, newIndex }) => {
@@ -42,6 +44,31 @@ const EmployeeOrderPage = (user) => {
       duration: 3,
     });
     console.log('Final order data:', orderData);
+  };
+
+  // Handle download button click - SIMPLIFIED APPROACH
+  const handleDownload = () => {
+    setDownloadLoading(true);
+    try {
+      // Use the filteredEmployees array directly
+      const dataToExport = isFiltering ? filteredEmployees : employees;
+      
+      // Generate and download the Excel file
+      generateEmployeeExcel(dataToExport);
+      
+      messageApi.success({
+        content: 'Excel file generated successfully!',
+        duration: 3,
+      });
+    } catch (error) {
+      console.error('Error generating Excel file:', error);
+      messageApi.error({
+        content: 'Failed to generate Excel file. Please try again.',
+        duration: 3,
+      });
+    } finally {
+      setDownloadLoading(false);
+    }
   };
 
   // Prompt to save changes when navigating away
@@ -189,6 +216,14 @@ const EmployeeOrderPage = (user) => {
               className={`save-button ${hasChanges ? 'save-button-highlight' : ''}`}
             >
               Save Order
+            </Button>
+            <Button
+              icon={<DownloadOutlined />}
+              onClick={handleDownload}
+              loading={downloadLoading}
+              className="download-button"
+            >
+              Download
             </Button>
           </Space>
         </div>
