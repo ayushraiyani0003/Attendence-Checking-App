@@ -24,6 +24,7 @@ import { UploadProvider } from "./context/UploadContext";
 import { DashboardProvider } from "./context/DashboardContext";
 import { SessionProvider } from "./context/SessionsContext";
 import { NotificationProvider } from "./context/notificationContext";
+import {SettingsProvider} from "./context/SettingsContext"
 import ProtectedRoute from "./components/ProtectedRoute";
 import WebSocketProvider from "./context/WebSocketContext";
 import NetworkMonitor from "./components/NetworkMonitor/NetworkMonitor";
@@ -110,9 +111,11 @@ const AuthenticatedLayout = ({ user }) => {
             <Route
               path="/employee"
               element={
+                <SettingsProvider>
                 <EmployeeProvider userRole={user.userRole} userReportingGroup={user.userReportingGroup}>
                   <EmployeePage />
                 </EmployeeProvider>
+                </SettingsProvider>
               }
             />
             <Route

@@ -73,7 +73,7 @@
 }
 
 /* Table styling */
-.employee-table .ant-table {
+.employee-table>.ant-table {
   background: white;
   height: 100vh;
 }
