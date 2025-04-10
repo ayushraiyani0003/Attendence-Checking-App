@@ -11,8 +11,6 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
       // Parse the data string into JSON if it's a string
       const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
       
-      // console.log(`Processing Redis data for date: ${date}, group: ${group}`);
-      
       // Store data with multiple date formats to ensure matching
       const redisDate = new Date(date);
       // Format 1: "DD/MM/YYYY"
@@ -32,18 +30,14 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
         // Handle array of employee records by mapping them by employee_id
         if (Array.isArray(parsedData)) {
           parsedData.forEach(empData => {
-            // console.log(`Adding employee ${empData.employee_id} data to lookup for date ${dateFormat}`);
             redisAttendanceLookup[dateFormat][group][empData.employee_id] = empData;
           });
         } else {
           // If it's a single record
-          // console.log(`Adding single employee ${parsedData.employee_id} data to lookup for date ${dateFormat}`);
           redisAttendanceLookup[dateFormat][group][parsedData.employee_id] = parsedData;
         }
       });
     });
-    
-    // console.log("Redis lookup data:", JSON.stringify(redisAttendanceLookup, null, 2));
 
     // Prepare the final result to send
     const finalAttendanceData = [];
@@ -51,19 +45,32 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
     // Loop through each employee's attendance data from MySQL
     for (const employee of mysqlAttendanceData) {
       const { employee_id, attendance_date, shift_type, network_hours, overtime_hours, comment, reporting_group } = employee;
-
-      // console.log("Employee in Redis compare data: ", employee);
       
-      // console.log(`Processing MySQL data for employee_id: ${employee_id}, date: ${attendance_date}, group: ${reporting_group}`);
-
       // Check if reporting_group is undefined and set a default if needed
       const group = reporting_group || 'default';  // Use 'default' if group is not provided
 
       // Find the employee details by matching employee_id
       const employeeDetails = employees.find((emp) => emp.employee_id === employee_id);
       if (!employeeDetails) {
-        // console.log(`Employee with ID ${employee_id} not found.`);
         continue; // Skip if employee details are not found
+      }
+
+      // NEW: Check for inactive status or if attendance is after resignation date
+      if (employeeDetails.status === "inactive") {
+        console.log(`Skipping inactive employee with ID ${employee_id}`);
+        continue; // Skip inactive employees
+      }
+
+      // NEW: Check resignation date
+      if (employeeDetails.resign_date !== null && employeeDetails.resign_date !== undefined) {
+        const resignDate = new Date(employeeDetails.resign_date);
+        const attendanceDate = new Date(attendance_date);
+        
+        // Skip if attendance date is after resignation date
+        if (attendanceDate > resignDate) {
+          console.log(`Skipping record for employee ${employee_id}, attendance date ${attendance_date} is after resignation date ${employeeDetails.resign_date}`);
+          continue;
+        }
       }
 
       // Initialize employee record if it doesn't exist
@@ -89,8 +96,6 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
       const isoFormattedDate = attendance_date;
       
       const dayOfWeek = attendanceDate.toLocaleString('en-us', { weekday: 'long' });
-      
-      // console.log(`Formatted date for comparison: ${formattedDate}, ISO: ${isoFormattedDate}`);
 
       // Determine lock status dynamically
       const lockStatus = determineLockStatus(
@@ -123,7 +128,13 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
             redisAttendanceLookup[dateFormat][groupName][employee_id]
           ) {
             const redisData = redisAttendanceLookup[dateFormat][groupName][employee_id];
-            // console.log(`Found Redis data for employee ${employee_id} on date ${dateFormat} in group ${groupName}:`, redisData);
+            
+            // NEW: Skip this record if the employee is inactive in Redis data
+            if (redisData.status === "inactive") {
+              console.log(`Skipping record for employee ${employee_id} because status is inactive in Redis data`);
+              redisDataFound = true;
+              continue;
+            }
             
             // Replace MySQL data with Redis data if available
             attendanceRecord = {
@@ -132,7 +143,7 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
               netHR: redisData.network_hours || attendanceRecord.netHR,
               otHR: redisData.overtime_hours || attendanceRecord.otHR,
               dnShift: redisData.shift_type || attendanceRecord.dnShift,
-              comment: redisData.comment|| attendanceRecord.comment ,
+              comment: redisData.comment|| attendanceRecord.comment,
               // Preserve the original lock status from MySQL/determination
               lock_status: lockStatus,
             };
@@ -143,19 +154,21 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
         }
         if (redisDataFound) break;
       }
-      
-      if (!redisDataFound) {
-        // console.log(`No Redis data found for employee ${employee_id} on date ${formattedDate}`);
-      }
 
       // Add attendance record to the employee's attendance array
       employeeRecord.attendance.push(attendanceRecord);
     }
 
+    // NEW: Final check to remove any employee records with empty attendance arrays
+    // This handles cases where all attendance records were filtered out
+    const filteredAttendanceData = finalAttendanceData.filter(
+      (employee) => employee.attendance && employee.attendance.length > 0
+    );
+
     // Return the final result
     return {
       action: 'attendanceData',
-      attendance: finalAttendanceData,
+      attendance: filteredAttendanceData,
     };
   } catch (error) {
     console.error('Error comparing Redis and MySQL attendance:', error);
