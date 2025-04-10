@@ -1,16 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Table, Button, Input, Space, message, Tooltip, Modal } from 'antd';
-import { SearchOutlined, SaveOutlined, InfoCircleOutlined, ExclamationCircleOutlined, DownloadOutlined } from '@ant-design/icons';
-import { sortableContainer, sortableElement } from 'react-sortable-hoc';
+import { 
+  SearchOutlined, 
+  SaveOutlined, 
+  InfoCircleOutlined, 
+  ExclamationCircleOutlined, 
+  DownloadOutlined,
+  ArrowUpOutlined,
+  ArrowDownOutlined,
+  ArrowsAltOutlined  
+} from '@ant-design/icons';
 import useEmployeeOrder from '../../hooks/useEmployeeOrder';
-import { generateEmployeeExcel } from '../../utils/exportEmployeesList'; // Import the simplified excel export utility
+import { generateEmployeeExcel } from '../../utils/exportEmployeesList';
 import './EmployeeOrderPage.css';
-
-// Create a sortable row element
-const SortableRow = sortableElement(props => <tr {...props} />);
-
-// Create a sortable container for the table body
-const SortableContainer = sortableContainer(props => <tbody {...props} />);
 
 const EmployeeOrderPage = (user) => {
   
@@ -23,31 +25,124 @@ const EmployeeOrderPage = (user) => {
     reorderEmployees,
     saveOrder,
     isFiltering,
-    hasChanges
+    hasChanges,
+    changesCount
   } = useEmployeeOrder(user.userReportingGroup);
   
   const [messageApi, contextHolder] = message.useMessage();
   const [downloadLoading, setDownloadLoading] = useState(false);
+  const [movingEmployee, setMovingEmployee] = useState(null);
+  const [targetPosition, setTargetPosition] = useState('');
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  
+  // Add debug state to track changes
+  const [debugInfo, setDebugInfo] = useState({ lastAction: 'none', changeCount: 0 });
 
-  // Handler for sort end event
-  const onSortEnd = ({ oldIndex, newIndex }) => {
-    if (oldIndex !== newIndex) {
-      reorderEmployees(oldIndex, newIndex);
+  // Log employees whenever they change (for debugging)
+  useEffect(() => {
+    console.log("Filtered employees updated:", 
+      filteredEmployees.map((e, i) => `${i+1}. ${e.name} (ID: ${e.employee_id})`));
+  }, [filteredEmployees]);
+
+  // Handle move up button click
+  const handleMoveUp = useCallback((index) => {
+    if (index > 0) {
+      console.log(`Moving up employee at index ${index}`);
+      // Move employee up one position
+      reorderEmployees(index, index - 1);
+      setDebugInfo(prev => ({ 
+        lastAction: `Move up from ${index+1} to ${index}`, 
+        changeCount: prev.changeCount + 1 
+      }));
     }
-  };
+  }, [reorderEmployees]);
+
+  // Handle move down button click
+  const handleMoveDown = useCallback((index) => {
+    if (index < filteredEmployees.length - 1) {
+      console.log(`Moving down employee at index ${index}`);
+      // Move employee down one position
+      reorderEmployees(index, index + 1);
+      setDebugInfo(prev => ({ 
+        lastAction: `Move down from ${index+1} to ${index+2}`, 
+        changeCount: prev.changeCount + 1 
+      }));
+    }
+  }, [reorderEmployees, filteredEmployees.length]);
+
+  // Handle move to specific position
+  const handleMoveToPosition = useCallback((index) => {
+    if (isFiltering) return;
+    
+    setMovingEmployee({
+      index: index,
+      name: filteredEmployees[index].name,
+      current: index + 1,
+      id: filteredEmployees[index].employee_id
+    });
+    setTargetPosition('');
+    setIsModalVisible(true);
+  }, [isFiltering, filteredEmployees]);
+
+  // Handle move modal confirm
+  const handleMoveConfirm = useCallback(() => {
+    const targetIndex = parseInt(targetPosition, 10) - 1;
+    
+    if (
+      isNaN(targetIndex) || 
+      targetIndex < 0 || 
+      targetIndex >= filteredEmployees.length ||
+      targetIndex === movingEmployee.index
+    ) {
+      messageApi.error({
+        content: 'Please enter a valid position number.',
+        duration: 3,
+      });
+      return;
+    }
+    
+    console.log(`Moving employee ${movingEmployee.name} from index ${movingEmployee.index} to ${targetIndex}`);
+    
+    // Perform the move
+    reorderEmployees(movingEmployee.index, targetIndex);
+    setIsModalVisible(false);
+    
+    messageApi.success({
+      content: `Moved ${movingEmployee.name} to position ${targetPosition}.`,
+      duration: 2,
+    });
+    
+    setDebugInfo(prev => ({ 
+      lastAction: `Move to position from ${movingEmployee.current} to ${targetPosition}`, 
+      changeCount: prev.changeCount + 1 
+    }));
+  }, [filteredEmployees.length, messageApi, movingEmployee, reorderEmployees, targetPosition]);
+
+  // Handle move modal cancel
+  const handleMoveCancel = useCallback(() => {
+    setIsModalVisible(false);
+  }, []);
 
   // Handle save button click
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
+    console.log("Saving order with changes count:", debugInfo.changeCount);
     const orderData = saveOrder();
     messageApi.success({
       content: 'Employee order saved successfully!',
       duration: 3,
     });
     console.log('Final order data:', orderData);
-  };
+    
+    setDebugInfo(prev => ({ 
+      lastAction: `Saved all changes (${prev.changeCount})`, 
+      changeCount: 0 
+    }));
+    
+    // No forced reload - employees will stay in their current positions
+  }, [debugInfo.changeCount, messageApi, saveOrder]);
 
-  // Handle download button click - SIMPLIFIED APPROACH
-  const handleDownload = () => {
+  // Handle download button click
+  const handleDownload = useCallback(() => {
     setDownloadLoading(true);
     try {
       // Use the filteredEmployees array directly
@@ -60,6 +155,8 @@ const EmployeeOrderPage = (user) => {
         content: 'Excel file generated successfully!',
         duration: 3,
       });
+      
+      setDebugInfo(prev => ({ ...prev, lastAction: `Downloaded excel` }));
     } catch (error) {
       console.error('Error generating Excel file:', error);
       messageApi.error({
@@ -69,51 +166,25 @@ const EmployeeOrderPage = (user) => {
     } finally {
       setDownloadLoading(false);
     }
-  };
+  }, [employees, filteredEmployees, isFiltering, messageApi]);
 
   // Prompt to save changes when navigating away
   useEffect(() => {
-    const handleNavigation = () => {
+    const handleBeforeUnload = (e) => {
       if (hasChanges) {
-        Modal.confirm({
-          title: 'Save Changes?',
-          icon: <ExclamationCircleOutlined />,
-          content: 'You have unsaved changes to the employee order. Would you like to save before leaving?',
-          okText: 'Save',
-          cancelText: 'Discard',
-          onOk: handleSave,
-        });
+        // Standard way to show a confirmation dialog when leaving the page
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
       }
     };
 
-    // This would need to be integrated with your router's navigation events
-    // For example, with react-router: history.block(handleNavigation)
-    // For simplicity, we'll just simulate this with an unmount effect
-    return () => {
-      if (hasChanges) {
-        // In a real app, you would use your router's navigation system
-        // This simple prompt won't work in modern browsers due to security,
-        // but illustrates the concept
-        const wantToSave = window.confirm('You have unsaved changes. Do you want to save before leaving?');
-        if (wantToSave) {
-          handleSave();
-        }
-      }
-    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasChanges]);
 
-  // Table columns configuration - match the UI in the screenshot
+  // Table columns configuration with enhanced action column
   const columns = [
-    {
-      title: '',
-      dataIndex: 'dragIcon',
-      width: 30,
-      render: () => (
-        <div className="drag-icon">
-          <span className="drag-dots">⋮</span>
-        </div>
-      ),
-    },
     {
       title: 'Sr No.',
       dataIndex: 'index',
@@ -133,6 +204,11 @@ const EmployeeOrderPage = (user) => {
       dataIndex: 'name',
       width: 380,
       align: 'center',
+      render: (text, record) => (
+        <span title={`ID: ${record.employee_id}, Order: ${record.displayOrder}`}>
+          {text}
+        </span>
+      )
     },
     {
       title: 'Department',
@@ -152,39 +228,41 @@ const EmployeeOrderPage = (user) => {
       width: 200,
       align: 'center',
     },
+    {
+      title: 'Actions',
+      key: 'actions',
+      width: 150,
+      render: (_, record, index) => (
+        <Space size="small">
+          <Button
+            type="text"
+            icon={<ArrowUpOutlined />}
+            onClick={() => handleMoveUp(index)}
+            disabled={isFiltering || index === 0}
+            className="move-button"
+            title="Move Up"
+          />
+          <Button
+            type="text"
+            icon={<ArrowDownOutlined />}
+            onClick={() => handleMoveDown(index)}
+            disabled={isFiltering || index === filteredEmployees.length - 1}
+            className="move-button"
+            title="Move Down"
+          />
+          <Button
+            type="text"
+            icon={<ArrowsAltOutlined />}
+            onClick={() => handleMoveToPosition(index)}
+            disabled={isFiltering}
+            className="move-button"
+            title="Move To Position"
+          />
+        </Space>
+      ),
+      align: 'center',
+    },
   ];
-
-  // Define a custom table body component that supports sorting
-  const SortableBody = props => {
-    const { children, ...restProps } = props;
-    
-    return (
-      <SortableContainer
-        useDragHandle={false} // We'll use the whole row for drag but prevent text selection
-        disableAutoscroll={false}
-        helperClass="row-dragging"
-        onSortEnd={onSortEnd}
-        disabled={isFiltering}
-        distance={5} // This value prevents accidental drags
-        lockAxis="y"
-        lockToContainerEdges={true}
-        {...restProps}
-      >
-        {React.Children.toArray(children)}
-      </SortableContainer>
-    );
-  };
-
-  // Define the components to be used in the Table
-  const components = {
-    body: {
-      wrapper: SortableBody,
-      row: props => {
-        const index = props['data-row-key'];
-        return <SortableRow index={Number(index)} {...props} />;
-      }
-    }
-  };
 
   return (
     <div className="employee-order-container">
@@ -193,7 +271,7 @@ const EmployeeOrderPage = (user) => {
       <div className="employee-order-header">
         <div className="employee-header-title">
           <h1>Employee Order Management</h1>
-          <Tooltip title="Click and drag rows to reorder employees">
+          <Tooltip title="Use the arrow buttons to reorder employees or the move button to place an employee at a specific position">
             <InfoCircleOutlined className="info-icon" />
           </Tooltip>
         </div>
@@ -215,7 +293,7 @@ const EmployeeOrderPage = (user) => {
               disabled={isFiltering}
               className={`save-button ${hasChanges ? 'save-button-highlight' : ''}`}
             >
-              Save Order
+              Save Order {debugInfo.changeCount > 0 ? `(${debugInfo.changeCount} changes)` : ''}
             </Button>
             <Button
               icon={<DownloadOutlined />}
@@ -236,36 +314,57 @@ const EmployeeOrderPage = (user) => {
             columns={columns}
             pagination={false}
             loading={loading}
-            components={components}
-            className="employee-short-table"
+            className="employee-table"
             bordered={false}
             size="middle"
             showHeader={true}
             scroll={{ y: false, x: 'max-content' }}
-            rowKey={(_, index) => index.toString()}
-            onRow={(_, index) => ({
-              index,
-              className: 'employee-row',
-              style: { 
-                cursor: isFiltering ? 'default' : 'grab',
-                touchAction: 'none' // Prevents touch scrolling during dragging on touch devices
-              }
-            })}
+            rowKey={(record) => record.employee_id || record.id}
+            rowClassName={(record, index) => 
+              `employee-row${record.displayOrder !== index + 1 ? ' changed-row' : ''}`}
           />
         </div>
         
         {isFiltering && (
           <div className="filtering-message">
-            <InfoCircleOutlined /> Drag and drop is disabled while filtering. Clear the search to reorder employees.
+            <InfoCircleOutlined /> Reordering is disabled while filtering. Clear the search to reorder employees.
           </div>
         )}
         
         {hasChanges && !isFiltering && (
           <div className="changes-message">
             <InfoCircleOutlined /> You have unsaved changes. Don't forget to save your order.
+            {debugInfo.changeCount > 0 && ` (${debugInfo.changeCount} changes)`}
           </div>
         )}
       </div>
+      
+      {/* Move to Position Modal */}
+      <Modal
+        title="Move Employee to Specific Position"
+        open={isModalVisible}
+        onOk={handleMoveConfirm}
+        onCancel={handleMoveCancel}
+        okText="Move"
+        cancelText="Cancel"
+      >
+        {movingEmployee && (
+          <>
+            <p>Moving: <strong>{movingEmployee.name}</strong></p>
+            <p>Current Position: {movingEmployee.current}</p>
+            <p>Enter new position (1-{filteredEmployees.length}):</p>
+            <Input
+              type="number"
+              value={targetPosition}
+              onChange={(e) => setTargetPosition(e.target.value)}
+              min={1}
+              max={filteredEmployees.length}
+              placeholder="Enter position number"
+              autoFocus
+            />
+          </>
+        )}
+      </Modal>
     </div>
   );
 };
