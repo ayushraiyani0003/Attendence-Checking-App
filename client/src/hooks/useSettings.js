@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchSettings, saveSettingsToServer, deleteDepartment, deleteDesignation, deleteReportingGroup } from '../services/settingsService';
+import { fetchSettings, saveSettingsToServer } from '../services/settingsService';
 
 export const useSettings = () => {
   const [departments, setDepartments] = useState([]);
@@ -8,6 +8,7 @@ export const useSettings = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [hasChanges, setHasChanges] = useState(false);
+
   // Fetch initial data
   useEffect(() => {
     const fetchData = async () => {
@@ -48,87 +49,39 @@ export const useSettings = () => {
     ]);
     setHasChanges(true);
   };
-  
-  
 
-  // Delete department (if it has an ID, delete from server, otherwise just from local state)
-  const handleDeleteDepartment = async (departmentToDelete) => {
-    try {
-      setLoading(true);
-      if (departmentToDelete.id) {
-        // Delete from server
-        await deleteDepartment(departmentToDelete.id);
-        // Refresh data after server-side deletion
-        const settings = await fetchSettings();
-        setDepartments(settings.departments || []);
-        setDesignations(settings.designations || []);
-      } else {
-        // Delete locally (if no ID exists)
-        setDepartments((prevDepartments) => prevDepartments.filter(department => department.name !== departmentToDelete.name));
-        setHasChanges(true);
-      }
-    } catch (error) {
-      setError('Failed to delete department');
-      console.error('Error deleting department:', error);
-    } finally {
-      setLoading(false);
+  // Handle department deletion (client-side only)
+  const handleDeleteDepartment = (departmentToDelete) => {
+    if (departmentToDelete.id) {
+      setDepartments(departments.filter(dept => dept.id !== departmentToDelete.id));
+    } else {
+      setDepartments(departments.filter(dept => dept.name !== departmentToDelete.name));
     }
+    setHasChanges(true);
   };
 
-  // Delete designation (if it has an ID, delete from server, otherwise just from local state)
-  const handleDeleteDesignation = async (designationToDelete) => {
-    try {
-      setLoading(true);
-      if (designationToDelete.id) {
-        // Delete from server
-        await deleteDesignation(designationToDelete.id);
-        // Refresh data after server-side deletion
-        const settings = await fetchSettings();
-        setDepartments(settings.departments || []);
-        setDesignations(settings.designations || []);
-      } else {
-        // Delete locally (if no ID exists)
-        setDesignations((prevDesignations) => prevDesignations.filter(designation => designation.designation_name !== designationToDelete.designation_name));
-        setHasChanges(true);
-      }
-    } catch (error) {
-      setError('Failed to delete designation');
-      console.error('Error deleting designation:', error);
-    } finally {
-      setLoading(false);
+  // Handle designation deletion (client-side only)
+  const handleDeleteDesignation = (designationToDelete) => {
+    if (designationToDelete.id) {
+      setDesignations(designations.filter(desig => desig.id !== designationToDelete.id));
+    } else {
+      setDesignations(designations.filter(desig => desig.designation_name !== designationToDelete.designation_name));
     }
+    setHasChanges(true);
   };
 
-  // Delete a reporting group (if it has an ID, delete from server, otherwise just from local state)
-  const handleDeleteReportingGroup = async (reportingGroupToDelete) => {
-    try {
-      setLoading(true);
-      if (reportingGroupToDelete.id) {
-        // Delete from server
-        await deleteReportingGroup(reportingGroupToDelete.id);
-        // Refresh data after server-side deletion
-        const settings = await fetchSettings();
-        setDepartments(settings.departments || []);
-        setDesignations(settings.designations || []);
-        setReportingGroups(settings.reportingGroups || []); 
-      } else {
-        // Delete locally (if no ID exists)
-        setReportingGroups((prevReportingGroups) => prevReportingGroups.filter(reportingGroup => reportingGroup.groupname !== reportingGroupToDelete.groupname));
-
-
-        setHasChanges(true);
-      }
-    } catch (error) {
-      setError('Failed to delete reporting group');
-      console.error('Error deleting reporting group:', error);
-    } finally {
-      setLoading(false);
+  // Handle reporting group deletion (client-side only)
+  const handleDeleteReportingGroup = (groupToDelete) => {
+    if (groupToDelete.id) {
+      setReportingGroups(reportingGroups.filter(group => group.id !== groupToDelete.id));
+    } else {
+      setReportingGroups(reportingGroups.filter(group => group.groupname !== groupToDelete.groupname));
     }
+    setHasChanges(true);
   };
 
   // Save all settings to the server
   const saveSettings = async () => {
-    // console.log('Saving settings:', { departments, designations });
     try {
       setLoading(true);
       setError(null);

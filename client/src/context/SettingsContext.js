@@ -1,18 +1,19 @@
-import { useState, useEffect } from "react";
-import {
-  fetchSettings,
-  deleteDepartment,
-  deleteDesignation,
-  deleteReportingGroup,
-} from "../services/settingsService";
+// SettingsContext.js
+import { createContext, useState, useEffect, useContext } from "react";
+import { fetchSettings, saveSettingsToServer } from "../services/settingsService";
 
-export const useSettings = () => {
+// Create the context
+const SettingsContext = createContext();
+
+// Create provider component
+export const SettingsProvider = ({ children }) => {
   const [departments, setDepartments] = useState([]);
   const [designations, setDesignations] = useState([]);
   const [reportingGroups, setReportingGroups] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Load settings on component mount
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -21,8 +22,9 @@ export const useSettings = () => {
         setDepartments(settings.departments || []);
         setDesignations(settings.designations || []);
         setReportingGroups(settings.reportingGroups || []);
-      } catch (error) {
+      } catch (err) {
         setError("Failed to fetch settings");
+        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -31,77 +33,46 @@ export const useSettings = () => {
     fetchData();
   }, []);
 
-  // Method to add a new department (you might need to create an actual service for adding)
-  const handleAddDepartment = async (newDepartment) => {
+  // Function to update all settings at once
+  const submitSettings = async () => {
     try {
-      // Update your logic here if an add method is created or handled in saveSettingsToServer
-      const updatedDepartments = [...departments, newDepartment]; // Example of direct state modification
-      setDepartments(updatedDepartments);
-    } catch (error) {
-      setError("Failed to add department");
+      setLoading(true);
+      await saveSettingsToServer(departments, designations, reportingGroups);
+      return true;
+    } catch (err) {
+      setError("Failed to save settings");
+      console.error(err);
+      return false;
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Method to add a new designation
-  const handleAddDesignation = async (newDesignation) => {
-    try {
-      const updatedDesignations = [...designations, newDesignation]; // Direct state modification example
-      setDesignations(updatedDesignations);
-    } catch (error) {
-      setError("Failed to add designation");
-    }
-  };
+  // Reset error state
+  const clearError = () => setError(null);
 
-  // Method to add a new reporting group
-  const handleAddReportingGroup = async (newReportingGroup) => {
-    try {
-      const updatedReportingGroups = [...reportingGroups, newReportingGroup]; // Direct state modification example
-      setReportingGroups(updatedReportingGroups);
-    } catch (error) {
-      setError("Failed to add reporting group");
-    }
-  };
-
-  const handleDeleteDepartment = async (departmentToDelete) => {
-    try {
-      const updatedDepartments = await deleteDepartment(departmentToDelete);
-      setDepartments(updatedDepartments);
-    } catch (error) {
-      setError("Failed to delete department");
-    }
-  };
-
-  const handleDeleteDesignation = async (designationToDelete) => {
-    try {
-      const updatedDesignations = await deleteDesignation(designationToDelete);
-      setDesignations(updatedDesignations);
-    } catch (error) {
-      setError("Failed to delete designation");
-    }
-  };
-
-  const handleDeleteReportingGroup = async (reportingGroupToDelete) => {
-    try {
-      const updatedReportingGroups = await deleteReportingGroup(
-        reportingGroupToDelete
-      );
-      setReportingGroups(updatedReportingGroups);
-    } catch (error) {
-      setError("Failed to delete reporting group");
-    }
-  };
-
-  return {
+  const value = {
     departments,
     designations,
     reportingGroups,
     loading,
     error,
-    handleAddDepartment,
-    handleAddDesignation,
-    handleAddReportingGroup,
-    handleDeleteDepartment,
-    handleDeleteDesignation,
-    handleDeleteReportingGroup,
+    clearError,
+    submitSettings
   };
+
+  return (
+    <SettingsContext.Provider value={value}>
+      {children}
+    </SettingsContext.Provider>
+  );
+};
+
+// Custom hook for using this context
+export const useSettings = () => {
+  const context = useContext(SettingsContext);
+  if (context === undefined) {
+    throw new Error("useSettings must be used within a SettingsProvider");
+  }
+  return context;
 };
