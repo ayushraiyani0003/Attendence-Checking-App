@@ -66,7 +66,7 @@ Session.cleanupOldSessions = async function() {
 
 // Auto delete all sessions after 1 week
 Session.cleanupWeekOldSessions = async function() {
-  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const oneWeekAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
   await Session.destroy({
     where: {
       createdAt: { [Sequelize.Op.lt]: oneWeekAgo }
