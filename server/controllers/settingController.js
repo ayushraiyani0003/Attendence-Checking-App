@@ -102,6 +102,8 @@ exports.updateSettings = [authenticateJWT, isAdmin, async (req, res) => {
 
 // Delete Department
 exports.deleteDepartment = [authenticateJWT, isAdmin, async (req, res) => {
+  console.log(req);
+  
   try {
     const { id } = req.params;
     const deletedCount = await db.Department.destroy({ where: { id } });

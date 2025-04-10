@@ -9,6 +9,8 @@ const Employee = require("./employees")(sequelize, Sequelize.DataTypes);
 const Attendance = require("./attendance")(sequelize, Sequelize.DataTypes);
 const AttendanceDateLockStatus = require("./attendanceDateLockStatus")(sequelize, Sequelize.DataTypes);
 const Audit = require("./audit")(sequelize, Sequelize.DataTypes);
+const HeaderMessage = require("./HeaderMessage")(sequelize, Sequelize.DataTypes);
+const PopupMessage = require("./PopupMessage")(sequelize, Sequelize.DataTypes);
 
 // Export models for use in controllers
 module.exports = {
@@ -20,4 +22,6 @@ module.exports = {
   Attendance,
   AttendanceDateLockStatus,
   Audit,
+  HeaderMessage,
+  PopupMessage,
 };
