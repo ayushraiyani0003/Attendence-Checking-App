@@ -5,6 +5,7 @@ import { useSettings } from '../../context/SettingsContext';
 import useEmployee from '../../hooks/useEmployee';
 import * as XLSX from 'xlsx';
 import './EmployeePage.css';
+import dayjs from 'dayjs'; // Import dayjs for date handling
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -24,6 +25,17 @@ const EmployeePage = () => {
   const sections = ["HADAMTALA","WINGS","KOTHARIYA"];
 
   const [form] = Form.useForm();
+
+  // Helper function to convert date strings or timestamps to dayjs objects
+  const convertToDayjs = (dateValue) => {
+    if (!dateValue) return null;
+    try {
+      return dayjs(dateValue);
+    } catch (e) {
+      console.error("Error converting date:", e);
+      return null;
+    }
+  };
 
   // Improved search functionality to handle mixed types
   useEffect(() => {
@@ -210,7 +222,7 @@ const EmployeePage = () => {
       title: 'Branch',
       dataIndex: 'branch',
       key: 'branch',
-      filters: branches && branches.length ? branches.map((branch) => ({ text: branch.name, value: branch.name })) : [],
+      filters: branches && branches.length ? branches.map((branch, index) => ({ text: branch, value: branch })) : [],
       onFilter: (value, record) => record.branch === value,
       render: (text) => <span>{text}</span>,
     },
@@ -218,7 +230,7 @@ const EmployeePage = () => {
       title: 'Sections',
       dataIndex: 'sections',
       key: 'sections',
-      filters: sections && sections.length ? sections.map((section) => ({ text: section.name, value: section.name })) : [],
+      filters: sections && sections.length ? sections.map((section) => ({ text: section, value: section })) : [],
       onFilter: (value, record) => record.sections === value,
       render: (text) => <span>{text}</span>,
     },
@@ -263,7 +275,7 @@ const EmployeePage = () => {
         if (!b.resign_date) return -1;
         return new Date(a.resign_date) - new Date(b.resign_date);
       },
-      render: (text) => text ? <span>{text}</span> : <span>-</span>,
+      render: (text) => text ? <span>{dayjs(text).format('YYYY-MM-DD')}</span> : <span>-</span>,
     },
     {
       title: 'Actions',
@@ -303,6 +315,8 @@ const EmployeePage = () => {
 
   const handleAddEmployee = () => {
     setIsModalVisible(true);
+    setSelectedEmployee(null);
+    form.resetFields();
   };
 
   const handleCancel = () => {
@@ -312,10 +326,19 @@ const EmployeePage = () => {
   };
 
   const handleSubmit = (values) => {
+    // Make a copy of the values
+    const formattedValues = { ...values };
+    
+    // Convert the resign_date to ISO string format if it exists
+    if (formattedValues.resign_date) {
+      // If using dayjs, format to YYYY-MM-DD
+      formattedValues.resign_date = formattedValues.resign_date.format('YYYY-MM-DD');
+    }
+    
     if (selectedEmployee) {
-      editEmployee(selectedEmployee.employee_id, values);
+      editEmployee(selectedEmployee.employee_id, formattedValues);
     } else {
-      addEmployee(values);
+      addEmployee(formattedValues);
     }
 
     setIsModalVisible(false);
@@ -325,10 +348,19 @@ const EmployeePage = () => {
 
   const handleEditEmployee = (employee) => {
     setSelectedEmployee(employee);
+    
+    // Convert the resign_date to a dayjs object for DatePicker
+    let formattedResignDate = null;
+    if (employee.resign_date) {
+      formattedResignDate = convertToDayjs(employee.resign_date);
+    }
+    
+    // Set form values with the properly formatted date
     form.setFieldsValue({
       ...employee,
-      resign_date: employee.resign_date ? employee.resign_date : null
+      resign_date: formattedResignDate
     });
+    
     setIsModalVisible(true);
   };
 
@@ -485,21 +517,21 @@ const EmployeePage = () => {
 
           <Form.Item label="Branch" name="branch" rules={[{ required: true, message: 'Please select branch!' }]}>
             <Select placeholder="Select branch">
-            {branches && branches.map((branch, index) => (
-  <Option key={index} value={branch}>
-    {branch}
-  </Option>
-))}
+              {branches && branches.map((branch, index) => (
+                <Option key={index} value={branch}>
+                  {branch}
+                </Option>
+              ))}
             </Select>
           </Form.Item>
 
           <Form.Item label="Sections" name="sections" rules={[{ required: true, message: 'Please select section!' }]}>
             <Select placeholder="Select section">
-            {sections && sections.map((section, index) => (
-  <Option key={index} value={section}>
-    {section}
-  </Option>
-))}
+              {sections && sections.map((section, index) => (
+                <Option key={index} value={section}>
+                  {section}
+                </Option>
+              ))}
             </Select>
           </Form.Item>
 
@@ -513,7 +545,11 @@ const EmployeePage = () => {
           </Form.Item>
 
           <Form.Item label="Resign Date" name="resign_date">
-            <DatePicker format="YYYY-MM-DD" style={{ width: '100%' }} />
+            <DatePicker 
+              format="YYYY-MM-DD" 
+              style={{ width: '100%' }} 
+              allowClear={true}
+            />
           </Form.Item>
 
           <Form.Item>
