@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
+import NewsTicker from "./newsTicker";
 import logo from '../../assets/sunchaser.png'; 
 import "./CustomHeader.css";
+import { useHeaderNotificationClient } from '../../hooks/useNotification'; // Import the notification hook
 
 const CustomDropdown = ({ options, defaultValue, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -82,6 +84,15 @@ const CustomDropdown = ({ options, defaultValue, onChange }) => {
 
 // Updated CustomHeader component with current month centered
 function CustomHeader({ toggleSidebar, user, onSearch, onMonthChange }) {
+  // Use the notification hook to get active header messages
+  const {
+    hasMessages,
+    currentMessage,
+    visible,
+    dismissBanner,
+    totalMessages
+  } = useHeaderNotificationClient();
+
   // Function to generate date list
   function generateDateList(startDate, endYear) {
     const dateOptions = [];
@@ -142,8 +153,13 @@ function CustomHeader({ toggleSidebar, user, onSearch, onMonthChange }) {
           value={searchText}
           onChange={handleSearchChange}
         /> */}
-<h2><img src={logo} alt="Logo" className="header-logo" /></h2>
-
+        <h2><img src={logo} alt="Logo" className="header-logo" /></h2>
+        {/* Display the news ticker with active notification message if available */}
+        {visible && hasMessages && currentMessage ? (
+          <NewsTicker messages={currentMessage.message} speed={50} />
+        ) : (
+          <NewsTicker messages="" speed={50} />
+        )}
       </div>
       <div className="header-right">
         <CustomDropdown 

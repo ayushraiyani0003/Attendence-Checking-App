@@ -1,4 +1,3 @@
-
 import dayjs from 'dayjs';
 
 // Define roles or any other constants you may need
@@ -14,7 +13,8 @@ export const pageRedirect = {
   settings: "/settings",
   upload: "/upload",
   userList: "/user-list",
-  session:"/sessions"
+  session:"/sessions",
+  notification:"/make-notification"
 };
 
 // Utility functions for week calculation

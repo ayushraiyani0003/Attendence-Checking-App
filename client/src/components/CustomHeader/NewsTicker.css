@@ -1,0 +1,59 @@
+/* News Ticker CSS */
+.news-ticker-container {
+    overflow: hidden;
+    width: 80%;
+    height: 30px;
+    /* background-color: rgba(255, 255, 255, 0.10); */
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    border-radius: 6px;
+    position: relative;
+  }
+  
+  .news-ticker-content {
+    white-space: nowrap;
+    padding-left: 70px; /* Space for the "ALERT" label */
+    font-size: 14px;
+    font-weight: 500;
+    will-change: transform;
+  }
+  
+  /* Optional: Add animation for smooth transitions */
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  .news-ticker-container {
+    animation: fadeIn 0.5s ease-out;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .news-ticker-container {
+      height: 26px;
+    }
+    
+    .news-ticker-container::before {
+      padding: 0 8px;
+      font-size: 11px;
+    }
+    
+    .news-ticker-content {
+      padding-left: 60px;
+      font-size: 13px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .news-ticker-container::before {
+      padding: 0 6px;
+      font-size: 10px;
+    }
+    
+    .news-ticker-content {
+      padding-left: 50px;
+      font-size: 12px;
+    }
+  }
