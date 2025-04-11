@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Input, Button, Select, Space, Typography, Tag, Card, Divider, Tooltip, notification, Form, Modal, DatePicker, Switch } from 'antd';
-import { SearchOutlined, DownloadOutlined, UserOutlined, EditOutlined, DeleteOutlined, PlusOutlined, FilterOutlined } from '@ant-design/icons';
+import { SearchOutlined, DownloadOutlined, UserOutlined, EditOutlined, DeleteOutlined, PlusOutlined, FilterOutlined, UploadOutlined } from '@ant-design/icons';
 import { useSettings } from '../../context/SettingsContext';
 import useEmployee from '../../hooks/useEmployee';
 import * as XLSX from 'xlsx';
 import './EmployeePage.css';
 import dayjs from 'dayjs'; // Import dayjs for date handling
+import handleImportFromExcel from "../../utils/handleImportFromExcel"
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -405,6 +406,15 @@ const EmployeePage = () => {
               >
                 Add Employee
               </Button>
+              
+<Button 
+  type="default" 
+  icon={<UploadOutlined />}
+  className="import-button"
+  onClick={() => handleImportFromExcel(addEmployee)}
+>
+  Import Excel
+</Button>
               <Button 
                 type="default" 
                 icon={<DownloadOutlined />} 
