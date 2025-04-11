@@ -218,8 +218,8 @@ const useEmployeeOrder = (userReportingGroup) => {
     setHasChanges(true);
     
     // Debug log to verify the change
-    console.log(`Moved employee ${movingEmployee.name} from position ${oldIndex + 1} to ${newIndex + 1}`);
-    console.log('Current changes:', Array.from(changesMapRef.current.entries()));
+    // console.log(`Moved employee ${movingEmployee.name} from position ${oldIndex + 1} to ${newIndex + 1}`);
+    // console.log('Current changes:', Array.from(changesMapRef.current.entries()));
     
   }, [orderedEmployees, isFiltering]);
 
@@ -236,8 +236,8 @@ const useEmployeeOrder = (userReportingGroup) => {
     localStorage.setItem(getStorageKey(), JSON.stringify(orderData));
     
     // Log what we're saving
-    console.log('Saving employee order:', orderData);
-    console.log('Changes applied:', Array.from(changesMapRef.current.entries()));
+    // console.log('Saving employee order:', orderData);
+    // console.log('Changes applied:', Array.from(changesMapRef.current.entries()));
     
     // Reset changes tracking
     changesMapRef.current = new Map();

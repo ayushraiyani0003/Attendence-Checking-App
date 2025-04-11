@@ -27,11 +27,11 @@ export const saveSettingsToServer = async (
   reportingGroups
 ) => {
   try {
-    console.log("Sending settings to server:", {
-      departments,
-      designations,
-      reportingGroups,
-    });
+    // console.log("Sending settings to server:", {
+    //   departments,
+    //   designations,
+    //   reportingGroups,
+    // });
     const response = await axios.post(`${API_URL}/setting`, {
       departments,
       designations,

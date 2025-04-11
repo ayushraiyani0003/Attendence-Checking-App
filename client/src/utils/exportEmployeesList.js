@@ -9,7 +9,7 @@ import getTemplate from '../assets/monthly am pm formate.xlsx';
  */
 export const generateEmployeeExcel = async (employees) => {
   try {
-    console.log('Starting Excel generation with template:', getTemplate);
+    // console.log('Starting Excel generation with template:', getTemplate);
     
     // Load the template file
     const response = await fetch(getTemplate);
@@ -31,7 +31,7 @@ export const generateEmployeeExcel = async (employees) => {
       bookFiles: true
     });
     
-    console.log('Template loaded successfully');
+    // console.log('Template loaded successfully');
     
     // Get the first worksheet from the template
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -61,7 +61,7 @@ export const generateEmployeeExcel = async (employees) => {
     
     // Process each department
     Object.entries(departmentGroups).forEach(([department, deptEmployees], deptIndex) => {
-      console.log(`Processing department ${deptIndex + 1}: ${department} with ${deptEmployees.length} employees`);
+      // console.log(`Processing department ${deptIndex + 1}: ${department} with ${deptEmployees.length} employees`);
       
       // Calculate number of sections needed (15 employees per section)
       const numSections = Math.ceil(deptEmployees.length / 15);
@@ -72,7 +72,7 @@ export const generateEmployeeExcel = async (employees) => {
         const endIdx = Math.min(startIdx + 15, deptEmployees.length);
         const sectionEmployees = deptEmployees.slice(startIdx, endIdx);
         
-        console.log(`Section ${section + 1} with ${sectionEmployees.length} employees, starting at row ${currentRow}`);
+        // console.log(`Section ${section + 1} with ${sectionEmployees.length} employees, starting at row ${currentRow}`);
         
         // =========== FIRST HALF - Days 1-15 ===========
         

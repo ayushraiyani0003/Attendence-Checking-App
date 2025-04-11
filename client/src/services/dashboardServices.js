@@ -64,26 +64,26 @@ export const getReports = async (reportType, options, month, year, dateRange, em
         if (matches && matches[1]) {
           // Remove any surrounding quotes and trim whitespace
           filename = matches[1].replace(/['"]/g, '').trim();
-          console.log("Using backend-provided filename:", filename);
+          // console.log("Using backend-provided filename:", filename);
         } else {
           // Try a simpler approach if the regex doesn't match
           const parts = contentDisposition.split('filename=');
           if (parts.length > 1) {
             filename = parts[1].replace(/['"]/g, '').trim();
-            console.log("Using extracted filename:", filename);
+            // console.log("Using extracted filename:", filename);
           } else {
-            console.log("Could not extract filename from content-disposition header:", contentDisposition);
+            // console.log("Could not extract filename from content-disposition header:", contentDisposition);
           }
         }
       } else {
-        console.log("No content-disposition header found, using default filename");
+        // console.log("No content-disposition header found, using default filename");
         
         // If no content-disposition header is found, construct a filename based on the parameters
         const cleanReportType = reportType.toLowerCase().replace(/\s+/g, '_');
         const today = new Date();
         const formattedDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
         filename = `${cleanReportType}_${employeeType}_${formattedDate}${fileExtension}`;
-        console.log("Generated fallback filename:", filename);
+        // console.log("Generated fallback filename:", filename);
       }
       
       // Create a blob URL with the appropriate content type

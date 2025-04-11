@@ -9,7 +9,7 @@ export const getEmployees = async () => {
 };
 
 export const GroupEmployees = async (groupsName) => {
-  console.log("this is call");
+  // console.log("this is call");
   const response = await axios.get(`${API_URL}/employees/groups`, {
     params: { groups: groupsName }
   });

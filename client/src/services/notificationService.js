@@ -99,7 +99,7 @@ const notificationService = {
    */
   // Get all popup messages (admin dashboard)
   getAllPopupMessages: async () => {
-    console.log("this is caled in client side");
+    // console.log("this is caled in client side");
     
     try {
       const response = await axios.get(`${API_URL}/notifications/popup`, {

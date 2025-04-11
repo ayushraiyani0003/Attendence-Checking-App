@@ -138,7 +138,7 @@ const generateReport = useCallback(async () => {
     );
     
     // The getReports function now returns an object with success status
-    console.log(`[useReportSettings] Report download result:`, result);
+    // console.log(`[useReportSettings] Report download result:`, result);
     
     // No need to open in new tab anymore
     // The getReports function handles the file download directly
@@ -200,7 +200,7 @@ export const useViewToggle = (currentMonth) => {
   // Fetch dashboard data
   const fetchData = useCallback(async () => {
     setIsLoading(true);
-    console.log('[useViewToggle] Fetching data for', currentMonth);
+    // console.log('[useViewToggle] Fetching data for', currentMonth);
     
     try {
       // Parse month and year
@@ -212,11 +212,11 @@ export const useViewToggle = (currentMonth) => {
         return;
       }
       
-      console.log(`[useViewToggle] Fetching data for month: ${month}, year: ${year}`);
+      // console.log(`[useViewToggle] Fetching data for month: ${month}, year: ${year}`);
       
       // Fetch graph data from API
       const response = await getDashboardGraphs(month, year);
-      console.log('[useViewToggle] API response:', response);
+      // console.log('[useViewToggle] API response:', response);
       
       // Handle both formats:
       // 1. Array response directly: [{ group: '...', mismatchCount: ... }, ...]
@@ -226,11 +226,11 @@ export const useViewToggle = (currentMonth) => {
       if (Array.isArray(response)) {
         // Direct array response
         dataArray = response;
-        console.log('[useViewToggle] Received direct array response');
+        // console.log('[useViewToggle] Received direct array response');
       } else if (response && response.success && Array.isArray(response.data)) {
         // Object with success and data properties
         dataArray = response.data;
-        console.log('[useViewToggle] Received object with data array');
+        // console.log('[useViewToggle] Received object with data array');
       } else {
         console.error('[useViewToggle] Invalid response format:', response);
         setChartData([]);
@@ -247,10 +247,10 @@ export const useViewToggle = (currentMonth) => {
         // Sort data by mistake count descending
         transformedData.sort((a, b) => b.mistakes - a.mistakes);
         
-        console.log('[useViewToggle] Transformed data:', transformedData);
+        // console.log('[useViewToggle] Transformed data:', transformedData);
         setChartData(transformedData);
       } else {
-        console.log('[useViewToggle] Empty data array received');
+        // console.log('[useViewToggle] Empty data array received');
         setChartData([]);
       }
     } catch (error) {
@@ -264,20 +264,20 @@ export const useViewToggle = (currentMonth) => {
   // Fetch data when month changes
   useEffect(() => {
     if (currentMonth) {
-      console.log('[useViewToggle] Month changed, fetching data for:', currentMonth);
+      // console.log('[useViewToggle] Month changed, fetching data for:', currentMonth);
       fetchData();
     }
   }, [currentMonth, fetchData]);
   
   // Get data function - return a copy of the array to ensure references change
   const getData = useCallback(() => {
-    console.log('[useViewToggle] getData called, returning data:', chartData);
+    // console.log('[useViewToggle] getData called, returning data:', chartData);
     return [...chartData];
   }, [chartData]);
   
   // Refresh data function
   const refreshData = useCallback(() => {
-    console.log('[useViewToggle] Manually refreshing data');
+    // console.log('[useViewToggle] Manually refreshing data');
     fetchData();
   }, [fetchData]);
   

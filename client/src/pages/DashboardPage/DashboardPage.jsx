@@ -24,12 +24,12 @@ const MistakeDashboard = ({ selectedMonthYear }) => {
   useEffect(() => {
     // Only update if the prop exists and is different from context
     if (selectedMonthYear && selectedMonthYear !== selectedMonth) {
-      console.log(`[MistakeDashboard] Updating month from prop: ${selectedMonthYear}`);
+      // console.log(`[MistakeDashboard] Updating month from prop: ${selectedMonthYear}`);
       updateSelectedMonth(selectedMonthYear);
     }
     // If no prop is provided but we're on first render, use the context's value
     else if (isFirstRender.current && selectedMonth) {
-      console.log(`[MistakeDashboard] Using context month: ${selectedMonth}`);
+      // console.log(`[MistakeDashboard] Using context month: ${selectedMonth}`);
     }
     
     isFirstRender.current = false;
@@ -38,7 +38,7 @@ const MistakeDashboard = ({ selectedMonthYear }) => {
   // The current month to use (guaranteed to have a value from context)
   const currentMonth = selectedMonth;
   
-  console.log(`[MistakeDashboard] Rendering with month: ${currentMonth}`);
+  // console.log(`[MistakeDashboard] Rendering with month: ${currentMonth}`);
   
   // Now use hooks with the effective month value
   const { 
@@ -70,7 +70,7 @@ const MistakeDashboard = ({ selectedMonthYear }) => {
 
   // Handle refresh button click
   const handleRefresh = () => {
-    console.log(`[MistakeDashboard] Refreshing data for month: ${currentMonth}`);
+    // console.log(`[MistakeDashboard] Refreshing data for month: ${currentMonth}`);
     refreshData();
   };
 
@@ -78,7 +78,7 @@ const MistakeDashboard = ({ selectedMonthYear }) => {
   const chartData = getData();
   
   // Log chart data for debugging
-  console.log('[MistakeDashboard] Chart data:', chartData);
+  // console.log('[MistakeDashboard] Chart data:', chartData);
 
   // Custom tooltip component with enhanced styling
   const CustomTooltip = ({ active, payload, label }) => {

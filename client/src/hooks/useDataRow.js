@@ -652,7 +652,7 @@ const useDataRow = ({
                 item => item.punchCode === row.punchCode
             );
             
-            console.log(`Found ${employeeMetrixData.length} metrix records for ${row.punchCode}`);
+            // console.log(`Found ${employeeMetrixData.length} metrix records for ${row.punchCode}`);
             
             if (employeeMetrixData.length > 0) {
                 // Initialize totals
@@ -681,10 +681,10 @@ const useDataRow = ({
                 const formattedNetHRDiff = totalNetHRDiff.toFixed(2);
                 const formattedOtHRDiff = totalOtHRDiff.toFixed(2);
                 
-                console.log(`Total differences for ${row.punchCode}:`, {
-                    netHRDiff: formattedNetHRDiff,
-                    otHRDiff: formattedOtHRDiff
-                });
+                // console.log(`Total differences for ${row.punchCode}:`, {
+                //     netHRDiff: formattedNetHRDiff,
+                //     otHRDiff: formattedOtHRDiff
+                // });
                 
                 // Update state with the totals
                 setNetDiffValue({ 

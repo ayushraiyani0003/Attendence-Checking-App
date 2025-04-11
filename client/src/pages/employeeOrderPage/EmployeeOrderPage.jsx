@@ -39,15 +39,15 @@ const EmployeeOrderPage = (user) => {
   const [debugInfo, setDebugInfo] = useState({ lastAction: 'none', changeCount: 0 });
 
   // Log employees whenever they change (for debugging)
-  useEffect(() => {
-    console.log("Filtered employees updated:", 
-      filteredEmployees.map((e, i) => `${i+1}. ${e.name} (ID: ${e.employee_id})`));
-  }, [filteredEmployees]);
+  // useEffect(() => {
+  //   console.log("Filtered employees updated:", 
+  //     filteredEmployees.map((e, i) => `${i+1}. ${e.name} (ID: ${e.employee_id})`));
+  // }, [filteredEmployees]);
 
   // Handle move up button click
   const handleMoveUp = useCallback((index) => {
     if (index > 0) {
-      console.log(`Moving up employee at index ${index}`);
+      // console.log(`Moving up employee at index ${index}`);
       // Move employee up one position
       reorderEmployees(index, index - 1);
       setDebugInfo(prev => ({ 
@@ -60,7 +60,7 @@ const EmployeeOrderPage = (user) => {
   // Handle move down button click
   const handleMoveDown = useCallback((index) => {
     if (index < filteredEmployees.length - 1) {
-      console.log(`Moving down employee at index ${index}`);
+      // console.log(`Moving down employee at index ${index}`);
       // Move employee down one position
       reorderEmployees(index, index + 1);
       setDebugInfo(prev => ({ 
@@ -101,7 +101,7 @@ const EmployeeOrderPage = (user) => {
       return;
     }
     
-    console.log(`Moving employee ${movingEmployee.name} from index ${movingEmployee.index} to ${targetIndex}`);
+    // console.log(`Moving employee ${movingEmployee.name} from index ${movingEmployee.index} to ${targetIndex}`);
     
     // Perform the move
     reorderEmployees(movingEmployee.index, targetIndex);
@@ -125,13 +125,13 @@ const EmployeeOrderPage = (user) => {
 
   // Handle save button click
   const handleSave = useCallback(() => {
-    console.log("Saving order with changes count:", debugInfo.changeCount);
+    // console.log("Saving order with changes count:", debugInfo.changeCount);
     const orderData = saveOrder();
     messageApi.success({
       content: 'Employee order saved successfully!',
       duration: 3,
     });
-    console.log('Final order data:', orderData);
+    // console.log('Final order data:', orderData);
     
     setDebugInfo(prev => ({ 
       lastAction: `Saved all changes (${prev.changeCount})`, 
