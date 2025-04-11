@@ -18,6 +18,7 @@ const {
 const { redisMysqlAttendanceCompare } = require('./redisMysqlAttendenceCompare');
 const { getLockStatusDataForMonthAndGroup, setStatusFromDateGroup } = require('../services/groupAttendenceLockServices');
 const { fetchMetricsForMonthYear } = require('../services/metricsService');
+const reportingGroup = require('../models/reportingGroup');
 
 /**
  * Initialize WebSocket server for real-time attendance management
@@ -306,17 +307,16 @@ async function handleAttendanceUpdate(ws, data, broadcastToClients) {
       throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
     }
 
-    // Normalize user reporting group
-    const userReportingGroup = Array.isArray(data.user.userReportingGroup) 
-      ? data.user.userReportingGroup[0] 
-      : data.user.userReportingGroup;
-
+    // Check user authorization for the target group
+    // For multiple groups, check if the reportGroup is in the user's groups array
+    const userReportingGroups = Array.isArray(data.user.userReportingGroup) 
+      ? data.user.userReportingGroup 
+      : [data.user.userReportingGroup];
+    
     // Ensure only admin can update for other groups
-    if (data.user.role !== 'admin' && data.reportGroup !== userReportingGroup) {
+    if (data.user.role !== 'admin' && !userReportingGroups.includes(data.reportGroup)) {
       throw new Error('Unauthorized to update attendance for this group');
     }
-
-    // console.log(`Processing attendance update for employee ${data.employeeId}, field ${data.field}, group ${data.reportGroup}`);
 
     // Extract month from the editDate (format: YYYY-MM-DD)
     const editDate = new Date(data.editDate);
@@ -373,8 +373,6 @@ async function handleAttendanceUpdate(ws, data, broadcastToClients) {
         group: data.reportGroup
       }
     }));
-    
-    // console.log(`Successfully updated attendance for employee ${data.employeeId}`);
   } catch (error) {
     // More detailed error logging
     console.error('Attendance Update Error:', {
