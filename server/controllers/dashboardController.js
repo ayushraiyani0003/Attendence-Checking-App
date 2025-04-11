@@ -76,11 +76,13 @@ const getData = async (month, year) => {
       console.warn("No reporting groups found. Using empty array.");
     }
     // 2. Get employees attendance data for the month by reporting groups from mysql
-    const attendanceData = await attendanceService.getEmployeesAttendanceByMonthAndGroup(
+    const attendanceData = await attendanceService.getDashboardEmployeesAttendanceByMonthAndGroup(
       reportingGroupNames || [],
       year,
       month
     );
+    // console.log(attendanceData);
+    
 
     // get teh attedence data from the redis db also
     const redisData = await getRedisAttendanceData(year, month, reportingGroupNames);

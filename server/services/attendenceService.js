@@ -70,6 +70,61 @@ async function getEmployeesAttendanceByMonthAndGroup(groups, year, month) {
   }
 }
 
+// New function to get all attendance for employees in the selected group and month
+async function getDashboardEmployeesAttendanceByMonthAndGroup(groups, year, month) { 
+  try {
+    // Fetch employees for the selected group
+    const employees = await getEmployeesByGroup(groups);
+
+    // Extract employee IDs from the fetched employees
+    const employeeIds = employees.map(employee => employee.employee_id);
+
+    // Create a map of employee IDs to their reporting groups and punch codes
+    const employeeMap = employees.reduce((map, employee) => {
+      map[employee.employee_id] = {
+        reporting_group: employee.reporting_group,
+        punch_code: employee.punch_code
+      };
+      return map;
+    }, {});
+
+    // Calculate the start and end of the selected month
+    const startDate = new Date(year, month - 1, 1); // First date of the month
+    const endDate = new Date(year, month, 0); // Last date of the month
+
+    // Fetch attendance data for the selected employees and month
+    const attendanceData = await Attendance.findAll({
+      where: {
+        employee_id: {
+          [Op.in]: employeeIds, // Match the employee IDs from the selected group
+        },
+        attendance_date: {
+          [Op.gte]: startDate, // Start date of the month
+          [Op.lte]: endDate, // End date of the month
+        },
+      },
+    });
+
+    // Add reporting_group and punch_code to each attendance record
+    const attendanceWithGroups = attendanceData.map(attendance => {
+      const attendanceObj = attendance.get({ plain: true }); // Using get({ plain: true }) instead of toJSON()
+      const employeeInfo = employeeMap[attendance.employee_id] || { reporting_group: null, punch_code: null };
+      
+      attendanceObj.reporting_group = employeeInfo.reporting_group;
+      attendanceObj.punch_code = employeeInfo.punch_code;
+      
+      return attendanceObj;
+    });
+
+    // Return the attendance data with reporting groups and punch codes
+    return attendanceWithGroups;
+
+  } catch (error) {
+    console.error("Error fetching attendance data:", error);
+    throw error; // Throw error to be handled by the caller
+  }
+}
+
 // get all employee details for selected dates from redis for update the data.
 async function updateEmployeesDetailsFromRedis(redisAttendanceData, user) {
   try {
@@ -501,6 +556,7 @@ const addAttendanceToMySQL = async (attendanceData) => {
 module.exports = { 
   getEmployeesByGroup, 
   getEmployeesAttendanceByMonthAndGroup, 
+  getDashboardEmployeesAttendanceByMonthAndGroup,
   updateEmployeesDetailsFromRedis, 
   getAttendanceSelectedGroupDateMysql,
   updateAttendanceFromRedisBySystumn,
