@@ -22,7 +22,7 @@ exports.createHeaderMessage = async (messageData) => {
 
 // Toggle a header message's active status
 exports.toggleHeaderMessageStatus = async (id) => {
-    console.log("this is caled");
+    // console.log("this is caled");
     
   const message = await HeaderMessage.findByPk(id);
   

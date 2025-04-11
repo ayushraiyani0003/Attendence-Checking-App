@@ -4,7 +4,7 @@ const { Employee, Attendance } = require("../models");
 const generateDailyAttendance = async () => {
   try {
     // Verify Redis connection before proceeding
-    console.log("generte daily attendence is called");
+    // console.log("generte daily attendence is called");
     
     if (!redisClient.isReady) {
       console.error('Redis client is not connected. Cannot proceed.');
@@ -13,13 +13,13 @@ const generateDailyAttendance = async () => {
 
     // Get current UTC time
     const currentDate = new Date();
-    console.log(currentDate);
+    // console.log(currentDate);
     
 
     // Convert UTC time to IST by adding 5 hours and 30 minutes (IST = UTC + 5:30)
     const istOffset = 5.5 * 60 * 60 * 1000; // 5 hours 30 minutes in milliseconds
     const istDate = new Date(currentDate.getTime() + istOffset);
-    console.log(istDate);
+    // console.log(istDate);
     // Subtract one day from the IST date to get yesterday's date
     istDate.setDate(istDate.getDate() - 1);
 
@@ -150,7 +150,7 @@ const generateDailyAttendance = async () => {
         }
       } catch (employeeError) {
         console.error(`Error processing employee ${employee.employee_id}:`, employeeError);
-        console.log(`Error processing employee ${employee.employee_id}:`, employeeError);
+        // console.log(`Error processing employee ${employee.employee_id}:`, employeeError);
         // Continue with next employee
       }
     }

@@ -71,7 +71,7 @@ cron.schedule('30 14 * * *', async () => {
 
 cron.schedule('0 0 * * *', async () => {
   try {
-    console.log('Running daily session cleanup...');
+    // console.log('Running daily session cleanup...');
     await Session.cleanupOldSessions();
     console.log('Daily session cleanup completed');
   } catch (error) {
@@ -81,7 +81,7 @@ cron.schedule('0 0 * * *', async () => {
 
 cron.schedule('0 0 * * *', async () => {
   try {
-    console.log('Running weekly session cleanup...');
+    // console.log('Running weekly session cleanup...');
     await Session.cleanupWeekOldSessions();
     console.log('Weekly session cleanup completed');
   } catch (error) {

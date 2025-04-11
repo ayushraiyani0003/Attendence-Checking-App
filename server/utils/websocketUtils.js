@@ -34,7 +34,7 @@ function initWebSocket(server) {
   wss.on('connection', (ws) => {
     // Assign unique ID to each client connection
     const id = ++clientId;
-    console.log(`Client ${id} connected to WebSocket`);
+    // console.log(`Client ${id} connected to WebSocket`);
 
     // Store client connection details
     const clientInfo = {
@@ -58,7 +58,7 @@ function initWebSocket(server) {
      * @param {boolean} restrictedBroadcast - Whether this is a restricted broadcast for specific groups only
      */
     const broadcastToClients = (broadcastData, sourceSocket = null, targetGroups = null, adminOnly = false, restrictedBroadcast = false) => {
-      console.log(`Broadcasting to clients. Action: ${broadcastData.action || broadcastData.type}, Target Groups: ${targetGroups ? targetGroups.join(', ') : 'All'}`);
+      // console.log(`Broadcasting to clients. Action: ${broadcastData.action || broadcastData.type}, Target Groups: ${targetGroups ? targetGroups.join(', ') : 'All'}`);
       
       for (const [clientId, targetClientInfo] of clients.entries()) {
         try {
@@ -100,7 +100,7 @@ function initWebSocket(server) {
 
           // Send data if conditions are met
           if (shouldReceive) {
-            console.log(`Sending broadcast to ${targetClientInfo.userName} (${targetClientInfo.userRole}) in group ${targetClientInfo.userGroup}`);
+            // console.log(`Sending broadcast to ${targetClientInfo.userName} (${targetClientInfo.userRole}) in group ${targetClientInfo.userGroup}`);
             targetClientInfo.socket.send(JSON.stringify(broadcastData));
           }
         } catch (error) {
@@ -112,7 +112,7 @@ function initWebSocket(server) {
     ws.on('message', async (message) => {
       try {
         const data = JSON.parse(message);
-        console.log(`Received ${data.action} from client ${id}:`, data);
+        // console.log(`Received ${data.action} from client ${id}:`, data);
 
         // Store user info for this connection if provided
         if (data.user) {
@@ -127,13 +127,13 @@ function initWebSocket(server) {
             clientInfo.selectedYear = year;
           }
           
-          console.log(`Updated client ${id} info:`, {
-            role: clientInfo.userRole,
-            group: clientInfo.userGroup,
-            name: clientInfo.userName,
-            month: clientInfo.selectedMonth,
-            year: clientInfo.selectedYear
-          });
+          // console.log(`Updated client ${id} info:`, {
+          //   role: clientInfo.userRole,
+          //   group: clientInfo.userGroup,
+          //   name: clientInfo.userName,
+          //   month: clientInfo.selectedMonth,
+          //   year: clientInfo.selectedYear
+          // });
         }
 
         // Handle different actions dynamically
@@ -203,7 +203,7 @@ function initWebSocket(server) {
     });
 
     ws.on('close', () => {
-      console.log(`Client ${id} disconnected`);
+      // console.log(`Client ${id} disconnected`);
       // Remove the client from the tracked connections
       clients.delete(id);
     });
@@ -227,14 +227,14 @@ async function handleAttendanceDataRetrieval(ws, data) {
     const userRole = data.user.role || data.user.userRole;
     const userGroup = data.user.userReportingGroup;
 
-    console.log(`Fetching attendance data for ${month}/${year}, User: ${data.user.name}, Role: ${userRole}, Group: ${userGroup}`);
+    // console.log(`Fetching attendance data for ${month}/${year}, User: ${data.user.name}, Role: ${userRole}, Group: ${userGroup}`);
 
     // If user is not admin, only allow access to their own group
     const group = userRole === 'admin' ? (data.group || userGroup) : userGroup;
 
     // Fetch employees in the selected group
     const employees = await getEmployeesByGroup(group);
-    console.log(`Found ${employees.length} employees in group ${group}`);
+    // console.log(`Found ${employees.length} employees in group ${group}`);
 
     // Fetch attendance data from MySQL
     const mysqlAttendanceData = await getEmployeesAttendanceByMonthAndGroup(group, year, month);
@@ -269,7 +269,7 @@ async function handleAttendanceDataRetrieval(ws, data) {
       metricsAttendanceDifference: metricsAttendanceDifference
     }));
     
-    console.log(`Successfully sent attendance data for ${group}, ${month}/${year}`);
+    // console.log(`Successfully sent attendance data for ${group}, ${month}/${year}`);
   } catch (error) {
     console.error('Error retrieving attendance data:', error);
     ws.send(JSON.stringify({
@@ -316,7 +316,7 @@ async function handleAttendanceUpdate(ws, data, broadcastToClients) {
       throw new Error('Unauthorized to update attendance for this group');
     }
 
-    console.log(`Processing attendance update for employee ${data.employeeId}, field ${data.field}, group ${data.reportGroup}`);
+    // console.log(`Processing attendance update for employee ${data.employeeId}, field ${data.field}, group ${data.reportGroup}`);
 
     // Extract month from the editDate (format: YYYY-MM-DD)
     const editDate = new Date(data.editDate);
@@ -374,7 +374,7 @@ async function handleAttendanceUpdate(ws, data, broadcastToClients) {
       }
     }));
     
-    console.log(`Successfully updated attendance for employee ${data.employeeId}`);
+    // console.log(`Successfully updated attendance for employee ${data.employeeId}`);
   } catch (error) {
     // More detailed error logging
     console.error('Attendance Update Error:', {
@@ -406,7 +406,7 @@ async function handleAttendanceUpdate(ws, data, broadcastToClients) {
 // Fixed saveDataRedisToMysql function
 async function saveDataRedisToMysql(ws, data, broadcastToClients) {
   try {
-    console.log('Starting saveDataRedisToMysql with data:', JSON.stringify(data));
+    // console.log('Starting saveDataRedisToMysql with data:', JSON.stringify(data));
     
     if (!data.monthYear) {
       console.error('Missing monthYear in request data');
@@ -414,7 +414,7 @@ async function saveDataRedisToMysql(ws, data, broadcastToClients) {
     }
     
     const { year, month } = convertMonthToYearMonthFormat(data.monthYear);
-    console.log(`Converted ${data.monthYear} to year=${year}, month=${month}`);
+    // console.log(`Converted ${data.monthYear} to year=${year}, month=${month}`);
     
     // Format date string for status update
     const formattedDateString = `${year}-${month.toString().padStart(2, '0')}-01`;
@@ -425,10 +425,10 @@ async function saveDataRedisToMysql(ws, data, broadcastToClients) {
       userGroups = [userGroups];
     }
     
-    console.log(`Using userGroups: ${userGroups.join(', ')}`);
+    // console.log(`Using userGroups: ${userGroups.join(', ')}`);
       
     // Fetch attendance data from Redis - passing the entire array of groups
-    console.log(`Fetching Redis data for ${year}/${month}/${userGroups.join(', ')}`);
+    // console.log(`Fetching Redis data for ${year}/${month}/${userGroups.join(', ')}`);
     const redisAttendanceData = await getRedisAttendanceData(year, month, userGroups);
     
     // Check that we have Redis data
@@ -473,7 +473,7 @@ async function saveDataRedisToMysql(ws, data, broadcastToClients) {
         }
       });
       
-      console.log(`Transformed Redis data into expected format with ${formattedRedisData.length} group records`);
+      // console.log(`Transformed Redis data into expected format with ${formattedRedisData.length} group records`);
     } else if (redisAttendanceData.attendance && Array.isArray(redisAttendanceData.attendance)) {
       // If we have a single object with attendance array, convert it to the expected format
       // First check if we have a date in the object
@@ -496,7 +496,7 @@ async function saveDataRedisToMysql(ws, data, broadcastToClients) {
         data: JSON.stringify(redisAttendanceData.attendance)
       });
       
-      console.log(`Transformed single Redis object into expected format with 1 group record containing ${redisAttendanceData.attendance.length} attendance entries`);
+      // console.log(`Transformed single Redis object into expected format with 1 group record containing ${redisAttendanceData.attendance.length} attendance entries`);
     }
     
     // Final validation of the formatted data
@@ -506,30 +506,30 @@ async function saveDataRedisToMysql(ws, data, broadcastToClients) {
     }
 
     // Save data to MySQL
-    console.log('Saving Redis data to MySQL...');
+    // console.log('Saving Redis data to MySQL...');
     const updateResult = await updateEmployeesDetailsFromRedis(formattedRedisData, data.user);
-    console.log('MySQL update result:', updateResult);
+    // console.log('MySQL update result:', updateResult);
 
     // Delete Redis data for the specific groups
-    console.log(`Deleting Redis keys for groups ${userGroups.join(', ')}`);
+    // console.log(`Deleting Redis keys for groups ${userGroups.join(', ')}`);
     await deleteRedisGroupKeys(userGroups, year, month);
-    console.log('Redis keys deleted successfully');
+    // console.log('Redis keys deleted successfully');
 
     // Change the status to lock in DB - only for the specific dates found in Redis data
-    console.log(`Setting status to "locked" only for dates found in Redis data`);
+    // console.log(`Setting status to "locked" only for dates found in Redis data`);
 
     // If no specific dates were found in the data or keys, use the default date
     if (uniqueDatesToLock.size === 0) {
-      console.log(`No specific dates found in Redis data. Using default date: ${formattedDateString}`);
+      // console.log(`No specific dates found in Redis data. Using default date: ${formattedDateString}`);
       uniqueDatesToLock.add(formattedDateString);
     }
 
-    console.log(`Dates to lock: ${Array.from(uniqueDatesToLock).join(', ')}`);
+    // console.log(`Dates to lock: ${Array.from(uniqueDatesToLock).join(', ')}`);
     const lockStatusPromises = [];
 
     // Lock only the specific dates found in the Redis data
     for (const dateString of uniqueDatesToLock) {
-      console.log(`Locking date: ${dateString} for groups: ${userGroups.join(', ')}`);
+      // console.log(`Locking date: ${dateString} for groups: ${userGroups.join(', ')}`);
       
       // Process each date - collecting promises but not awaiting yet
       lockStatusPromises.push(
@@ -543,11 +543,11 @@ async function saveDataRedisToMysql(ws, data, broadcastToClients) {
 
     // Wait for all status updates to complete
     const statusResults = await Promise.all(lockStatusPromises);
-    console.log(`Completed locking ${statusResults.length} dates found in Redis data`);
+    // console.log(`Completed locking ${statusResults.length} dates found in Redis data`);
 
     // Count successful updates
     const successfulUpdates = statusResults.filter(result => result.success).length;
-    console.log(`Successfully locked ${successfulUpdates} dates of ${statusResults.length} total`);
+    // console.log(`Successfully locked ${successfulUpdates} dates of ${statusResults.length} total`);
 
     // If there were any failures, log them
     const failedUpdates = statusResults.filter(result => !result.success);
@@ -559,7 +559,7 @@ async function saveDataRedisToMysql(ws, data, broadcastToClients) {
     }
 
     // Send response and broadcast update to each group
-    console.log('Broadcasting update to clients');
+    // console.log('Broadcasting update to clients');
     broadcastToClients({
       action: 'dataUpdated',
       year,
@@ -580,7 +580,7 @@ async function saveDataRedisToMysql(ws, data, broadcastToClients) {
       groups: userGroups
     }));
     
-    console.log(`Successfully completed saveDataRedisToMysql operation`);
+    // console.log(`Successfully completed saveDataRedisToMysql operation`);
   } catch (error) {
     console.error('Error in saveDataRedisToMysql:', error);
     console.error('Full error stack:', error.stack);
@@ -609,7 +609,7 @@ async function lockUnlockStatusToggle(ws, data, broadcastToClients) {
 
     // Extract group, date, user, and status from the received data
     const { group, date, user, status } = data;
-    console.log(`Processing ${status} request for groups [${group}], date ${date}`);
+    // console.log(`Processing ${status} request for groups [${group}], date ${date}`);
 
     // Convert the date from "DD/MM/YYYY" to "YYYY-MM-DD"
     const [day, month, year] = date.split('/').map(part => parseInt(part, 10));
@@ -627,7 +627,7 @@ async function lockUnlockStatusToggle(ws, data, broadcastToClients) {
       await processLockRequest(ws, date, formattedDateString, groupList, user, broadcastToClients, monthYear);
     }
     
-    console.log(`Successfully processed ${status} request for groups [${groupList.join(', ')}], date ${date}`);
+    // console.log(`Successfully processed ${status} request for groups [${groupList.join(', ')}], date ${date}`);
   } catch (error) {
     console.error('Error in lockUnlockStatusToggle:', error);
 

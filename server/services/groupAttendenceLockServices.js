@@ -52,17 +52,17 @@ async function getLockStatusDataForMonthAndGroup(groups, month, year) {
 
 async function setStatusFromDateGroup(groups, date, status, user) {
   try {
-    console.log(date);
+    // console.log(date);
     
     // Ensure the date is in the correct format
     const formattedDate = moment(date).format('YYYY-MM-DD');
     
     // Log to verify the values being passed
-    console.log('Setting status with values:');
-    console.log('Formatted Date:', formattedDate);
-    console.log('Groups:', groups);
-    console.log('Status:', status);
-    console.log('User:', user ? user.username : 'undefined');
+    // console.log('Setting status with values:');
+    // console.log('Formatted Date:', formattedDate);
+    // console.log('Groups:', groups);
+    // console.log('Status:', status);
+    // console.log('User:', user ? user.username : 'undefined');
     
     // Ensure groups is an array
     const groupsArray = Array.isArray(groups) ? groups : [groups];
@@ -87,7 +87,7 @@ async function setStatusFromDateGroup(groups, date, status, user) {
       }
     });
     
-    console.log(`Found ${existingRecords.length} existing records for date: ${formattedDate} and groups: ${groupsArray.join(', ')}`);
+    // console.log(`Found ${existingRecords.length} existing records for date: ${formattedDate} and groups: ${groupsArray.join(', ')}`);
     
     // Track which records need to be created
     const existingGroups = existingRecords.map(record => record.reporting_group_name);
@@ -95,7 +95,7 @@ async function setStatusFromDateGroup(groups, date, status, user) {
     
     // If there are groups that need records created
     if (groupsToCreate.length > 0) {
-      console.log(`Creating new records for groups: ${groupsToCreate.join(', ')}`);
+      // console.log(`Creating new records for groups: ${groupsToCreate.join(', ')}`);
       
       const newRecords = groupsToCreate.map(group => ({
         attendance_date: formattedDate,
@@ -107,7 +107,7 @@ async function setStatusFromDateGroup(groups, date, status, user) {
       try {
         // Create new records
         const createdRecords = await AttendanceDateLockStatus.bulkCreate(newRecords);
-        console.log(`Created ${createdRecords.length} new status records`);
+        // console.log(`Created ${createdRecords.length} new status records`);
       } catch (createError) {
         console.error('Error creating records:', createError);
         // Continue execution even if creation fails
@@ -116,7 +116,7 @@ async function setStatusFromDateGroup(groups, date, status, user) {
     
     // Now update existing records
     if (existingGroups.length > 0) {
-      console.log(`Updating existing records for groups: ${existingGroups.join(', ')}`);
+      // console.log(`Updating existing records for groups: ${existingGroups.join(', ')}`);
       
       const [updatedRows] = await AttendanceDateLockStatus.update(
         {
@@ -133,7 +133,7 @@ async function setStatusFromDateGroup(groups, date, status, user) {
         }
       );
       
-      console.log(`Updated ${updatedRows} existing records`);
+      // console.log(`Updated ${updatedRows} existing records`);
     }
     
     // Double-check that all records are now as expected
@@ -146,7 +146,7 @@ async function setStatusFromDateGroup(groups, date, status, user) {
       }
     });
     
-    console.log(`Final check: ${finalRecords.length} records found with status '${status}'`);
+    // console.log(`Final check: ${finalRecords.length} records found with status '${status}'`);
     
     return {
       success: true,

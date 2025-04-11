@@ -72,7 +72,7 @@ async function updateRedisAttendanceData(updateData) {
         'comment': 'comment'
       };
       
-      console.log(fieldMapping);
+    //   console.log(fieldMapping);
       
       // Get the mapped field name
       const mappedField = fieldMapping[updateData.field] || updateData.field;
@@ -89,7 +89,7 @@ async function updateRedisAttendanceData(updateData) {
         attendanceRecords[employeeRecordIndex][mappedField] = parseFloat(updateData.newValue);
       }
       
-      console.log(`Updated ${mappedField} to:`, attendanceRecords[employeeRecordIndex][mappedField]);
+    //   console.log(`Updated ${mappedField} to:`, attendanceRecords[employeeRecordIndex][mappedField]);
       
       // Add metadata
       attendanceRecords[employeeRecordIndex].lastUpdatedBy = updateData.name || 'System';
@@ -97,7 +97,7 @@ async function updateRedisAttendanceData(updateData) {
       
       // Store the updated record back in Redis
       await redisClient.set(key, JSON.stringify(attendanceRecords));
-      console.log(`Updated Redis key ${key} for employee ${updateData.employeeId}`);
+    //   console.log(`Updated Redis key ${key} for employee ${updateData.employeeId}`);
       
       return {
         success: true,
@@ -252,7 +252,7 @@ const makeAttendenceKeyRedis = (mysqlAttendanceData) => {
         // console.log(mysqlAttendanceData);
 
         if (!mysqlAttendanceData || !mysqlAttendanceData.date || !mysqlAttendanceData.records) {
-            console.log('Invalid attendance data structure');
+            // console.log('Invalid attendance data structure');
             return null;
         }
 

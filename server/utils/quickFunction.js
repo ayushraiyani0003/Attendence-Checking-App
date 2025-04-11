@@ -179,7 +179,7 @@ function compareAttendanceData(metricsData, finalAttendanceData) {
       // Get attendance data
       const attendanceNetHR = parseFloat(record.netHR) || 0;
       const attendanceOtHR = parseFloat(record.otHR) || 0;
-      console.log(day);
+      // console.log(day);
 
       // Calculate differences
       const netHRDiff = attendanceNetHR - metricsNetHR;

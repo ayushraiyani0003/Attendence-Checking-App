@@ -1,6 +1,6 @@
 async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysqlAttendanceData, groups, lockStatusData) {
   try {
-    console.log("Redis data:", JSON.stringify(redisAttendanceData, null, 2));
+    // console.log("Redis data:", JSON.stringify(redisAttendanceData, null, 2));
     
     // Convert the Redis data into a lookup object for easier comparison
     const redisAttendanceLookup = {};
@@ -57,7 +57,7 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
 
       // NEW: Check for inactive status or if attendance is after resignation date
       if (employeeDetails.status === "inactive") {
-        console.log(`Skipping inactive employee with ID ${employee_id}`);
+        // console.log(`Skipping inactive employee with ID ${employee_id}`);
         continue; // Skip inactive employees
       }
 
@@ -68,7 +68,7 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
         
         // Skip if attendance date is after resignation date
         if (attendanceDate > resignDate) {
-          console.log(`Skipping record for employee ${employee_id}, attendance date ${attendance_date} is after resignation date ${employeeDetails.resign_date}`);
+          // console.log(`Skipping record for employee ${employee_id}, attendance date ${attendance_date} is after resignation date ${employeeDetails.resign_date}`);
           continue;
         }
       }
@@ -131,7 +131,7 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
             
             // NEW: Skip this record if the employee is inactive in Redis data
             if (redisData.status === "inactive") {
-              console.log(`Skipping record for employee ${employee_id} because status is inactive in Redis data`);
+              // console.log(`Skipping record for employee ${employee_id} because status is inactive in Redis data`);
               redisDataFound = true;
               continue;
             }

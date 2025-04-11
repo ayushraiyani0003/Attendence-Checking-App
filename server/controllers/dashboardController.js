@@ -14,7 +14,7 @@ exports.getDashboardGraphs = [async (req, res) => {
 
     // Get month and year from the request query
     let { month, year } = req.query;
-    console.log("this is a dashboard " + month + " and " + year);
+    // console.log("this is a dashboard " + month + " and " + year);
     // const month = 4;
     // const year = 2025;
 
@@ -23,7 +23,7 @@ exports.getDashboardGraphs = [async (req, res) => {
       const currentDate = new Date();
       month = month || (currentDate.getMonth() + 1).toString();
       year = year || currentDate.getFullYear().toString();
-      console.log(`Using default month: ${month}, year: ${year}`);
+      // console.log(`Using default month: ${month}, year: ${year}`);
     }
 
     // Convert to numbers to ensure proper handling
@@ -60,7 +60,7 @@ exports.getDashboardGraphs = [async (req, res) => {
 
 // Helper function to get dashboard data
 const getData = async (month, year) => {
-  console.log(month + "-" + year);
+  // console.log(month + "-" + year);
 
   try {
     // 1. First, get all reporting groups from settings
@@ -99,7 +99,7 @@ const getData = async (month, year) => {
 
     // 4. calculate the diff between the finalAttendanceData and metricsData
     const mismatchBygroup = findMismatchesByGroup(finalAttendanceData, metricsData);
-    console.log(mismatchBygroup);
+    // console.log(mismatchBygroup);
 
     return mismatchBygroup;
   } catch (error) {
@@ -110,13 +110,12 @@ const getData = async (month, year) => {
 
 exports.getDashboardReports = [authenticateJWT, isAdmin, async (req, res) => {
   try {
-    console.log("my report is called");
+    // console.log("my report is called");
 
     // Get parameters from the request query
     let { month, year, reportType, options, dateRange, employeeType } = req.query;
-    console.log("date range i  print " + options);
+    // console.log("date range i  print " + options);
     // month year is look like 4 and 2025 in numeric formated format
-
 
     // Convert to numbers to ensure proper handling
     const numericMonth = parseInt(month, 10);
@@ -171,8 +170,8 @@ exports.getDashboardReports = [authenticateJWT, isAdmin, async (req, res) => {
     // Initialize result variable
     let reportData = null;
 
-    console.log(dateRange);
-    console.log(reportType);
+    // console.log(dateRange);
+    // console.log(reportType);
     // Main switch case for report types
     switch (reportType) {
       case 'Net Hr':

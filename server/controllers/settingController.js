@@ -102,7 +102,7 @@ exports.updateSettings = [authenticateJWT, isAdmin, async (req, res) => {
 
 // Delete Department
 exports.deleteDepartment = [authenticateJWT, isAdmin, async (req, res) => {
-  console.log(req);
+  // console.log(req);
   
   try {
     const { id } = req.params;
