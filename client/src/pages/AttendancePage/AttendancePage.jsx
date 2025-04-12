@@ -9,7 +9,7 @@ import { useAttendance } from "../../hooks/useAttendance";
 
 function AttendancePage({ user, monthYear }) {
   const { ws, send } = useWebSocket();
-  
+
   const {
     // States
     hoveredRow,
@@ -38,7 +38,9 @@ function AttendancePage({ user, monthYear }) {
     isAdmin,
     headerRef,
     dataContainerRef,
-    
+    // total data in json format
+    employeeMetrics,
+
     // Functions
     toggleColumn,
     fixedColumns,
@@ -53,6 +55,35 @@ function AttendancePage({ user, monthYear }) {
   // Get filtered data without setting state directly
   const { data: filteredData } = getFilteredData();
 
+  // Helper function to get metrics for a specific employee
+  const getEmployeeMetricsById = (employeeId) => {
+    if (!employeeMetrics || !Array.isArray(employeeMetrics)) {
+      return {
+        totalNetHR: 0,
+        totalOtHR: 0,
+        nightShiftCount: 0,
+        eveningShiftCount: 0,
+        siteCommentCount: 0,
+        absentCount: 0
+      };
+    }
+    
+    const metrics = employeeMetrics.find(metric => metric.employeeId === employeeId);
+    
+    if (!metrics) {
+      return {
+        totalNetHR: 0,
+        totalOtHR: 0,
+        nightShiftCount: 0,
+        eveningShiftCount: 0,
+        siteCommentCount: 0,
+        absentCount: 0
+      };
+    }
+    
+    return metrics;
+  };
+
   if (!attendanceData.length) {
     return (
       <div className="attendance-page">
@@ -64,7 +95,7 @@ function AttendancePage({ user, monthYear }) {
       </div>
     );
   }
-  
+
   if (isWebSocketOpen === false) {
     return (
       <div style={{
@@ -87,11 +118,11 @@ function AttendancePage({ user, monthYear }) {
         <p style={{
           margin: 0,
           fontSize: '14px'
-        }}>Services will be back as soon as possible.</p>
+        }}>Server is Disconnect. can you reload the page....</p>
       </div>
     );
   }
-  
+
   return (
     <div className="attendance-page">
       <div className="attendance-container">
@@ -148,6 +179,9 @@ function AttendancePage({ user, monthYear }) {
               {filteredData.map((row) => {
                 // Find the actual index in the attendanceData array
                 const rowIndex = attendanceData.findIndex((item) => item.id === row.id);
+                
+                // Get the metrics for this specific employee
+                const metrics = getEmployeeMetricsById(row.id);
 
                 return (
                   <DataRow
@@ -170,6 +204,12 @@ function AttendancePage({ user, monthYear }) {
                     attDateEnd={dateRange[1]}
                     isAdmin={isAdmin}
                     TotalDiffData={TotalDiffData}
+                    totalNetHR={metrics.totalNetHR}
+                    totalOtHR={metrics.totalOtHR}
+                    nightShiftCount={metrics.nightShiftCount}
+                    eveningShiftCount={metrics.eveningShiftCount}
+                    siteCommentCount={metrics.siteCommentCount}
+                    absentCount={metrics.absentCount}
                   />
                 );
               })}

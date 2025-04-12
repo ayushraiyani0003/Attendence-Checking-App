@@ -7,8 +7,7 @@ import useDataRow from "../../hooks/useDataRow";
 
 function DataRow(props) {
   const {
-    row, rowIndex, hoveredRow, isAdmin, setHoveredRow, user,
-  } = props;
+    row, rowIndex, hoveredRow, isAdmin, setHoveredRow, user, totalNetHR, totalOtHR, nightShiftCount, eveningShiftCount, siteCommentCount,absentCount, } = props;
 
   // Use custom hook for logic
   const {
@@ -17,12 +16,6 @@ function DataRow(props) {
     netDiffValue,
     otDiffValue,
     showCommentPopup,
-    totalNetHR,
-    totalOtHR,
-    nightShiftCount,
-    eveningShiftCount,
-    siteCommentCount,
-    absentCount,
     inputRef,
     rowRef,
     displayData,

@@ -15,14 +15,6 @@ const useDataRow = ({
     const [otDiffValue, setOtDiffValue] = useState({});
     const [showCommentPopup, setShowCommentPopup] = useState(false);
 
-    // Additional state for totals
-    const [totalNetHR, setTotalNetHR] = useState(0);
-    const [totalOtHR, setTotalOtHR] = useState(0);
-    const [nightShiftCount, setNightShiftCount] = useState(0);
-    const [eveningShiftCount, setEveningShiftCount] = useState(0);
-    const [siteCommentCount, setSiteCommentCount] = useState(0);
-    const [absentCount, setAbsentCount] = useState(0);
-
     const inputRef = useRef(null);
     const rowRef = useRef(null);
 
@@ -97,83 +89,6 @@ const useDataRow = ({
 
         return displayData;
     }, [filteredAttendance, isShowDiffData, isAdmin, row.punchCode, MetrixDiffData]);
-
-    // Calculate totals whenever filteredAttendance or displayData changes
-    useEffect(() => {
-        // Choose which data source to use based on the mode
-        // IMPORTANT: Always use filteredAttendance (original data) for calculations
-        // regardless of whether we're in metrix view mode or not
-        const dataToProcess = filteredAttendance;
-
-        if (!dataToProcess || dataToProcess.length === 0) {
-            setTotalNetHR(0);
-            setTotalOtHR(0);
-            setNightShiftCount(0);
-            setEveningShiftCount(0);
-            setSiteCommentCount(0);
-            setAbsentCount(0);
-            return;
-        }
-
-        // Calculate total network hours and overtime hours
-        let netHRSum = 0;
-        let otHRSum = 0;
-        let nightCount = 0;
-        let eveningCount = 0;
-        let siteCount = 0;
-        let absenceCount = 0;
-
-        dataToProcess.forEach(att => {
-            // Sum up network hours
-            if (att.netHR) {
-                const netHRValue = parseFloat(att.netHR);
-                if (!isNaN(netHRValue)) {
-                    netHRSum += netHRValue;
-
-                    // Count absences (days with 0 network hours)
-                    if (netHRValue === 0) {
-                        absenceCount++;
-                    }
-                }
-            } else {
-                // If netHR is undefined or null, count as absence
-                absenceCount++;
-            }
-
-            // Sum up overtime hours
-            if (att.otHR) {
-                const otHRValue = parseFloat(att.otHR);
-                if (!isNaN(otHRValue)) {
-                    otHRSum += otHRValue;
-                }
-            }
-
-            // Count night shifts
-            if (att.dnShift && att.dnShift.toUpperCase() === 'N') {
-                nightCount++;
-            }
-
-            // Count evening shifts
-            if (att.dnShift && att.dnShift.toUpperCase() === 'E') {
-                eveningCount++;
-            }
-
-            // Count site comments
-            if (att.comment &&
-                att.comment.trim().toLowerCase().startsWith('site')) {
-                siteCount++;
-            }
-        });
-
-        // Update state with calculated totals
-        setTotalNetHR(netHRSum);
-        setTotalOtHR(otHRSum);
-        setNightShiftCount(nightCount);
-        setEveningShiftCount(eveningCount);
-        setSiteCommentCount(siteCount);
-        setAbsentCount(absenceCount);
-
-    }, [filteredAttendance, isShowMetrixData]); // Only depend on filteredAttendance, not displayData
 
     // Handle clicks outside the input
     useEffect(() => {
@@ -652,8 +567,6 @@ const useDataRow = ({
                 item => item.punchCode === row.punchCode
             );
             
-            // console.log(`Found ${employeeMetrixData.length} metrix records for ${row.punchCode}`);
-            
             if (employeeMetrixData.length > 0) {
                 // Initialize totals
                 let totalNetHRDiff = 0;
@@ -680,11 +593,6 @@ const useDataRow = ({
                 // Format to 2 decimal places
                 const formattedNetHRDiff = totalNetHRDiff.toFixed(2);
                 const formattedOtHRDiff = totalOtHRDiff.toFixed(2);
-                
-                // console.log(`Total differences for ${row.punchCode}:`, {
-                //     netHRDiff: formattedNetHRDiff,
-                //     otHRDiff: formattedOtHRDiff
-                // });
                 
                 // Update state with the totals
                 setNetDiffValue({ 
@@ -716,12 +624,6 @@ const useDataRow = ({
         netDiffValue,
         otDiffValue,
         showCommentPopup,
-        totalNetHR,
-        totalOtHR,
-        nightShiftCount,
-        eveningShiftCount,
-        siteCommentCount,
-        absentCount,
         inputRef,
         rowRef,
         filteredAttendance,

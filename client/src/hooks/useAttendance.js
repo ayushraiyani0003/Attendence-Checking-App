@@ -699,6 +699,72 @@ export const useAttendance = (user, monthYear, ws, send) => {
     toast.info("Date range reset to yesterday");
   };
 
+  // Function to calculate metrics for each employee
+function calculateEmployeeMetrics(attendanceData) {
+  if (!attendanceData || !Array.isArray(attendanceData) || attendanceData.length === 0) {
+    return [];
+  }
+
+  return attendanceData.map(employee => {
+    let totalNetHR = 0;
+    let totalOtHR = 0;
+    let nightShiftCount = 0;
+    let eveningShiftCount = 0;
+    let siteCommentCount = 0;
+    let absentCount = 0;
+
+    // Process attendance records if they exist
+    if (employee.attendance && Array.isArray(employee.attendance)) {
+      employee.attendance.forEach(record => {
+        // Calculate totalNetHR
+        if (typeof record.netHR === 'number') {
+          totalNetHR += record.netHR;
+          
+          // Count absent days (netHR = 0)
+          if (record.netHR === 0) {
+            absentCount++;
+          }
+        }
+
+        // Calculate totalOtHR
+        if (typeof record.otHR === 'number') {
+          totalOtHR += record.otHR;
+        }
+
+        // Count night shift days
+        if (record.dnShift && record.dnShift.toLowerCase() === 'n') {
+          nightShiftCount++;
+        }
+
+        // Count evening shift days
+        if (record.dnShift && record.dnShift.toLowerCase() === 'e') {
+          eveningShiftCount++;
+        }
+
+        // Count site comment days
+        if (record.comment && 
+            typeof record.comment === 'string' && 
+            record.comment.trim().toLowerCase().startsWith('site')) {
+          siteCommentCount++;
+        }
+      });
+    }
+
+    // Return metrics for this employee
+    return {
+      employeeId: employee.id,
+      totalNetHR,
+      totalOtHR,
+      nightShiftCount,
+      eveningShiftCount,
+      siteCommentCount,
+      absentCount
+    };
+  });
+}
+
+const employeeMetrics = calculateEmployeeMetrics(attendanceData);
+
   return {
     // States
     hoveredRow,
@@ -727,7 +793,8 @@ export const useAttendance = (user, monthYear, ws, send) => {
     isAdmin,
     headerRef,
     dataContainerRef,
-    
+    // for the employe totals
+    employeeMetrics,
     // Functions
     toggleColumn,
     fixedColumns,
