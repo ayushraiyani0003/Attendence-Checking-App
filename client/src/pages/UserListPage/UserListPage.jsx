@@ -4,6 +4,7 @@ import UserTable from './UserTable';
 import UserForm from './UserForm';
 import { Box, Button, Container, Typography, Paper, useTheme, useMediaQuery, Fade, CircularProgress, Alert } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import { toast } from 'react-toastify';
 
 function UserListPage() {
   const theme = useTheme();
@@ -43,14 +44,25 @@ function UserListPage() {
   };
 
   // Handle Delete User
-  const handleDeleteUser = async (id) => {
+  // Handle Delete User
+const handleDeleteUser = async (id) => {
+  // Ask for user confirmation
+  const confirmDelete = window.confirm("Are you sure you want to delete this user?");
+  
+  // Only proceed if the user confirms
+  if (confirmDelete) {
     try {
       await deleteUserHandler(id);
+      // Display the toast message here
+      toast.success("User deleted successfully!");
       fetchUsers(); // Refetch the list of users after deleting a user
     } catch (err) {
       console.error(err);
+      // Optional: display error toast
+      toast.error("Failed to delete user");
     }
-  };
+  }
+};
 
   // Open the UserForm for adding or editing
   const handleUserSelect = (user) => {
