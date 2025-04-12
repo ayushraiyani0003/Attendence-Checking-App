@@ -119,17 +119,18 @@ const EmployeePage = () => {
 
       // Create a new array with only the data we want to export
       const exportData = dataToExport.map(employee => ({
+        'EmployeeId':employee.employee_id,
         'Punch Code': employee.punch_code,
         'Name': employee.name,
         'Department': employee.department,
         'Designation': employee.designation,
-        'Reporting Group': employee.reporting_group,
         'Net Hours': employee.net_hr,
-        'Week Off': employee.week_off,
-        'Resign Date': employee.resign_date,
-        'Status': employee.status,
         'Branch': employee.branch,
-        'Sections': employee.sections
+        'Sections': employee.sections,
+        'Week Off': employee.week_off,
+        'Reporting Group': employee.reporting_group,
+        'Status': employee.status,
+        'Resign Date': employee.resign_date,
       }));
 
       // Create a new workbook
@@ -390,6 +391,7 @@ const EmployeePage = () => {
 
     setIsModalVisible(true);
   };
+console.log(employees);
 
   const handlePageSizeChange = (current, size) => {
     setPageSize(size);
@@ -437,7 +439,7 @@ const EmployeePage = () => {
                 type="default"
                 icon={<UploadOutlined />}
                 className="import-button"
-                onClick={() => handleImportFromExcel(addEmployee)}
+                onClick={() => handleImportFromExcel(employees,addEmployee, editEmployee)}
               >
                 Import Excel
               </Button>
