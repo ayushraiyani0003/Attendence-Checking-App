@@ -38,18 +38,25 @@ const EmployeePage = () => {
     }
   };
 
-  // Improved search functionality to handle mixed types
-  useEffect(() => {
-    if (!employees || !employees.length) {
-      setFilteredData([]);
-      return;
-    }
+// Improved search functionality with exact match for status
+useEffect(() => {
+  if (!employees || !employees.length) {
+    setFilteredData([]);
+    return;
+  }
 
-    const lowerSearchText = searchText.toLowerCase();
-    const filtered = employees.filter(item => {
-      // Convert punch_code to string to handle mixed types
-      const punchCodeStr = String(item.punch_code || '');
-
+  const lowerSearchText = searchText.toLowerCase();
+  const filtered = employees.filter(item => {
+    // Convert punch_code to string to handle mixed types
+    const punchCodeStr = String(item.punch_code || '');
+    
+    // Special handling for status field - exact match
+    if (lowerSearchText === 'active' || lowerSearchText === 'inactive' ||lowerSearchText === 'resigned' ||lowerSearchText === 'on_leave') {
+      if (item.status && item.status.toLowerCase() === lowerSearchText) {
+        return true;
+      }
+    } else {
+      // For non-status searches, use the existing logic
       return (
         (item.name && item.name.toLowerCase().includes(lowerSearchText)) ||
         (item.department && item.department.toLowerCase().includes(lowerSearchText)) ||
@@ -57,12 +64,16 @@ const EmployeePage = () => {
         (item.reporting_group && item.reporting_group.toLowerCase().includes(lowerSearchText)) ||
         (item.branch && item.branch.toLowerCase().includes(lowerSearchText)) ||
         (item.sections && item.sections.toLowerCase().includes(lowerSearchText)) ||
+        (item.status && item.status.toLowerCase().includes(lowerSearchText)) ||
         punchCodeStr.includes(lowerSearchText)
       );
-    });
+    }
+    
+    return false;
+  });
 
-    setFilteredData(filtered);
-  }, [employees, searchText]);
+  setFilteredData(filtered);
+}, [employees, searchText]);
 
   // Function to show delete confirmation modal
   const showDeleteConfirm = (employee) => {
