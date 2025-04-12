@@ -2,6 +2,10 @@ import React, { useState } from "react";
 import { useUploadContext } from "../../context/UploadContext"; // Use the context for uploading files
 import "./UploadPage.css"; 
 
+// Import sample files
+import sampleNetworkFile from "../../assets/metrics_network.xlsx";
+import sampleOTFile from "../../assets/metrics_OT_Report.xlsx";
+
 function UploadPage() {
   const { handleFileUpload, message, isLoading } = useUploadContext(); // Get file upload logic and state from context
   const [networkHourFile, setNetworkHourFile] = useState(null);
@@ -36,6 +40,29 @@ function UploadPage() {
           <p className="upload-subtitle">
             Please upload all required files to process attendance data
           </p>
+        </div>
+
+        {/* Sample Files Section */}
+        <div className="sample-files-section">
+          <p className="sample-files-title">Need sample files? Download here:</p>
+          <div className="sample-files-container">
+            <a 
+              href={sampleNetworkFile} 
+              download="metrics_network_sample.xlsx"
+              className="sample-file-btn"
+            >
+              <span className="sample-icon">📊</span>
+              <span>Sample Network Hour File</span>
+            </a>
+            <a 
+              href={sampleOTFile} 
+              download="metrics_OT_Report_sample.xlsx"
+              className="sample-file-btn"
+            >
+              <span className="sample-icon">📑</span>
+              <span>Sample OT File</span>
+            </a>
+          </div>
         </div>
 
         {message.text && (
@@ -85,8 +112,6 @@ function UploadPage() {
             </div>
           </div>
 
-          
-
           {/* Month-Year Picker */}
           <div className="form-group">
             <label htmlFor="monthYear">
@@ -112,7 +137,7 @@ function UploadPage() {
           <button
             className={`btn btn-primary ${isLoading ? "loading" : ""}`}
             onClick={handleSubmit}
-            disabled={isLoading}
+            disabled={isLoading || !networkHourFile || !otFile || !monthYear}
           >
             {isLoading ? "Uploading..." : "Upload Files"}
           </button>

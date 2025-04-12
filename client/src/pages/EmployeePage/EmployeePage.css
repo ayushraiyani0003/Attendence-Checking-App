@@ -344,6 +344,10 @@
   box-shadow: none !important;
   font-size: 12px !important;
 }
+.import-sample-button{
+  background-color: #ffd344;
+  border-color: #ffd344;
+}
 
 .delete-button:hover {
   background-color: #ffd4d2 !important;

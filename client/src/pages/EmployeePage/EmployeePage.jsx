@@ -8,6 +8,8 @@ import './EmployeePage.css';
 import dayjs from 'dayjs'; // Import dayjs for date handling
 import handleImportFromExcel from "../../utils/handleImportFromExcel"
 
+import employeeDemo from "../../assets/new data.xlsx";
+
 const { Title } = Typography;
 const { Option } = Select;
 
@@ -23,7 +25,7 @@ const EmployeePage = () => {
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState(null);
   const branches = ["Sunchaser Structure Pvt Ltd."];
-  const sections = ["HADAMTALA","WINGS","KOTHARIYA"];
+  const sections = ["HADAMTALA", "WINGS", "KOTHARIYA"];
 
   const [form] = Form.useForm();
 
@@ -37,43 +39,56 @@ const EmployeePage = () => {
       return null;
     }
   };
-
-// Improved search functionality with exact match for status
-useEffect(() => {
-  if (!employees || !employees.length) {
-    setFilteredData([]);
-    return;
-  }
-
-  const lowerSearchText = searchText.toLowerCase();
-  const filtered = employees.filter(item => {
-    // Convert punch_code to string to handle mixed types
-    const punchCodeStr = String(item.punch_code || '');
+  
+  const downloadEmployeeDemo = () => {
+    // Create a temporary anchor element
+    const link = document.createElement('a');
+    link.href = employeeDemo;
+    link.download = 'employee_demo.xlsx';
     
-    // Special handling for status field - exact match
-    if (lowerSearchText === 'active' || lowerSearchText === 'inactive' ||lowerSearchText === 'resigned' ||lowerSearchText === 'on_leave') {
-      if (item.status && item.status.toLowerCase() === lowerSearchText) {
-        return true;
-      }
-    } else {
-      // For non-status searches, use the existing logic
-      return (
-        (item.name && item.name.toLowerCase().includes(lowerSearchText)) ||
-        (item.department && item.department.toLowerCase().includes(lowerSearchText)) ||
-        (item.designation && item.designation.toLowerCase().includes(lowerSearchText)) ||
-        (item.reporting_group && item.reporting_group.toLowerCase().includes(lowerSearchText)) ||
-        (item.branch && item.branch.toLowerCase().includes(lowerSearchText)) ||
-        (item.sections && item.sections.toLowerCase().includes(lowerSearchText)) ||
-        (item.status && item.status.toLowerCase().includes(lowerSearchText)) ||
-        punchCodeStr.includes(lowerSearchText)
-      );
+    // Append to the document, click it, and remove it
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+  
+
+  // Improved search functionality with exact match for status
+  useEffect(() => {
+    if (!employees || !employees.length) {
+      setFilteredData([]);
+      return;
     }
-    
-    return false;
-  });
 
-  setFilteredData(filtered);
-}, [employees, searchText]);
+    const lowerSearchText = searchText.toLowerCase();
+    const filtered = employees.filter(item => {
+      // Convert punch_code to string to handle mixed types
+      const punchCodeStr = String(item.punch_code || '');
+
+      // Special handling for status field - exact match
+      if (lowerSearchText === 'active' || lowerSearchText === 'inactive' || lowerSearchText === 'resigned' || lowerSearchText === 'on_leave') {
+        if (item.status && item.status.toLowerCase() === lowerSearchText) {
+          return true;
+        }
+      } else {
+        // For non-status searches, use the existing logic
+        return (
+          (item.name && item.name.toLowerCase().includes(lowerSearchText)) ||
+          (item.department && item.department.toLowerCase().includes(lowerSearchText)) ||
+          (item.designation && item.designation.toLowerCase().includes(lowerSearchText)) ||
+          (item.reporting_group && item.reporting_group.toLowerCase().includes(lowerSearchText)) ||
+          (item.branch && item.branch.toLowerCase().includes(lowerSearchText)) ||
+          (item.sections && item.sections.toLowerCase().includes(lowerSearchText)) ||
+          (item.status && item.status.toLowerCase().includes(lowerSearchText)) ||
+          punchCodeStr.includes(lowerSearchText)
+        );
+      }
+
+      return false;
+    });
+
+    setFilteredData(filtered);
+  }, [employees, searchText]);
 
   // Function to show delete confirmation modal
   const showDeleteConfirm = (employee) => {
@@ -101,7 +116,7 @@ useEffect(() => {
     try {
       // Determine which data to export (filtered or all)
       const dataToExport = filteredData.length > 0 ? filteredData : employees;
-      
+
       // Create a new array with only the data we want to export
       const exportData = dataToExport.map(employee => ({
         'Punch Code': employee.punch_code,
@@ -116,22 +131,22 @@ useEffect(() => {
         'Branch': employee.branch,
         'Sections': employee.sections
       }));
-      
+
       // Create a new workbook
       const workbook = XLSX.utils.book_new();
-      
+
       // Convert the data to a worksheet
       const worksheet = XLSX.utils.json_to_sheet(exportData);
-      
+
       // Add the worksheet to the workbook
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Employees');
-      
+
       // Generate Excel file
       const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-      
+
       // Save the file
       saveAsExcelFile(excelBuffer, 'Employee_Directory');
-      
+
       // Show success notification
       notification.success({
         message: 'Export Successful',
@@ -253,7 +268,7 @@ useEffect(() => {
       filters: reportingGroups && reportingGroups.length ? reportingGroups.map((group) => ({ text: group.groupname, value: group.groupname })) : [],
       onFilter: (value, record) => record.reporting_group === value,
       render: (text) => {
-        
+
         return <Tag color={'default'}>{text}</Tag>;
       },
     },
@@ -340,13 +355,13 @@ useEffect(() => {
   const handleSubmit = (values) => {
     // Make a copy of the values
     const formattedValues = { ...values };
-    
+
     // Convert the resign_date to ISO string format if it exists
     if (formattedValues.resign_date) {
       // If using dayjs, format to YYYY-MM-DD
       formattedValues.resign_date = formattedValues.resign_date.format('YYYY-MM-DD');
     }
-    
+
     if (selectedEmployee) {
       editEmployee(selectedEmployee.employee_id, formattedValues);
     } else {
@@ -360,19 +375,19 @@ useEffect(() => {
 
   const handleEditEmployee = (employee) => {
     setSelectedEmployee(employee);
-    
+
     // Convert the resign_date to a dayjs object for DatePicker
     let formattedResignDate = null;
     if (employee.resign_date) {
       formattedResignDate = convertToDayjs(employee.resign_date);
     }
-    
+
     // Set form values with the properly formatted date
     form.setFieldsValue({
       ...employee,
       resign_date: formattedResignDate
     });
-    
+
     setIsModalVisible(true);
   };
 
@@ -417,18 +432,26 @@ useEffect(() => {
               >
                 Add Employee
               </Button>
-              
-<Button 
-  type="default" 
-  icon={<UploadOutlined />}
-  className="import-button"
-  onClick={() => handleImportFromExcel(addEmployee)}
->
-  Import Excel
-</Button>
-              <Button 
-                type="default" 
-                icon={<DownloadOutlined />} 
+
+              <Button
+                type="default"
+                icon={<UploadOutlined />}
+                className="import-button"
+                onClick={() => handleImportFromExcel(addEmployee)}
+              >
+                Import Excel
+              </Button>
+              <Button
+                type="default"
+                icon={<UploadOutlined />}
+                className="import-sample-button"
+                onClick={downloadEmployeeDemo}
+              >
+                Sample import
+              </Button>
+              <Button
+                type="default"
+                icon={<DownloadOutlined />}
                 className="export-button"
                 onClick={exportToExcel}
               >
@@ -518,7 +541,7 @@ useEffect(() => {
               ))}
             </Select>
           </Form.Item>
-          
+
           {/* New form fields for the additional columns */}
           <Form.Item label="Net Hours" name="net_hr" rules={[{ required: true, message: 'Please enter net hours!' }]}>
             <Input type="number" placeholder="Enter net hours" />
@@ -566,9 +589,9 @@ useEffect(() => {
           </Form.Item>
 
           <Form.Item label="Resign Date" name="resign_date">
-            <DatePicker 
-              format="YYYY-MM-DD" 
-              style={{ width: '100%' }} 
+            <DatePicker
+              format="YYYY-MM-DD"
+              style={{ width: '100%' }}
               allowClear={true}
             />
           </Form.Item>

@@ -248,6 +248,73 @@ body {
   border: 1px solid rgba(16, 185, 129, 0.2);
 }
 
+/* Add these styles to your existing UploadPage.css file */
+
+/* Sample Files Section */
+.sample-files-section {
+  margin-bottom: 2rem;
+  background-color: var(--primary-light);
+  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid rgba(67, 97, 238, 0.2);
+}
+
+.sample-files-title {
+  font-size: 0.95rem;
+  color: var(--text-color);
+  margin-bottom: 0.75rem;
+  text-align: center;
+  font-weight: 500;
+}
+
+.sample-files-container {
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.sample-file-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  color: var(--primary-color);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  flex: 1;
+  min-width: 180px;
+}
+
+.sample-file-btn:hover {
+  background-color: var(--primary-color);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.sample-icon {
+  margin-right: 8px;
+  font-size: 1.1rem;
+}
+
+/* Add this to your existing responsive media queries */
+@media (max-width: 576px) {
+  .sample-files-container {
+    flex-direction: column;
+  }
+  
+  .sample-file-btn {
+    width: 100%;
+  }
+}
+
 /* Animation */
 @keyframes fadeInUp {
   from {
