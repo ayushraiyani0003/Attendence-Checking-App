@@ -24,8 +24,8 @@ const EmployeePage = () => {
   // Add state for delete confirmation modal
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState(null);
-  const branches = ["Sunchaser Structure Pvt Ltd.", "Patel Technomation Pvt Ltd"];
-  const sections = ["HADAMTALA", "WINGS", "KOTHARIYA"];
+  const sections = ["Sunchaser Structure Pvt Ltd.", "Patel Technomation Pvt Ltd"];
+  const branches = ["HADAMTALA", "WINGS", "KOTHARIYA"];
 
   const [form] = Form.useForm();
 
