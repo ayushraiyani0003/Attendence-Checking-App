@@ -7,10 +7,6 @@ const processMetricsFiles = async (networkFile, otFile, monthYear) => {
     const networkData = await parseExcelFile(networkFile);
     const otData = await parseExcelFile(otFile);
 
-    // Print headers for debugging
-    // console.log("Network File Headers:", Object.keys(networkData[0]));
-    // console.log("OT File Headers:", Object.keys(otData[0]));
-
     // Calculate the number of days in the month
     const [year, month] = monthYear.split("-");
     const daysInMonth = new Date(year, month, 0).getDate();
@@ -22,6 +18,39 @@ const processMetricsFiles = async (networkFile, otFile, monthYear) => {
     // Group data by punch_code (User ID)
     const metricsMap = {};
 
+    // Helper function to check if a column is a date column
+    const isDateColumn = (key) => {
+      // Check for all three date formats:
+      // 1. Simple day number (01-31)
+      const simpleFormat = /^(0?[1-9]|[12][0-9]|3[01])$/;
+      
+      // 2. Day with weekday format like "1    Tue"
+      const dayWeekdayFormat = /^(0?[1-9]|[12][0-9]|3[01])\s+[A-Za-z]{3}$/;
+      
+      // 3. Full date format like "01/04/2025" or other variants
+      const fullDateFormat = /^(0?[1-9]|[12][0-9]|3[01])[\/\-](0?[1-9]|1[0-2])[\/\-]\d{4}$/;
+      
+      return simpleFormat.test(key) || 
+             dayWeekdayFormat.test(key) || 
+             fullDateFormat.test(key);
+    };
+
+    // Helper function to extract day number from any date format
+    const extractDayFromKey = (key) => {
+      // For simple day number or day with weekday, extract the number part
+      if (/^(0?[1-9]|[12][0-9]|3[01])/.test(key)) {
+        return key.split(/\s+/)[0]; // Extract just the day number
+      }
+      
+      // For full date format like "01/04/2025"
+      const fullDateMatch = key.match(/^(0?[1-9]|[12][0-9]|3[01])[\/\-]/);
+      if (fullDateMatch) {
+        return fullDateMatch[1];
+      }
+      
+      return key; // Fallback
+    };
+
     // Process network hours data
     networkDataFull.forEach((entry) => {
       const punchCode = entry['User ID'];
@@ -29,16 +58,13 @@ const processMetricsFiles = async (networkFile, otFile, monthYear) => {
       
       const networkHours = [];
 
-      // Get all day columns (01, 02, 03, etc.)
-      const dayColumns = Object.keys(entry).filter(key => {
-        // Check if key is a date format (01-31)
-        return /^(0?[1-9]|[12][0-9]|3[01])$/.test(key);
-      });
+      // Get all date columns using the helper function
+      const dateColumns = Object.keys(entry).filter(isDateColumn);
 
       // Process each day column
-      dayColumns.forEach(dayStr => {
+      dateColumns.forEach(dateKey => {
         // Get hours value for this day
-        let hours = entry[dayStr];
+        let hours = entry[dateKey];
         
         // Skip if no hours recorded
         if (hours === undefined || hours === null || hours === '') {
@@ -51,7 +77,8 @@ const processMetricsFiles = async (networkFile, otFile, monthYear) => {
           hours = h + (m / 60);
         }
 
-        // Format the day as "01", "02", etc.
+        // Extract the day number and format it
+        const dayStr = extractDayFromKey(dateKey);
         const formattedDate = String(dayStr).padStart(2, '0');
         
         networkHours.push({
@@ -90,16 +117,13 @@ const processMetricsFiles = async (networkFile, otFile, monthYear) => {
       
       const overtimeHours = [];
 
-      // Get all day columns (01, 02, 03, etc.)
-      const dayColumns = Object.keys(entry).filter(key => {
-        // Check if key is a date format (01-31)
-        return /^(0?[1-9]|[12][0-9]|3[01])$/.test(key);
-      });
+      // Get all date columns using the helper function
+      const dateColumns = Object.keys(entry).filter(isDateColumn);
 
       // Process each day column
-      dayColumns.forEach(dayStr => {
+      dateColumns.forEach(dateKey => {
         // Get hours value for this day
-        let hours = entry[dayStr];
+        let hours = entry[dateKey];
         
         // Skip if no hours recorded
         if (hours === undefined || hours === null || hours === '') {
@@ -112,7 +136,8 @@ const processMetricsFiles = async (networkFile, otFile, monthYear) => {
           hours = h + (m / 60);
         }
 
-        // Format the day as "01", "02", etc.
+        // Extract the day number and format it
+        const dayStr = extractDayFromKey(dateKey);
         const formattedDate = String(dayStr).padStart(2, '0');
         
         overtimeHours.push({
@@ -149,8 +174,6 @@ const processMetricsFiles = async (networkFile, otFile, monthYear) => {
             month_year: monthYear
           }
         });
-
-        // console.log(`Found ${existingRecords.length} existing records for ${monthYear}`);
         
         // Create a map of existing records by metric_id for quick lookup
         const existingRecordsMap = {};
@@ -160,9 +183,6 @@ const processMetricsFiles = async (networkFile, otFile, monthYear) => {
         
         // Insert data in smaller batches to avoid connection timeout
         const batchSize = 5;
-        
-        // Log first record for debugging
-        // console.log("Sample record to be processed:", JSON.stringify(metricsData[0], null, 2));
         
         // Process in batches
         for (let i = 0; i < metricsData.length; i += batchSize) {
@@ -174,7 +194,6 @@ const processMetricsFiles = async (networkFile, otFile, monthYear) => {
             
             if (existingRecord) {
               // Update existing record
-              // console.log(`Updating existing record: ${record.metric_id}`);
               return existingRecord.update({
                 network_hours: record.network_hours,
                 overtime_hours: record.overtime_hours,
@@ -182,14 +201,12 @@ const processMetricsFiles = async (networkFile, otFile, monthYear) => {
               });
             } else {
               // Create new record
-              // console.log(`Creating new record: ${record.metric_id}`);
               return Metrics.create(record);
             }
           });
           
           const results = await Promise.all(promises);
           insertedData = insertedData.concat(results);
-          // console.log(`Processed batch ${Math.floor(i/batchSize) + 1} of ${Math.ceil(metricsData.length/batchSize)}`);
         }
       } catch (dbError) {
         console.error("Database operation error:", dbError);
@@ -208,7 +225,6 @@ const processMetricsFiles = async (networkFile, otFile, monthYear) => {
   }
 };
 
-// get metrix data.
 // Function to fetch metrics data for a specific month and year
 async function fetchMetricsForMonthYear(month, year) {
   try {
@@ -235,6 +251,8 @@ async function fetchMetricsForMonthYear(month, year) {
     throw error;
   }
 }
+
 module.exports = {
-  processMetricsFiles,fetchMetricsForMonthYear
+  processMetricsFiles,
+  fetchMetricsForMonthYear
 };
