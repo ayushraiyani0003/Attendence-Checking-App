@@ -33,6 +33,7 @@ export const useAttendance = (user, monthYear, ws, send) => {
     { id: 'designation', label: 'Designation', isVisible: true },
     { id: 'department', label: 'Department', isVisible: false },
   ]);
+console.log(dateRange);
 
   const headerRef = useRef(null);
   const dataContainerRef = useRef(null);
@@ -368,31 +369,57 @@ export const useAttendance = (user, monthYear, ws, send) => {
       const itemCopy = {...item};
       
       // Filter the attendance array to only include dates within the range
-      if (itemCopy.attendance && Array.isArray(itemCopy.attendance)) {
-        itemCopy.attendance = itemCopy.attendance.filter(record => {
-          if (!record.date) return false;
-          
-          // Parse both dates to the same format for comparison
-          const recordDate = dayjs(record.date).format('YYYY-DD-MM');
-          const startDate = dayjs(dateRange[0]).format('YYYY-MM-DD');
-          const endDate = dayjs(dateRange[1]).format('YYYY-MM-DD');
-          
-          return recordDate >= startDate && recordDate <= endDate;
-        });
-        
-        // Sort attendance records by date
-        itemCopy.attendance = itemCopy.attendance.sort((a, b) => {
-          const dateA = convertDateForSorting(a.date);
-          const dateB = convertDateForSorting(b.date);
-          
-          // Handle null values
-          if (!dateA && !dateB) return 0;
-          if (!dateA) return 1;
-          if (!dateB) return -1;
-          
-          return dateA - dateB;
-        });
+if (itemCopy.attendance && Array.isArray(itemCopy.attendance)) {
+  // Define possible date formats to try
+  const dateFormats = ["DD/MM/YYYY", "D/M/YYYY", "MM/DD/YYYY", "M/D/YYYY"];
+  
+  // Parse date with multiple possible formats
+  const parseDate = (dateStr) => {
+    if (!dateStr) return null;
+    
+    // Try each format until one works
+    for (const format of dateFormats) {
+      const parsed = dayjs(dateStr, format);
+      if (parsed.isValid()) {
+        return parsed;
       }
+    }
+    console.log(`Could not parse date: ${dateStr}`);
+    return null;
+  };
+  
+  const startParsed = parseDate(dateRange[0]);
+  const endParsed = parseDate(dateRange[1]);
+  const startDate = startParsed ? startParsed.format('YYYY-MM-DD') : null;
+  const endDate = endParsed ? endParsed.format('YYYY-MM-DD') : null;
+  
+  itemCopy.attendance = itemCopy.attendance.filter(record => {
+    if (!record.date) return false;
+    
+    const parsedRecord = parseDate(record.date);
+    if (!parsedRecord) return false;
+    
+    const recordDate = parsedRecord.format('YYYY-MM-DD');
+    
+    return recordDate >= startDate && recordDate <= endDate;
+  });
+  
+  // Sort attendance records by date
+  itemCopy.attendance = itemCopy.attendance.sort((a, b) => {
+    const parsedA = parseDate(a.date);
+    const parsedB = parseDate(b.date);
+    
+    const dateA = parsedA ? parsedA.valueOf() : null;
+    const dateB = parsedB ? parsedB.valueOf() : null;
+    
+    // Handle null values
+    if (!dateA && !dateB) return 0;
+    if (!dateA) return 1;
+    if (!dateB) return -1;
+    
+    return dateA - dateB;
+  });
+}
       
       return itemCopy;
     });
