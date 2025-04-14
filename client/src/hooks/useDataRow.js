@@ -164,22 +164,57 @@ const useDataRow = ({
     const handleEdit = (field, attendance, index) => {
         if (canEdit(attendance, isAdmin, isShowDiffData)) {
             if (isAdmin) {
-                // Create a custom password modal
-                createPasswordModal((enteredPassword) => {
-                    // This is the callback function that runs after password is entered
-                    if (enteredPassword === "ptpl75750") {
-                        // Password is correct, allow editing
-                        setEditableCell(`${field}-${index}`);
-                        // Initialize edit value with current cell value
-                        setEditValue(prev => ({
-                            ...prev,
-                            [`${field}-${index}`]: attendance[field]
-                        }));
-                    } else {
-                        // Password is incorrect
-                        alert("Incorrect password. Editing access denied.");
+                // Check if admin is already authenticated and authentication hasn't expired
+                const adminAuthTime = sessionStorage.getItem('adminAuthTime');
+                const currentTime = new Date().getTime();
+                const oneHourInMillis = 30 * 60 * 1000;
+                
+                if (adminAuthTime && (currentTime - parseInt(adminAuthTime) < oneHourInMillis)) {
+                    // Admin is already authenticated and within the 1-hour window
+                    setEditableCell(`${field}-${index}`);
+                    setEditValue(prev => ({
+                        ...prev,
+                        [`${field}-${index}`]: attendance[field]
+                    }));
+                    
+                    // Set a timeout to clear authentication after the remaining time
+                    const remainingTime = oneHourInMillis - (currentTime - parseInt(adminAuthTime));
+                    if (!window.authTimeoutId) {
+                        window.authTimeoutId = setTimeout(() => {
+                            sessionStorage.removeItem('adminAuthTime');
+                            window.authTimeoutId = null;
+                        }, remainingTime);
                     }
-                });
+                } else {
+                    // Create a custom password modal
+                    createPasswordModal((enteredPassword) => {
+                        // This is the callback function that runs after password is entered
+                        if (enteredPassword === "ptpl75750") {
+                            // Password is correct, allow editing
+                            // Store the authentication time
+                            sessionStorage.setItem('adminAuthTime', new Date().getTime().toString());
+                            
+                            // Set a timeout to clear authentication after exactly 1 hour
+                            if (window.authTimeoutId) {
+                                clearTimeout(window.authTimeoutId);
+                            }
+                            window.authTimeoutId = setTimeout(() => {
+                                sessionStorage.removeItem('adminAuthTime');
+                                window.authTimeoutId = null;
+                            }, oneHourInMillis);
+                            
+                            setEditableCell(`${field}-${index}`);
+                            // Initialize edit value with current cell value
+                            setEditValue(prev => ({
+                                ...prev,
+                                [`${field}-${index}`]: attendance[field]
+                            }));
+                        } else {
+                            // Password is incorrect
+                            alert("Incorrect password. Editing access denied.");
+                        }
+                    });
+                }
             } else {
                 // Non-admin users with edit permission can edit directly
                 setEditableCell(`${field}-${index}`);
