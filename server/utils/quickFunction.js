@@ -137,71 +137,75 @@ function compareAttendanceData(metricsData, finalAttendanceData) {
   // Parse the JSON strings for network and overtime hours
   const networkHours = JSON.parse(metricsData.dataValues.network_hours);
   const overtimeHours = JSON.parse(metricsData.dataValues.overtime_hours);
-
+  
   // Create a map of date to hours from metrics data for easy lookup
   const metricsNetworkMap = {};
   const metricsOvertimeMap = {};
-
+  
+  // Also keep track of all dates in metrics data
+  const metricsAvailableDates = new Set();
+  
   networkHours.forEach(item => {
     metricsNetworkMap[item.date] = parseFloat(item.hours);
+    metricsAvailableDates.add(item.date);
   });
-
+  
   overtimeHours.forEach(item => {
     metricsOvertimeMap[item.date] = parseFloat(item.hours);
+    metricsAvailableDates.add(item.date);
   });
-
+  
   // Get the punch code from metrics data
   const metricsPunchCode = metricsData.dataValues.punch_code;
-
+  
   // Find all employees with matching punch code
   const matchingEmployees = finalAttendanceData.attendance.filter(emp =>
     emp.punchCode === metricsPunchCode
   );
-
+  
   // Create simplified differences list
   const allDifferences = [];
-
+  
   matchingEmployees.forEach(employee => {
     employee.attendance.forEach(record => {
-
       // Extract date (day and month) from the date string
       const parts = record.date.split('/');
       var day = parts[0];
-
+      
       if (day.length === 1) {
         day = '0' + day; // Add leading zero if day is a single digit
       }
-
-      // Get the corresponding metrics data
-      const metricsNetHR = metricsNetworkMap[day] || 0;
-      const metricsOtHR = metricsOvertimeMap[day] || 0;
-
-      // Get attendance data
-      const attendanceNetHR = parseFloat(record.netHR) || 0;
-      const attendanceOtHR = parseFloat(record.otHR) || 0;
-      // console.log(day);
-
-      // Calculate differences
-      const netHRDiff = attendanceNetHR - metricsNetHR;
-      const otHRDiff = attendanceOtHR - metricsOtHR;
-
-      // Add to results if there's a difference
-
-      allDifferences.push({
-        employeeName: employee.name,
-        punchCode: employee.punchCode,
-        attendanceDate: record.date,
-        netHRDiff: netHRDiff.toFixed(2),
-        otHRDiff: otHRDiff.toFixed(2),
-        metricsNetHR: metricsNetHR.toFixed(2),
-        attendanceNetHR: attendanceNetHR.toFixed(2),
-        metricsOtHR: metricsOtHR.toFixed(2),
-        attendanceOtHR: attendanceOtHR.toFixed(2)
-      });
-
+      
+      // Only process if this date exists in metrics data
+      if (metricsAvailableDates.has(day)) {
+        // Get the corresponding metrics data
+        const metricsNetHR = metricsNetworkMap[day] || 0;
+        const metricsOtHR = metricsOvertimeMap[day] || 0;
+        
+        // Get attendance data
+        const attendanceNetHR = parseFloat(record.netHR) || 0;
+        const attendanceOtHR = parseFloat(record.otHR) || 0;
+        
+        // Calculate differences
+        const netHRDiff = attendanceNetHR - metricsNetHR;
+        const otHRDiff = attendanceOtHR - metricsOtHR;
+        
+        // Add to results if there's a difference (you might want to check if the difference is significant)
+        allDifferences.push({
+          employeeName: employee.name,
+          punchCode: employee.punchCode,
+          attendanceDate: record.date,
+          netHRDiff: netHRDiff.toFixed(2),
+          otHRDiff: otHRDiff.toFixed(2),
+          metricsNetHR: metricsNetHR.toFixed(2),
+          attendanceNetHR: attendanceNetHR.toFixed(2),
+          metricsOtHR: metricsOtHR.toFixed(2),
+          attendanceOtHR: attendanceOtHR.toFixed(2)
+        });
+      }
     });
   });
-
+  
   return {
     punchCode: metricsPunchCode,
     differences: allDifferences,
@@ -216,9 +220,8 @@ function compareAttendanceData(metricsData, finalAttendanceData) {
  * @returns {Array} Consolidated results for all metrics data
  */
 function processAllMetricsData(metricsDataArray, finalAttendanceData) {
-
   const results = [];
-
+  
   metricsDataArray.forEach(metricsData => {
     const result = compareAttendanceData(metricsData, finalAttendanceData);
     if (result.differences && result.differences.length > 0) {
@@ -230,7 +233,7 @@ function processAllMetricsData(metricsDataArray, finalAttendanceData) {
       });
     }
   });
-
+  
   return results;
 }
 
