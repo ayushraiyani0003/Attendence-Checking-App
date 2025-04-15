@@ -154,7 +154,7 @@ function DataRow(props) {
         })}
 
         {(!isAdmin || (isAdmin && props.isShowMetrixData)) && (
-          <div className={`total-data-cell ${rowIndex % 2 === 0 ? "even-row" : "odd-row"}`}>
+          <div className={`total-data-cell ${rowIndex % 2 === 0 ? "even-row" : "odd-row"}`} title={row.punchCode +` - `+  row.name}>
             <div className={`Disply-total-sub-data-cell ${rowIndex % 2 === 0 ? "even-row" : "odd-row"}`}>
               <div className="total sub-disply-total">{totalNetHR.toFixed(2)}</div>
               <div className="total sub-disply-total">{totalOtHR.toFixed(2)}</div>

@@ -114,22 +114,22 @@
 
 /* Fixed column widths */
 .header-cell.punch-code {
-  min-width: 140px;
-  width: 175px;
+  min-width: 120px;
+  width: 120px;
 }
 
 .header-cell.name {
-  min-width: 180px;
-  width: 210px;
+  min-width: 240px;
+  width: 240px;
 }
 
 .header-cell.designation {
   min-width: 140px;
-  width: 170px;
+  width: 140px;
 }
 
 .header-cell.department {
-  min-width: 140px;
+  min-width: 170px;
   width: 170px;
 }
 
