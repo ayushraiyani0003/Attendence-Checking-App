@@ -59,12 +59,12 @@ const EmployeePage = () => {
       setFilteredData([]);
       return;
     }
-
+    
     const lowerSearchText = searchText.toLowerCase();
     const filtered = employees.filter(item => {
-      // Convert punch_code to string to handle mixed types
-      const punchCodeStr = String(item.punch_code || '');
-
+      // Convert punch_code to string and lowercase to handle mixed types
+      const punchCodeStr = String(item.punch_code || '').toLowerCase();
+      
       // Special handling for status field - exact match
       if (lowerSearchText === 'active' || lowerSearchText === 'inactive' || lowerSearchText === 'resigned' || lowerSearchText === 'on_leave') {
         if (item.status && item.status.toLowerCase() === lowerSearchText) {
@@ -83,10 +83,10 @@ const EmployeePage = () => {
           punchCodeStr.includes(lowerSearchText)
         );
       }
-
+      
       return false;
     });
-
+    
     setFilteredData(filtered);
   }, [employees, searchText]);
 
