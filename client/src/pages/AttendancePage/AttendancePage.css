@@ -292,9 +292,9 @@
   width: max-content;
 }
 
-.data-row.hovered , .data-row.hovered>.fixed-data-cells>div{
-  background-color: #f0f7ff;
-  box-shadow: 0 4px 8px rgba(58, 134, 255, 0.15);
+.data-row.hovered , .data-row.hovered>.fixed-data-cells>div, .data-row.hovered>.scrollable-data-cells> div, .data-row.hovered>.total-data-cell{
+  background-color: #ecf8fff1 !important;
+  box-shadow: 0 2px 4px rgba(58, 134, 255, 0.15);
   transform: translateY(-2px);
 }
 

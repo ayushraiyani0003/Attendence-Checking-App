@@ -1,4 +1,4 @@
-import {React} from "react";
+import { React } from "react";
 import { exceedsThreshold, getShiftClass, canEdit } from "../../utils/constants";
 import "./DataRow.css";
 import "./AddComment.css";
@@ -7,7 +7,7 @@ import useDataRow from "../../hooks/useDataRow";
 
 function DataRow(props) {
   const {
-    row, rowIndex, hoveredRow, isAdmin, setHoveredRow, user, totalNetHR, totalOtHR, nightShiftCount, eveningShiftCount, siteCommentCount,absentCount, } = props;
+    row, rowIndex, hoveredRow, isAdmin, setHoveredRow, user, totalNetHR, totalOtHR, nightShiftCount, eveningShiftCount, siteCommentCount, absentCount, } = props;
 
   // Use custom hook for logic
   const {
@@ -28,7 +28,7 @@ function DataRow(props) {
     handleShowCommentPopup,
     setShowCommentPopup
   } = useDataRow(props);
-  
+
   // Determine whether to show metrix display
   const shouldShowMetrixDisplay = isAdmin && props.isShowDiffData;
 
@@ -38,10 +38,11 @@ function DataRow(props) {
     const numValue = parseFloat(value);
     return numValue !== 0 ? 'bg-red-100' : '';
   };
-  
+
   return (
     <div
-      className={`data-row ${hoveredRow === rowIndex ? "hovered" : ""}${hasAnyComments() ? "has-comments" : ""}`}
+      className={`data-row ${hoveredRow === rowIndex ? "hovered" : ""}${hasAnyComments() ? "has-comments" : ""} 
+    ${rowIndex % 2 === 0 ? "even-row" : "odd-row"}`}
       onMouseEnter={() => {
         setHoveredRow(rowIndex);
         handleShowCommentPopup();
@@ -52,29 +53,29 @@ function DataRow(props) {
       }}
       ref={rowRef}
     >
-      <div className="fixed-data-cells">
-        <div className="data-cell punch-code">{row.punchCode}</div>
-        <div className="data-cell name">{row.name}</div>
-        <div className="data-cell designation">{row.designation}</div>
-        <div className="data-cell department">{row.department}</div>
+      <div className={`fixed-data-cells ${rowIndex % 2 === 0 ? "even-row" : "odd-row"}`}>
+        <div className={`data-cell punch-code ${rowIndex % 2 === 0 ? "even-row" : "odd-row"}`}>{row.punchCode}</div>
+        <div className={`data-cell name ${rowIndex % 2 === 0 ? "even-row" : "odd-row"}`}>{row.name}</div>
+        <div className={`data-cell designation ${rowIndex % 2 === 0 ? "even-row" : "odd-row"}`}>{row.designation}</div>
+        <div className={`data-cell department ${rowIndex % 2 === 0 ? "even-row" : "odd-row"}`}>{row.department}</div>
       </div>
 
       <div className="scrollable-data-cells" id="body-scrollable">
         {displayData.map((attendance, displayIndex) => {
           if (!attendance) return null;
-          
+
           // Calculate the original index in the full attendance array
           const originalIndex = displayIndex;
-          
+
           // Check if this date has a comment
           const hasComment = attendance.comment && attendance.comment.trim() !== "";
-          const hasSiteComment = attendance.comment && 
-                      attendance.comment.trim() !== "" && 
-                      attendance.comment.trim().toLowerCase().startsWith("site");
+          const hasSiteComment = attendance.comment &&
+            attendance.comment.trim() !== "" &&
+            attendance.comment.trim().toLowerCase().startsWith("site");
 
           return (
-            <div 
-              key={displayIndex} 
+            <div
+              key={displayIndex}
               className="date-cell"
               onDoubleClick={() => handleAddComment(attendance, originalIndex)}
               title={hasComment ? `Comment: ${attendance.comment}` : "Double-click to add comment"}
@@ -112,9 +113,9 @@ function DataRow(props) {
                 if (hasComment && field !== "dnShift") {
                   className += " gray-comment";
                 }
-                if(hasSiteComment && field !== "dnShift"){
+                if (hasSiteComment && field !== "dnShift") {
                   className += " site-comment";
-                } 
+                }
 
                 return (
                   <div
@@ -152,8 +153,8 @@ function DataRow(props) {
         })}
 
         {(!isAdmin || (isAdmin && props.isShowMetrixData)) && (
-          <div className="total-data-cell">
-            <div className="Disply-total-sub-data-cell">
+          <div className={`total-data-cell ${rowIndex % 2 === 0 ? "even-row" : "odd-row"}`}>
+            <div className={`Disply-total-sub-data-cell ${rowIndex % 2 === 0 ? "even-row" : "odd-row"}`}>
               <div className="total sub-disply-total">{totalNetHR.toFixed(2)}</div>
               <div className="total sub-disply-total">{totalOtHR.toFixed(2)}</div>
               <div className={`total sub-disply-total ${getDiffBgClass(netDiffValue[row.punchCode])}`}>
@@ -170,11 +171,11 @@ function DataRow(props) {
           </div>
         )}
       </div>
-      
+
       {/* Comment popup displayed at top right of screen with fixed position */}
       {showCommentPopup && (
-        <CommentPopup 
-          rowData={row} 
+        <CommentPopup
+          rowData={row}
           onClose={handleCloseCommentPopup}
         />
       )}

@@ -158,3 +158,13 @@
 .hoveredhas-comments, .data-row.hoveredhas-comments>.fixed-data-cells>div{
   background-color: #f0f7ff;
 }
+
+.even-row {
+  background-color: rgba(247, 247, 247, 0.87) !important;
+  transition: background-color 0.2s ease;
+}
+
+.odd-row {
+  background-color: rgb(255, 255, 255) !important;
+  transition: background-color 0.2s ease;
+}
