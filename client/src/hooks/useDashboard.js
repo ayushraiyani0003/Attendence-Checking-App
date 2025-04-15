@@ -42,7 +42,7 @@ export const useReportSettings = (currentMonth) => {
     { name: 'Evening shift', options: ['count', 'hours', "remarks"] },
     { name: 'Night shift', options: ['count', 'hours', "remarks"] },
     { name: 'Absent', options: ['count'] },
-    { name: 'Detailed Group Report', options: ["master", "mistake date", "seperate date"] },
+    { name: 'Detailed Group Report', options: ["master", "mistake date", "seperate date", "net-ot"] },
   ];
 
   // Update available options when report type changes
