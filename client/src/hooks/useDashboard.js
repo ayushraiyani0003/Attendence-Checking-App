@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getDashboardGraphs, getReports } from '../services/dashboardServices';
-import {maxMonthOFCurrent} from '../utils/constants'
+import { maxMonthOFCurrent } from '../utils/constants'
 
 /**
  * Hook to manage report settings and generation
@@ -15,25 +15,25 @@ import {maxMonthOFCurrent} from '../utils/constants'
 export const useReportSettings = (currentMonth) => {
   // Report type selection
   const [selectedReportType, setSelectedReportType] = useState('Net Hr');
-  
+
   // Date range for filtering
   const [dateRange, setDateRange] = useState({
     startDate: null,
     endDate: null
   });
-  
+
   // Employee type filter
   const [employeeType, setEmployeeType] = useState('All Employees');
-  
+
   // Available options based on report type
   const [availableReportOptions, setAvailableReportOptions] = useState([]);
-  
+
   // Selected options state (key-value pairs for options)
   const [selectedOptions, setSelectedOptions] = useState({});
-  
+
   // Loading state
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Define available report types
   const reportTypes = [
     { name: 'Net Hr', options: ['count', 'hours', "remarks"] },
@@ -42,15 +42,15 @@ export const useReportSettings = (currentMonth) => {
     { name: 'Evening shift', options: ['count', 'hours', "remarks"] },
     { name: 'Night shift', options: ['count', 'hours', "remarks"] },
     { name: 'Absent', options: ['count'] },
-    { name: 'Detailed Group Report', options: ["master"] },
+    { name: 'Detailed Group Report', options: ["master", "mistake date", "seperate date"] },
   ];
-  
+
   // Update available options when report type changes
   useEffect(() => {
     const reportType = reportTypes.find(type => type.name === selectedReportType);
     if (reportType) {
       setAvailableReportOptions(reportType.options);
-      
+
       // Reset selected options when report type changes
       const initialOptions = {};
       reportType.options.forEach(option => {
@@ -59,24 +59,24 @@ export const useReportSettings = (currentMonth) => {
       setSelectedOptions(initialOptions);
     }
   }, [selectedReportType]);
-  
+
   // Parse month and year from currentMonth string
   const parseMonthYear = useCallback(() => {
     if (!currentMonth) return { month: null, year: null };
-    
+
     const parts = currentMonth.split(' ');
     if (parts.length !== 2) return { month: null, year: null };
-    
+
     // Convert month name to number (1-12)
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const monthIndex = monthNames.findIndex(m => m === parts[0]);
-    
+
     return {
       month: monthIndex !== -1 ? monthIndex + 1 : null,
       year: parseInt(parts[1], 10)
     };
   }, [currentMonth]);
-  
+
   // Toggle a specific option
   const toggleOption = useCallback((option) => {
     setSelectedOptions(prev => ({
@@ -84,7 +84,7 @@ export const useReportSettings = (currentMonth) => {
       [option]: !prev[option]
     }));
   }, []);
-  
+
   // Select all options
   const selectAllOptions = useCallback(() => {
     const allSelected = {};
@@ -93,7 +93,7 @@ export const useReportSettings = (currentMonth) => {
     });
     setSelectedOptions(allSelected);
   }, [availableReportOptions]);
-  
+
   // Deselect all options
   const deselectAllOptions = useCallback(() => {
     const allDeselected = {};
@@ -102,54 +102,73 @@ export const useReportSettings = (currentMonth) => {
     });
     setSelectedOptions(allDeselected);
   }, [availableReportOptions]);
-  
+
   // Generate report function
- // Updated generateReport function in useReportSettings hook
-const generateReport = useCallback(async () => {
-  setIsLoading(true);
-  
-  try {
-    // Get selected options as array
-    const selectedOptionsArray = Object.entries(selectedOptions)
-      .filter(([_, selected]) => selected)
-      .map(([option]) => option);
-    
-    // Format options as comma-separated string
-    const options = selectedOptionsArray.join(',');
-    
-    // Parse month and year
-    const { month, year } = parseMonthYear();
-    
-    if (!month || !year) {
-      console.error('[useReportSettings] Invalid month or year');
+  // Updated generateReport function in useReportSettings hook
+  const generateReport = useCallback(async () => {
+    setIsLoading(true);
+
+    try {
+      // Get selected options as array
+      const selectedOptionsArray = Object.entries(selectedOptions)
+        .filter(([_, selected]) => selected)
+        .map(([option]) => option);
+
+      // Format options as comma-separated string
+      const options = selectedOptionsArray.join(',');
+
+      // Parse month and year
+      const { month, year } = parseMonthYear();
+
+      if (!month || !year) {
+        console.error('[useReportSettings] Invalid month or year');
+        setIsLoading(false);
+        return;
+      }
+
+      // Call the getReports service
+      // This will handle the file download without opening a new tab
+      setDateRange(currentRange => {
+        // If start date is null, just return the current range
+        if (!currentRange.startDate) {
+          return currentRange;
+        }
+
+        // Create a new date object to avoid mutating the original
+        const newStartDate = new Date(currentRange.startDate);
+
+        // Add 1 hour
+        newStartDate.setHours(newStartDate.getHours() + 1);
+
+        // Return the updated range
+        return {
+          ...currentRange,
+          startDate: newStartDate
+        };
+      });
+
+      const result = await getReports(
+        selectedReportType,
+        options,
+        month,
+        year,
+        dateRange,
+        employeeType
+      );
+
+      // The getReports function now returns an object with success status
+      // console.log(`[useReportSettings] Report download result:`, result);
+
+      // No need to open in new tab anymore
+      // The getReports function handles the file download directly
+
+    } catch (error) {
+      console.error('[useReportSettings] Error generating report:', error);
+    } finally {
       setIsLoading(false);
-      return;
     }
-    
-    // Call the getReports service
-    // This will handle the file download without opening a new tab
-    const result = await getReports(
-      selectedReportType,
-      options,
-      month,
-      year,
-      dateRange,
-      employeeType
-    );
-    
-    // The getReports function now returns an object with success status
-    // console.log(`[useReportSettings] Report download result:`, result);
-    
-    // No need to open in new tab anymore
-    // The getReports function handles the file download directly
-    
-  } catch (error) {
-    console.error('[useReportSettings] Error generating report:', error);
-  } finally {
-    setIsLoading(false);
-  }
-}, [selectedReportType, selectedOptions, dateRange, employeeType, currentMonth, parseMonthYear]);
-  
+  }, [selectedReportType, selectedOptions, dateRange, employeeType, currentMonth, parseMonthYear]);
+
   return {
     selectedReportType,
     setSelectedReportType,
@@ -176,53 +195,53 @@ const generateReport = useCallback(async () => {
 export const useViewToggle = (currentMonth) => {
   // Chart data state
   const [chartData, setChartData] = useState([]);
-  
+
   // Loading state
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Parse month and year from currentMonth string
   const parseMonthYear = useCallback(() => {
     if (!currentMonth) return { month: null, year: null };
-    
+
     const parts = currentMonth.split(' ');
     if (parts.length !== 2) return { month: null, year: null };
-    
+
     // Convert month name to number (1-12)
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const monthIndex = monthNames.findIndex(m => m === parts[0]);
-    
+
     return {
       month: monthIndex !== -1 ? monthIndex + 1 : null,
       year: parseInt(parts[1], 10)
     };
   }, [currentMonth]);
-  
+
   // Fetch dashboard data
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     // console.log('[useViewToggle] Fetching data for', currentMonth);
-    
+
     try {
       // Parse month and year
       const { month, year } = parseMonthYear();
-      
+
       if (!month || !year) {
         console.error('[useViewToggle] Invalid month format:', currentMonth);
         setChartData([]);
         return;
       }
-      
+
       // console.log(`[useViewToggle] Fetching data for month: ${month}, year: ${year}`);
-      
+
       // Fetch graph data from API
       const response = await getDashboardGraphs(month, year);
       // console.log('[useViewToggle] API response:', response);
-      
+
       // Handle both formats:
       // 1. Array response directly: [{ group: '...', mismatchCount: ... }, ...]
       // 2. Object response: { success: true, data: [...] }
       let dataArray = [];
-      
+
       if (Array.isArray(response)) {
         // Direct array response
         dataArray = response;
@@ -236,17 +255,17 @@ export const useViewToggle = (currentMonth) => {
         setChartData([]);
         return;
       }
-      
+
       // Transform data for the chart
       if (dataArray.length > 0) {
         const transformedData = dataArray.map(item => ({
           name: item.group || "Unknown",
           mistakes: item.mismatchCount || 0
         }));
-        
+
         // Sort data by mistake count descending
         transformedData.sort((a, b) => b.mistakes - a.mistakes);
-        
+
         // console.log('[useViewToggle] Transformed data:', transformedData);
         setChartData(transformedData);
       } else {
@@ -260,7 +279,7 @@ export const useViewToggle = (currentMonth) => {
       setIsLoading(false);
     }
   }, [currentMonth, parseMonthYear]);
-  
+
   // Fetch data when month changes
   useEffect(() => {
     if (currentMonth) {
@@ -268,22 +287,22 @@ export const useViewToggle = (currentMonth) => {
       fetchData();
     }
   }, [currentMonth, fetchData]);
-  
+
   // Get data function - return a copy of the array to ensure references change
   const getData = useCallback(() => {
     // console.log('[useViewToggle] getData called, returning data:', chartData);
     return [...chartData];
   }, [chartData]);
-  
+
   // Refresh data function
   const refreshData = useCallback(() => {
     // console.log('[useViewToggle] Manually refreshing data');
     fetchData();
   }, [fetchData]);
-  
+
   // For backwards compatibility
   const [viewType, setViewType] = useState('Group');
-  
+
   return {
     viewType,
     setViewType,
