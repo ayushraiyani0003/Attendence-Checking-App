@@ -78,7 +78,7 @@ function DataRow(props) {
               key={displayIndex}
               className="date-cell"
               onDoubleClick={() => handleAddComment(attendance, originalIndex)}
-              title={hasComment ? `Comment: ${attendance.comment}` : "Double-click to add comment"}
+              title={row.punchCode +` - `+  row.name}
             >
               {["netHR", "otHR", "dnShift"].map((field) => {
                 const editKey = `${field}-${originalIndex}`;
@@ -122,6 +122,7 @@ function DataRow(props) {
                     key={field}
                     className={className}
                     onClick={() => handleEdit(field, attendance, originalIndex)}
+                    title={`${row.punchCode} - ${row.name}${hasComment ? `: ${attendance.comment}` : ": Double-click to add comment"}`}
                   >
                     {isEditing ? (
                       <input

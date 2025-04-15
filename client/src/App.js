@@ -40,6 +40,7 @@ const AuthenticatedLayout = ({ user }) => {
   const [selectedMonthYear, setSelectedMonthYear] = useState("");
   const navigate = useNavigate();
   const { logout } = useContext(AuthContext);
+console.log(user);
 
   useEffect(() => {
     const currentDate = new Date();
@@ -112,7 +113,7 @@ const AuthenticatedLayout = ({ user }) => {
               path="/employee"
               element={
                 <SettingsProvider>
-                <EmployeeProvider userRole={user.userRole} userReportingGroup={user.userReportingGroup}>
+                <EmployeeProvider userRole={user.role} userReportingGroup={user.userReportingGroup}>
                   <EmployeePage />
                 </EmployeeProvider>
                 </SettingsProvider>
@@ -137,7 +138,7 @@ const AuthenticatedLayout = ({ user }) => {
             <Route
               path="/employee-list"
               element={
-                <EmployeeProvider userRole={user.userRole} userReportingGroup={user.userReportingGroup}>
+                <EmployeeProvider userRole={user.role} userReportingGroup={user.userReportingGroup}>
                   <EmployeeOrderPage user={user} />
                 </EmployeeProvider>
               }
