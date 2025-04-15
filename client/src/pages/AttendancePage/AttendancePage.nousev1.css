@@ -1,0 +1,1256 @@
+/* Container Styling */
+.attendance-page {
+  overflow-x: auto;
+  margin: 20px;
+  background-color: var(--gray-100);
+  margin-top: 80px;
+  border-radius: var(--border-radius);
+  height: calc(100vh - 100px);
+  display: flex;
+  flex-direction: column;
+  /* overflow: hidden; */
+  box-shadow: var(--box-shadow);
+  border: 1px solid var(--gray-300);
+}
+
+.attendance-container {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  /* overflow: hidden; */
+}
+
+/* Main scroll container - Modified for synced scrolling */
+.scroll-container {
+  display: flex;
+  flex-direction: column;
+  /* overflow: hidden;  */
+  flex: 1;
+  /* position: relative; */
+  isolation: isolate;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: var(--gray-600);
+  background-color: white;
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+/* Header wrapper - New */
+.header-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  overflow: auto;
+  top: 0;
+  z-index: 10;
+  border-radius: var(--border-radius);
+}
+.data-container {
+  overflow-x: auto; /* Horizontal scrolling enabled */
+  white-space: nowrap;
+}
+
+.header-container {
+  background-color: white;
+  z-index: 2;
+}
+
+/* Header Row with Sticky Header */
+.header-row {
+  position: relative;
+  display: flex;
+  padding: 0px 2px;
+  background: linear-gradient(
+    135deg,
+    var(--primary-color),
+    var(--primary-dark)
+    );
+    color: white;
+    font-weight: 600;
+    min-height: 50px;
+    box-sizing: border-box;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    width: max-content;
+    border-radius: 10px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    margin-left: 5px;
+}
+.fixed-columns,
+.scrollable-columns {
+  display: flex;
+}
+
+.fixed-columns {
+  display: flex;
+  min-width: 600px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 10; /* Increased z-index */
+  background: inherit;
+  border-radius: var(--border-radius) 0 0 var(--border-radius);
+}
+.scrollable-columns {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: hidden;
+}
+.fixed-columns,
+.fixed-data-cells {
+  background-clip: padding-box;
+  left: 0;
+  z-index: 5;
+}
+
+.attendance-header-cell-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.attendance-header-date-title-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.attendance-header-date-title-container svg {
+  width: 20px;
+  height: 20px;
+  color: var(--card-bg);
+}
+
+.button-group {
+  display: flex;
+  gap: 12px;
+  justify-content: end;
+  flex-wrap: wrap;
+}
+
+/* Scrollable columns container */
+/* #header-scrollable {
+  display: flex;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+} */
+
+.data-container::-webkit-scrollbar {
+  width: 8px; /* Width of the scrollbar */
+  height: 8px;
+}
+
+.data-container::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.3); /* Scrollbar thumb color */
+  border-radius: 10px;
+}
+.header-wrapper::-webkit-scrollbar {
+  display: none;
+  width: 10px; /* Width of the scrollbar */
+}
+
+.header-wrapper::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.3); /* Scrollbar thumb color */
+  border-radius: 0px;
+  display: block;
+  visibility: visible;
+}
+
+.header-cell {
+  padding: 10px 15px;
+  text-align: center;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  box-sizing: border-box;
+  letter-spacing: 0.5px;
+}
+
+/* Fixed column widths */
+.header-cell.punch-code {
+  min-width: 140px;
+  width: 175px;
+}
+
+.header-cell.name {
+  min-width: 180px;
+  width: 210px;
+}
+
+.header-cell.designation {
+  min-width: 140px;
+  width: 170px;
+}
+
+.header-cell.department {
+  min-width: 140px;
+  width: 170px;
+}
+
+.header-cell.attendance-header-cell {
+  min-width: 232px;
+  width: 232px;
+  font-weight: 700;
+}
+
+.header-cell:last-child {
+  border-right: none;
+}
+
+.header-cell:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.date-header {
+  display: flex;
+  gap: 22px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 6px 0 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+  justify-content: space-between;
+}
+.total-data-header{
+  display: flex;
+  gap: 14px;
+  width: 100%;
+  margin-top: 10px;
+  align-items: center;
+  padding: 6px 0 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+  justify-content: space-between;
+}
+
+.sub-header-cell {
+  flex: 1;
+  padding: 6px;
+  text-align: center;
+  font-size: 12px;
+  white-space: nowrap;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+.total-sub-header-cell{
+  flex: 1;
+  padding: 2px;
+  text-align: center;
+  font-size: 12px;
+  white-space: nowrap;
+  font-weight: 500;
+  text-transform: uppercase;
+  text-wrap: wrap;
+}
+
+/* Data Rows - Modified for synced scrolling */
+.data-container {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: scroll !important;
+  padding: 4px 0;
+  flex: 1;
+  scroll-behavior: smooth;
+  padding-bottom: 16px; /* Add space for the scrollbar */
+  min-width: 100%;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.header-cell.total-attendance-header-cell{
+  padding: 2px !important;
+}
+
+
+/* Make header follow data scroll position */
+
+/* Data Row Styling */
+.data-row {
+  min-width: max-content; /* Ensures row expands to fit all content */
+  width: max-content; /* Ensures the row takes up full width of content */
+  display: flex;
+  /* padding: 10px 0; */
+  flex: 0 0 auto;
+  transition: var(--transition);
+  border-radius: var(--border-radius);
+  background-color: white;
+  min-height: 50px;
+  box-sizing: border-box;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--gray-200);
+  border-left: 5px solid transparent;
+  width: max-content;
+}
+
+.data-row.hovered , .data-row.hovered>.fixed-data-cells>div, .data-row.hovered>.scrollable-data-cells> div, .data-row.hovered>.total-data-cell{
+  background-color: #ecf8fff1 !important;
+  box-shadow: 0 2px 4px rgba(58, 134, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Fixed data cells - Updated z-index */
+.fixed-data-cells {
+  display: flex;
+  min-width: 600px;
+  flex-shrink: 0;
+  position: s;
+  left: 0;
+  z-index: 0; /* Increased z-index but lower than header */
+  background: white;
+  border-radius: var(--border-radius) 0 0 var(--border-radius);
+}
+
+/* Scrollable data cells */
+.scrollable-data-cells {
+  display: flex;
+  flex: 1;
+}
+
+.data-cell {
+  padding: 8px 15px;
+  text-align: center;
+  border-right: 1px solid var(--gray-300);
+  font-size: 14px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-800);
+  z-index: 0;
+}
+
+.data-cell:hover {
+  background-color: var(--gray-100);
+}
+
+.fixed-data-cells .data-cell {
+  left: 0;
+  z-index: 1;
+  background-color: white;
+}
+.total.sub-disply-total{
+  width: 70px;
+}
+
+/* Fixed data cell widths */
+.data-cell.punch-code {
+  min-width: 176px;
+  width: 176px;
+}
+
+.data-cell.name {
+  min-width: 210px;
+  width: 210px;
+  text-align: left;
+  justify-content: start;
+}
+.data-cell.designation {
+  min-width: 170px;
+  width: 170px;
+}
+
+.data-cell.department {
+  min-width: 170px;
+  width: 170px;
+}
+
+.data-cell:last-child {
+  border-right: none;
+}
+
+/* Date-cell Styling */
+.date-cell {
+  display: flex;
+  gap: 8px;
+  min-width: 232px;
+  width: 232px;
+  padding: 6px;
+  border-right: 1px solid var(--gray-300);
+  background-color: rgba(248, 249, 250, 0.5);
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  border-radius: 4px;
+}
+.total-date-cell {
+  display: flex;
+}
+
+.date-cell:last-child {
+  border-right: none;
+}
+
+/* Sub-date-cell Styling (For Inputs) */
+.sub-date-cell {
+  flex: 1;
+  padding: 6px;
+  margin: 0;
+  text-align: center;
+  font-size: 14px;
+  background-color: white;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  /* height: 12px; */
+  border: 1px solid transparent;
+  transition: var(--transition);
+}
+.Disply-total-sub-data-cell{
+  flex: 1;
+  gap: 5px;
+  text-align: center;
+  font-size: 14px;
+  background-color: white;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  /* height: 12px; */
+  border: 1px solid transparent;
+  transition: var(--transition);
+}
+
+.sub-date-cell input {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background-color: transparent;
+  font-size: 14px;
+  text-align: center;
+  padding: 0;
+  margin: 0;
+  outline: none;
+  box-sizing: border-box;
+  color: var(--primary-color);
+  font-weight: 500;
+}
+.total-data-cell{
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  border: none;
+  background-color: transparent;
+  font-size: 14px;
+  text-align: center;
+  padding: 0px 14px;
+  margin: 0;
+  outline: none;
+  box-sizing: border-box;
+  color: var(--primary-color);
+  font-weight: 500;
+}
+.sub-disply-total{
+  padding: 5px;
+}
+/* Hover effect */
+.date-cell:hover {
+  background-color: rgba(233, 236, 239, 0.8);
+}
+
+.sub-date-cell:hover {
+  background-color: #f0f7ff;
+  border-color: var(--primary-color);
+}
+
+/* Editable cell highlight */
+.sub-date-cell.editable,
+.sub-date-cell:has(input:focus) {
+  background-color: #f0f7ff;
+  border: 1px solid var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(58, 134, 255, 0.2);
+}
+
+/* Status indicators for attendance */
+.dnShift-Day {
+  background-color: rgba(6, 214, 160, 0.1);
+  color: var(--success-color);
+  font-weight: 500;
+}
+
+.dnShift-Night {
+  background-color: rgba(131, 56, 236, 0.1);
+  color: var(--secondary-color);
+  font-weight: 500;
+}
+.dnShift-AfterNoon {
+  background-color: #ffcc9977;
+  color: var(--after-noon);
+  font-weight: 500;
+}
+
+/* Control buttons */
+.attendance-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 12px;
+}
+
+.control-button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.control-button:hover {
+  background-color: var(--primary-dark);
+  transform: translateY(-1px);
+}
+
+.control-button.secondary {
+  background-color: white;
+  color: var(--primary-color);
+  border: 1px solid #d9d9d9;
+}
+
+.control-button.secondary:hover {
+  background-color: #f0f7ff;
+}
+
+/* Tooltip styling */
+.tooltip {
+  position: relative;
+}
+
+.tooltip:hover:after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--gray-800);
+  color: white;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 10;
+}
+/* Enhanced Popup Styles */
+.attendance-lock-popup {
+  /* Position is handled dynamically via props */
+  width: 450px;
+  background-color: var(--card-bg, white);
+  border-radius: var(--border-radius, 8px);
+  box-shadow: var(
+    --box-shadow,
+    0 6px 16px rgba(0, 0, 0, 0.12),
+    0 3px 6px rgba(0, 0, 0, 0.08)
+  );
+  z-index: 1000;
+  overflow: visible; /* For dropdown visibility */
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+  animation: popup-fade-in 0.2s ease-out;
+}
+
+@keyframes popup-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) translateX(-50%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) translateX(-50%);
+  }
+}
+
+.popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: linear-gradient(to right, #f8f9fa, #f1f3f5);
+  border-bottom: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+  border-radius: var(--border-radius, 8px) var(--border-radius, 8px) 0 0;
+}
+
+.popup-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #2c3e50;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.2px;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #7f8c8d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  margin-left: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.close-button:hover {
+  color: #e74c3c;
+  background-color: rgba(231, 76, 60, 0.1);
+}
+
+.popup-content {
+  padding: 20px;
+}
+
+.approval-info h4 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #34495e;
+  letter-spacing: -0.2px;
+}
+
+/* React-Select Customization */
+.user-select {
+  margin-bottom: 24px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  border-radius: 6px;
+}
+
+.user-select__control {
+  border-color: #dfe6e9 !important;
+  border-radius: 6px !important;
+  box-shadow: none !important;
+  min-height: 45px !important;
+}
+
+.user-select__control--is-focused {
+  border-color: #3498db !important;
+  box-shadow: 0 0 0 1px #3498db !important;
+}
+
+.user-select__value-container {
+  padding: 2px 12px !important;
+}
+
+.user-select__menu {
+  z-index: 1100 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  overflow: hidden;
+}
+
+.user-select__menu-list {
+  max-height: 200px;
+  padding: 8px 0 !important;
+}
+
+.user-select__option {
+  padding: 10px 16px !important;
+  cursor: pointer !important;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.unlock-button,
+.lock-button {
+  display: flex;
+  align-items: center;
+  padding: 10px 20px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  gap: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.unlock-button {
+  background-color: #3498db;
+  color: white;
+}
+
+.unlock-button:hover {
+  background-color: #2980b9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.lock-button {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.lock-button:hover {
+  background-color: #c0392b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Custom Styling for React Select Components */
+body .user-select__menu {
+  background-color: white;
+}
+
+body .user-select__option {
+  background-color: transparent;
+  transition: all 0.2s ease;
+}
+
+body .user-select__option--is-focused {
+  background-color: #f8f9fa;
+}
+
+body .user-select__option--is-selected {
+  background-color: #3498db;
+  color: white;
+}
+
+body .user-select__multi-value {
+  background-color: #e1f0fa;
+  border-radius: 4px;
+  margin: 3px;
+}
+
+body .user-select__multi-value__label {
+  color: #2980b9;
+  font-size: 13px;
+  padding: 3px 6px;
+}
+
+body .user-select__multi-value__remove {
+  color: #7f8c8d;
+  padding: 0 6px;
+  border-radius: 0 4px 4px 0;
+}
+
+body .user-select__multi-value__remove:hover {
+  background-color: #e74c3c;
+  color: white;
+}
+
+/* Responsive adjustments */
+@media (max-width: 500px) {
+  .attendance-lock-popup {
+    width: 95vw !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .popup-header h3 {
+    font-size: 16px;
+  }
+
+  .popup-content {
+    padding: 16px;
+  }
+
+  .unlock-button,
+  .lock-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Additional Enhancements */
+.popup-content p {
+  color: #7f8c8d;
+  font-style: italic;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.exceeds-threshold {
+  background-color: rgba(255, 200, 200, 0.7) !important; /* Light red background */
+}
+
+.exceeds-threshold input {
+  background-color: rgba(255, 200, 200, 0.7) !important;
+}
+
+.attendance-header-total-title-container{
+  width: 60%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* 
+===================================
+RESPONSIVE STYLES FOR ATTENDANCE APP
+===================================
+*/
+
+/* CSS Variables for Consistent Design */
+:root {
+  --header-height-mobile: 60px;
+  --sidebar-width-tablet: 250px;
+  --min-column-width-mobile: 120px;
+}
+
+/* ========== RESPONSIVE BASE LAYOUT ========== */
+
+/* Main Container Adjustments */
+@media screen and (max-width: 1200px) {
+  .attendance-page {
+    margin: 12px;
+    margin-top: 70px;
+    height: calc(100vh - 90px);
+  }
+
+  .attendance-container {
+    padding: 12px;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .attendance-page {
+    margin: 8px;
+    margin-top: 60px;
+    height: calc(100vh - 80px);
+    border-radius: 8px;
+  }
+
+  .attendance-container {
+    padding: 8px;
+  }
+
+  .scroll-container {
+    isolation: initial;
+  }
+}
+
+/* ========== RESPONSIVE CONTROLS ========== */
+
+@media screen and (max-width: 768px) {
+  .attendance-controls {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .control-button {
+    padding: 6px 12px;
+    font-size: 13px;
+    flex: 1 0 auto;
+    justify-content: center;
+    min-width: 120px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .attendance-controls {
+    flex-direction: column;
+  }
+
+  .control-button {
+    width: 100%;
+  }
+}
+
+/* ========== RESPONSIVE HEADER ========== */
+
+@media screen and (max-width: 1024px) {
+  .header-row {
+    min-height: 45px;
+  }
+
+  .header-cell {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .sub-header-cell {
+    padding: 4px;
+    font-size: 11px;
+  }
+
+  .date-header {
+    gap: 16px;
+    margin-top: 6px;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .header-cell.punch-code {
+    min-width: 120px;
+    width: 120px;
+  }
+
+  .header-cell.name {
+    min-width: 140px;
+    width: 140px;
+  }
+
+  .header-cell.designation,
+  .header-cell.department {
+    min-width: 120px;
+    width: 120px;
+  }
+
+  .header-cell.attendance-header-cell {
+    min-width: 200px;
+    width: 200px;
+  }
+  .header-cell.total-attendance-header-cell{
+    padding: 0!important;
+    min-width: 350px;
+    width: 350px;
+  }
+
+  .fixed-columns {
+    min-width: 380px; /* Adjusted for smaller column widths */
+  }
+
+  /* Compact headers for better readability on smaller screens */
+  .attendance-header-date-title-container {
+    gap: 5px;
+    flex-direction: column;
+
+  }
+
+  .attendance-header-date-title-container svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+/* Mobile portrait optimization */
+@media screen and (max-width: 480px) {
+  .header-row {
+    min-height: 40px;
+  }
+
+  .header-cell {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+}
+
+/* ========== RESPONSIVE DATA ROWS ========== */
+
+@media screen and (max-width: 1024px) {
+  .data-row {
+    min-height: 45px;
+  }
+
+  .data-cell {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .data-cell.punch-code {
+    min-width: 120px;
+    width: 120px;
+  }
+
+  .data-cell.name {
+    min-width: 140px;
+    width: 140px;
+  }
+
+  .data-cell.designation,
+  .data-cell.department {
+    min-width: 120px;
+    width: 120px;
+  }
+
+  .fixed-data-cells {
+    min-width: 380px; /* Match the header fixed width */
+  }
+
+  .date-cell {
+    min-width: 200px;
+    width: 200px;
+    padding: 4px;
+    gap: 6px;
+  }
+
+  .sub-date-cell {
+    padding: 4px;
+    font-size: 13px;
+  }
+
+  .sub-date-cell input {
+    font-size: 13px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .data-row {
+    min-height: 40px;
+  }
+
+  .data-cell {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+}
+
+/* ========== RESPONSIVE SCROLLING OPTIMIZATIONS ========== */
+
+/* Improve touch scrolling on mobile */
+@media screen and (max-width: 768px) {
+  .data-container {
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 60px; /* Extra space for comfortable scrolling */
+  }
+
+  /* Adjust scrollbar for touch devices */
+  .data-container::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  /* Hide scrollbar on very small screens but maintain functionality */
+  @media screen and (max-width: 480px) {
+    .data-container::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+  }
+}
+
+/* ========== RESPONSIVE EMPTY STATE ========== */
+
+@media screen and (max-width: 768px) {
+  .empty-state {
+    padding: 30px 20px;
+    margin-top: 15px;
+  }
+}
+
+/* ========== RESPONSIVE POPUP ========== */
+
+@media screen and (max-width: 768px) {
+  .attendance-lock-popup {
+    width: 90%;
+    max-width: 450px;
+  }
+
+  .popup-header {
+    padding: 14px 16px;
+  }
+
+  .popup-header h3 {
+    font-size: 16px;
+  }
+
+  .popup-content {
+    padding: 16px;
+  }
+
+  .approval-info h4 {
+    font-size: 15px;
+    margin-bottom: 12px;
+  }
+
+  .user-select {
+    margin-bottom: 20px;
+  }
+
+  .user-select__control {
+    min-height: 40px !important;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .attendance-lock-popup {
+    width: 95%;
+  }
+
+  .popup-header {
+    padding: 12px;
+  }
+
+  .popup-content {
+    padding: 12px;
+  }
+
+  .close-button {
+    padding: 4px;
+  }
+}
+
+/* ========== RESPONSIVE TOOLTIP ========== */
+
+@media screen and (max-width: 768px) {
+  .tooltip:hover:after {
+    font-size: 11px;
+    padding: 4px 8px;
+    white-space: normal;
+    max-width: 200px;
+    line-height: 1.3;
+  }
+}
+
+/* ========== TOUCH DEVICE OPTIMIZATIONS ========== */
+
+@media (hover: none) {
+  /* Better touch targets for mobile */
+  .sub-date-cell {
+    min-height: 30px;
+  }
+
+  .control-button {
+    min-height: 38px;
+  }
+
+  /* Apply active states instead of hover for touch devices */
+  .control-button:active {
+    background-color: var(--primary-dark);
+  }
+
+  .control-button.secondary:active {
+    background-color: #f0f7ff;
+  }
+
+  .date-cell:active {
+    background-color: rgba(233, 236, 239, 0.8);
+  }
+
+  .sub-date-cell:active {
+    background-color: #f0f7ff;
+    border-color: var(--primary-color);
+  }
+
+  /* Tooltip alternative for touch devices */
+  .tooltip:active:after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--gray-800);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 10;
+  }
+}
+
+/* ========== PRINT MEDIA STYLES ========== */
+
+@media print {
+  .attendance-page {
+    margin: 0;
+    height: auto;
+    overflow: visible;
+    box-shadow: none;
+    border: none;
+  }
+
+  .attendance-container,
+  .scroll-container,
+  .data-container {
+    overflow: visible;
+    height: auto;
+  }
+
+  .attendance-controls {
+    display: none;
+  }
+
+  .header-row,
+  .data-row {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Reset fixed positioning for print layout */
+  .fixed-columns,
+  .fixed-data-cells {
+    position: static;
+    background: none;
+  }
+
+  /* Print-friendly adjustments */
+  .header-cell,
+  .data-cell {
+    border: 1px solid #ddd;
+  }
+}
+
+/* ========== ORIENTATION SPECIFIC STYLES ========== */
+
+@media screen and (max-width: 768px) and (orientation: landscape) {
+  .attendance-page {
+    height: calc(100vh - 60px);
+    margin-top: 50px;
+  }
+
+  /* Optimize landscape view to show more columns */
+  .fixed-columns,
+  .fixed-data-cells {
+    min-width: 350px;
+  }
+
+  .header-cell.name {
+    min-width: 130px;
+    width: 130px;
+  }
+
+  .data-cell.name {
+    min-width: 130px;
+    width: 130px;
+  }
+}
+
+/* ========== HIGH RESOLUTION SCREENS ========== */
+
+@media screen and (min-width: 1600px) {
+  .attendance-container {
+    /* max-width: 1600px;
+    margin: 0 auto; */
+  }
+
+  .header-cell {
+    font-size: 15px;
+  }
+
+  .data-cell {
+    font-size: 15px;
+  }
+}

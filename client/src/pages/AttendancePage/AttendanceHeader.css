@@ -1,0 +1,298 @@
+/* Header wrapper */
+.header-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  overflow: auto;
+  top: 0;
+  z-index: 10;
+  border-radius: var(--border-radius);
+}
+
+.header-wrapper::-webkit-scrollbar {
+  display: none;
+  width: 10px;
+}
+
+.header-wrapper::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 0px;
+  display: block;
+  visibility: visible;
+}
+
+.header-container {
+  background-color: white;
+  z-index: 2;
+}
+
+/* Header Row with Sticky Header */
+.header-row {
+  position: relative;
+  display: flex;
+  padding: 0px 2px;
+  background: linear-gradient(
+    135deg,
+    var(--primary-color),
+    var(--primary-dark)
+  );
+  color: white;
+  font-weight: 600;
+  min-height: 50px;
+  box-sizing: border-box;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: max-content;
+  border-radius: 10px;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  margin-left: 5px;
+}
+
+.fixed-columns,
+.scrollable-columns {
+  display: flex;
+}
+
+.fixed-columns {
+  display: flex;
+  min-width: 600px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 10;
+  background: inherit;
+  border-radius: var(--border-radius) 0 0 var(--border-radius);
+}
+
+.scrollable-columns {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: hidden;
+}
+
+.attendance-header-cell-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.attendance-header-date-title-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.attendance-header-date-title-container svg {
+  width: 20px;
+  height: 20px;
+  color: var(--card-bg);
+}
+
+.attendance-header-total-title-container {
+  width: 60%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.header-cell {
+  padding: 10px 15px;
+  text-align: center;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  box-sizing: border-box;
+  letter-spacing: 0.5px;
+}
+
+/* Fixed column widths */
+.header-cell.punch-code {
+  min-width: 140px;
+  width: 175px;
+}
+
+.header-cell.name {
+  min-width: 180px;
+  width: 210px;
+}
+
+.header-cell.designation {
+  min-width: 140px;
+  width: 170px;
+}
+
+.header-cell.department {
+  min-width: 140px;
+  width: 170px;
+}
+
+.header-cell.attendance-header-cell {
+  min-width: 232px;
+  width: 232px;
+  font-weight: 700;
+}
+
+.header-cell.total-attendance-header-cell {
+  padding: 2px !important;
+}
+
+.header-cell:last-child {
+  border-right: none;
+}
+
+.header-cell:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.date-header {
+  display: flex;
+  gap: 22px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 6px 0 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+  justify-content: space-between;
+}
+
+.total-data-header {
+  display: flex;
+  gap: 14px;
+  width: 100%;
+  margin-top: 10px;
+  align-items: center;
+  padding: 6px 0 0 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+  justify-content: space-between;
+}
+
+.sub-header-cell {
+  flex: 1;
+  padding: 6px;
+  text-align: center;
+  font-size: 12px;
+  white-space: nowrap;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.total-sub-header-cell {
+  flex: 1;
+  padding: 2px;
+  text-align: center;
+  font-size: 12px;
+  white-space: nowrap;
+  font-weight: 500;
+  text-transform: uppercase;
+  text-wrap: wrap;
+}
+
+/* Responsive styles for the header */
+@media screen and (max-width: 1024px) {
+  .header-row {
+    min-height: 45px;
+  }
+
+  .header-cell {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .sub-header-cell {
+    padding: 4px;
+    font-size: 11px;
+  }
+
+  .date-header {
+    gap: 16px;
+    margin-top: 6px;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .header-cell.punch-code {
+    min-width: 120px;
+    width: 120px;
+  }
+
+  .header-cell.name {
+    min-width: 140px;
+    width: 140px;
+  }
+
+  .header-cell.designation,
+  .header-cell.department {
+    min-width: 120px;
+    width: 120px;
+  }
+
+  .header-cell.attendance-header-cell {
+    min-width: 200px;
+    width: 200px;
+  }
+  
+  .header-cell.total-attendance-header-cell {
+    padding: 0 !important;
+    min-width: 350px;
+    width: 350px;
+  }
+
+  .fixed-columns {
+    min-width: 380px;
+  }
+
+  .attendance-header-date-title-container {
+    gap: 5px;
+    flex-direction: column;
+  }
+
+  .attendance-header-date-title-container svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .header-row {
+    min-height: 40px;
+  }
+
+  .header-cell {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+}
+
+@media screen and (max-width: 768px) and (orientation: landscape) {
+  .fixed-columns {
+    min-width: 350px;
+  }
+}
+
+@media screen and (min-width: 1600px) {
+  .header-cell {
+    font-size: 15px;
+  }
+}
+
+@media print {
+  .header-row {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .fixed-columns {
+    position: static;
+    background: none;
+  }
+
+  .header-cell {
+    border: 1px solid #ddd;
+  }
+}

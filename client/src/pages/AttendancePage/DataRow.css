@@ -1,5 +1,355 @@
 /* Add these CSS styles to your stylesheet */
+/* Data Row Styling */
+.data-row {
+  min-width: max-content;
+  width: max-content;
+  display: flex;
+  flex: 0 0 auto;
+  transition: var(--transition);
+  border-radius: var(--border-radius);
+  background-color: white;
+  min-height: 50px;
+  box-sizing: border-box;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid var(--gray-200);
+  border-left: 5px solid transparent;
+}
 
+.data-row.hovered,
+.data-row.hovered > .fixed-data-cells > div,
+.data-row.hovered > .scrollable-data-cells > div,
+.data-row.hovered > .total-data-cell {
+  background-color: #ecf8fff1 !important;
+  box-shadow: 0 2px 4px rgba(58, 134, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Fixed data cells */
+.fixed-data-cells {
+  display: flex;
+  min-width: 600px;
+  flex-shrink: 0;
+  position: s;
+  left: 0;
+  z-index: 0;
+  background: white;
+  border-radius: var(--border-radius) 0 0 var(--border-radius);
+}
+
+/* Scrollable data cells */
+.scrollable-data-cells {
+  display: flex;
+  flex: 1;
+}
+
+.data-cell {
+  padding: 8px 15px;
+  text-align: center;
+  border-right: 1px solid var(--gray-300);
+  font-size: 14px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-800);
+  z-index: 0;
+}
+
+.data-cell:hover {
+  background-color: var(--gray-100);
+}
+
+.fixed-data-cells .data-cell {
+  left: 0;
+  z-index: 1;
+  background-color: white;
+}
+
+/* Fixed data cell widths */
+.data-cell.punch-code {
+  min-width: 176px;
+  width: 176px;
+}
+
+.data-cell.name {
+  min-width: 210px;
+  width: 210px;
+  text-align: left;
+  justify-content: start;
+}
+
+.data-cell.designation {
+  min-width: 170px;
+  width: 170px;
+}
+
+.data-cell.department {
+  min-width: 170px;
+  width: 170px;
+}
+
+.data-cell:last-child {
+  border-right: none;
+}
+
+/* Date-cell Styling */
+.date-cell {
+  display: flex;
+  gap: 8px;
+  min-width: 232px;
+  width: 232px;
+  padding: 6px;
+  border-right: 1px solid var(--gray-300);
+  background-color: rgba(248, 249, 250, 0.5);
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  border-radius: 4px;
+}
+
+.total-date-cell {
+  display: flex;
+}
+
+.date-cell:last-child {
+  border-right: none;
+}
+
+/* Sub-date-cell Styling (For Inputs) */
+.sub-date-cell {
+  flex: 1;
+  padding: 6px;
+  margin: 0;
+  text-align: center;
+  font-size: 14px;
+  background-color: white;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: var(--transition);
+}
+
+.Disply-total-sub-data-cell {
+  flex: 1;
+  gap: 5px;
+  text-align: center;
+  font-size: 14px;
+  background-color: white;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: var(--transition);
+}
+
+.sub-date-cell input {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background-color: transparent;
+  font-size: 14px;
+  text-align: center;
+  padding: 0;
+  margin: 0;
+  outline: none;
+  box-sizing: border-box;
+  color: var(--primary-color);
+  font-weight: 500;
+}
+
+.total-data-cell {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  border: none;
+  background-color: transparent;
+  font-size: 14px;
+  text-align: center;
+  padding: 0px 14px;
+  margin: 0;
+  outline: none;
+  box-sizing: border-box;
+  color: var(--primary-color);
+  font-weight: 500;
+}
+
+.sub-disply-total {
+  padding: 5px;
+}
+
+.total.sub-disply-total {
+  width: 70px;
+}
+
+/* Hover effects */
+.date-cell:hover {
+  background-color: rgba(233, 236, 239, 0.8);
+}
+
+.sub-date-cell:hover {
+  background-color: #f0f7ff;
+  border-color: var(--primary-color);
+}
+
+/* Editable cell highlight */
+.sub-date-cell.editable,
+.sub-date-cell:has(input:focus) {
+  background-color: #f0f7ff;
+  border: 1px solid var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(58, 134, 255, 0.2);
+}
+
+/* Status indicators for attendance */
+.dnShift-Day {
+  background-color: rgba(6, 214, 160, 0.1);
+  color: var(--success-color);
+  font-weight: 500;
+}
+
+.dnShift-Night {
+  background-color: rgba(131, 56, 236, 0.1);
+  color: var(--secondary-color);
+  font-weight: 500;
+}
+
+.dnShift-AfterNoon {
+  background-color: #ffcc9977;
+  color: var(--after-noon);
+  font-weight: 500;
+}
+
+.exceeds-threshold {
+  background-color: rgba(255, 200, 200, 0.7) !important;
+}
+
+.exceeds-threshold input {
+  background-color: rgba(255, 200, 200, 0.7) !important;
+}
+
+/* Additional styles for comments */
+.gray-comment {
+  /* Add styling for cells with comments */
+}
+
+.site-comment {
+  /* Add styling for cells with site comments */
+}
+
+.editable-cell {
+  /* Add styling for editable cells */
+}
+
+/* Responsive styles for data rows */
+@media screen and (max-width: 1024px) {
+  .data-row {
+    min-height: 45px;
+  }
+
+  .data-cell {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .data-cell.punch-code {
+    min-width: 120px;
+    width: 120px;
+  }
+
+  .data-cell.name {
+    min-width: 140px;
+    width: 140px;
+  }
+
+  .data-cell.designation,
+  .data-cell.department {
+    min-width: 120px;
+    width: 120px;
+  }
+
+  .fixed-data-cells {
+    min-width: 380px;
+  }
+
+  .date-cell {
+    min-width: 200px;
+    width: 200px;
+    padding: 4px;
+    gap: 6px;
+  }
+
+  .sub-date-cell {
+    padding: 4px;
+    font-size: 13px;
+  }
+
+  .sub-date-cell input {
+    font-size: 13px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .data-row {
+    min-height: 40px;
+  }
+
+  .data-cell {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+}
+
+@media (hover: none) {
+  /* Better touch targets for mobile */
+  .sub-date-cell {
+    min-height: 30px;
+  }
+
+  .sub-date-cell:active {
+    background-color: #f0f7ff;
+    border-color: var(--primary-color);
+  }
+
+  .date-cell:active {
+    background-color: rgba(233, 236, 239, 0.8);
+  }
+}
+
+@media screen and (max-width: 768px) and (orientation: landscape) {
+  .data-cell.name {
+    min-width: 130px;
+    width: 130px;
+  }
+}
+
+@media screen and (min-width: 1600px) {
+  .data-cell {
+    font-size: 15px;
+  }
+}
+
+@media print {
+  .data-row {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .fixed-data-cells {
+    position: static;
+    background: none;
+  }
+
+  .data-cell {
+    border: 1px solid #ddd;
+  }
+}
 /* Style for the focused cell with border - only applied to current active cell */
 .focused-cell {
     border: 2px solid #4299e1 !important;

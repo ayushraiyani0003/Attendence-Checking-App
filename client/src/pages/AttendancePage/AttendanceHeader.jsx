@@ -3,7 +3,8 @@ import LockIcon from "@mui/icons-material/Lock";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
 import LockUnlockPopup from "./lockUnlockPopup";
 import { AuthContext } from "../../context/AuthContext";
-import { useWebSocket } from "../../hooks/useWebSocket";  // Use WebSocket hook
+import { useWebSocket } from "../../hooks/useWebSocket";  // Use WebSocket 
+import "./AttendanceHeader.css"
 import { useUsers } from "../../hooks/userList";
 
 function AttendanceHeader({ columns, isAdmin, onSort, sortConfig, handleLock, handleUnlock, popupOpen, setPopupOpen, displayWeeks, isShowMetrixData, lockUnlock, attDateStart, attDateEnd  }) {
