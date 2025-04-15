@@ -18,7 +18,7 @@ const {
 const { redisMysqlAttendanceCompare } = require('./redisMysqlAttendenceCompare');
 const { getLockStatusDataForMonthAndGroup, setStatusFromDateGroup } = require('../services/groupAttendenceLockServices');
 const { fetchMetricsForMonthYear } = require('../services/metricsService');
-const reportingGroup = require('../models/reportingGroup');
+const  {getAllGroupNames} = require('../services/reportingGroupService')
 
 /**
  * Initialize WebSocket server for real-time attendance management
@@ -229,9 +229,12 @@ async function handleAttendanceDataRetrieval(ws, data) {
     const userGroup = data.user.userReportingGroup;
 
     // console.log(`Fetching attendance data for ${month}/${year}, User: ${data.user.name}, Role: ${userRole}, Group: ${userGroup}`);
+    // get the all groups for admin
+    const forAdminGroups = await getAllGroupNames();
+console.log(forAdminGroups);
 
     // If user is not admin, only allow access to their own group
-    const group = userRole === 'admin' ? (data.group || userGroup) : userGroup;
+    const group = userRole === 'admin' ? forAdminGroups : userGroup;
 
     // Fetch employees in the selected group
     const employees = await getEmployeesByGroup(group);
