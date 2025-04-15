@@ -1,11 +1,130 @@
 const Metrics = require("../models/metricsModel");
 const { parseExcelFile } = require("../utils/fileUtils");
 
+/**
+ * Validates Excel file format to ensure it has the required structure
+ * @param {Array} data - Parsed Excel data
+ * @param {String} fileType - Type of file being validated ('network' or 'overtime')
+ * @returns {Object} - {isValid: boolean, errorMessage: string}
+ */
+const validateFileFormat = (data, fileType) => {
+  // Check if data is empty
+  if (!data || data.length === 0) {
+    return {
+      isValid: false,
+      errorMessage: "File is empty or could not be parsed correctly."
+    };
+  }
+
+  // Get all column headers and log them for debugging
+  const headers = Object.keys(data[0]);
+  console.log(`[DEBUG] ${fileType} file headers:`, headers);
+  
+  // More flexible User ID column detection
+  const userIdColumn = headers.find(h => 
+    h === "User ID" || 
+    h === "UserID" || 
+    h === "User Id" ||
+    h === "userId" ||
+    h === "ID" ||
+    h === "Id" ||
+    h === "id" ||
+    h === "EMP ID" ||
+    h === "Employee ID" ||
+    h === "EmployeeID" ||
+    h === "Employee Id" ||
+    h === "Name" || 
+    h === "Employee" ||
+    h === "employee" ||
+    (h.toLowerCase().includes("user") && h.toLowerCase().includes("id")) ||
+    (h.toLowerCase().includes("emp") && h.toLowerCase().includes("id")) ||
+    (h.toLowerCase().includes("employee") && h.toLowerCase().includes("id"))
+  );
+
+  if (!userIdColumn) {
+    // Simplified error message for missing User ID column
+    return {
+      isValid: false,
+      errorMessage: "User ID column not found in file. Please add a 'User ID' column."
+    };
+  }
+
+  // Check if date columns exist (columns with numeric names like 1, 2, 3, etc.)
+  const dateColumns = headers.filter(header => /^(0?[1-9]|[12][0-9]|3[01])(\s+[A-Za-z]{3})?$/.test(header));
+  console.log(`[DEBUG] ${fileType} file date columns:`, dateColumns);
+  
+  if (dateColumns.length === 0) {
+    return {
+      isValid: false,
+      errorMessage: "Date columns not found. Column names should be numbers (1, 2, 3, etc.)."
+    };
+  }
+
+  // Check data format in cells (time format like 9:00, 11:00, 2:30)
+  // We'll check a sample of non-empty cells to see if they follow time format
+  let timeFormatFound = false;
+  let nonEmptyValuesChecked = 0;
+
+  for (let i = 0; i < data.length && nonEmptyValuesChecked < 5; i++) {
+    const row = data[i];
+    for (const col of dateColumns) {
+      const value = row[col];
+      if (value && value !== "") {
+        nonEmptyValuesChecked++;
+        
+        // Check if it's a time string in the format HH:MM
+        if (typeof value === "string" && /^\d{1,2}:\d{2}$/.test(value)) {
+          timeFormatFound = true;
+          break;
+        }
+      }
+    }
+    if (timeFormatFound) break;
+  }
+
+  if (!timeFormatFound && nonEmptyValuesChecked > 0) {
+    return {
+      isValid: false,
+      errorMessage: "Time values must be in the format HH:MM (e.g., 9:00, 11:30)."
+    };
+  }
+
+  // Return success with the identified User ID column name for future use
+  return { isValid: true, errorMessage: "", userIdColumn };
+};
+
 const processMetricsFiles = async (networkFile, otFile, monthYear) => {
   try {
+    console.log("[DEBUG] Starting file processing");
+    console.log("[DEBUG] Network file name:", networkFile.originalname);
+    console.log("[DEBUG] OT file name:", otFile.originalname);
+    
     // Parse Network Hours and OT Hours files
     const networkData = await parseExcelFile(networkFile);
     const otData = await parseExcelFile(otFile);
+
+    console.log("[DEBUG] Files parsed successfully");
+    console.log("[DEBUG] Network data rows:", networkData.length);
+    console.log("[DEBUG] OT data rows:", otData.length);
+
+    // Validate file formats
+    const networkValidation = validateFileFormat(networkData, 'network');
+    if (!networkValidation.isValid) {
+      throw new Error(`Network hours file: ${networkValidation.errorMessage}`);
+    }
+
+    const otValidation = validateFileFormat(otData, 'overtime');
+    if (!otValidation.isValid) {
+      throw new Error(`Overtime hours file: ${otValidation.errorMessage}`);
+    }
+
+    console.log("[DEBUG] Files validated successfully");
+    console.log("[DEBUG] Network User ID column:", networkValidation.userIdColumn);
+    console.log("[DEBUG] OT User ID column:", otValidation.userIdColumn);
+
+    // Get the actual User ID column names found in each file
+    const networkUserIdColumn = networkValidation.userIdColumn;
+    const otUserIdColumn = otValidation.userIdColumn;
 
     // Calculate the number of days in the month
     const [year, month] = monthYear.split("-");
@@ -53,7 +172,8 @@ const processMetricsFiles = async (networkFile, otFile, monthYear) => {
 
     // Process network hours data
     networkDataFull.forEach((entry) => {
-      const punchCode = entry['User ID'];
+      // Use the detected User ID column name
+      const punchCode = entry[networkUserIdColumn];
       if (!punchCode) return; // Skip entries without User ID
       
       const networkHours = [];
@@ -102,7 +222,8 @@ const processMetricsFiles = async (networkFile, otFile, monthYear) => {
 
     // Process overtime hours data
     otDataFull.forEach((entry) => {
-      const punchCode = entry['User ID'];
+      // Use the detected User ID column name
+      const punchCode = entry[otUserIdColumn];
       if (!punchCode) return; // Skip entries without User ID
       
       // Create entry for this punch code if it doesn't exist yet
@@ -210,11 +331,8 @@ const processMetricsFiles = async (networkFile, otFile, monthYear) => {
         }
       } catch (dbError) {
         console.error("Database operation error:", dbError);
-        // Log more details about the failing record if available
-        if (dbError.errors && dbError.errors.length > 0) {
-          console.error("Error details:", dbError.errors[0]);
-        }
-        throw new Error(`Database error: ${dbError.message}`);
+        // Simplified database error message
+        throw new Error("Database error while saving data. Please try again.");
       }
     }
 
@@ -254,5 +372,6 @@ async function fetchMetricsForMonthYear(month, year) {
 
 module.exports = {
   processMetricsFiles,
-  fetchMetricsForMonthYear
+  fetchMetricsForMonthYear,
+  validateFileFormat
 };

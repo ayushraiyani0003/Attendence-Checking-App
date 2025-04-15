@@ -1,4 +1,5 @@
 const metricsService = require("../services/metricsService");
+
 const handleMetricsUpload = async (req, res) => {
   try {
     // Extract files and month_year from the request
@@ -8,7 +9,8 @@ const handleMetricsUpload = async (req, res) => {
     // Validate that the necessary data exists
     if (!networkFile || !otFile || !monthYear) {
       return res.status(400).json({
-        message: "Please upload both files and provide a valid month-year.",
+        success: false,
+        message: "Please upload both files and provide a valid month-year."
       });
     }
 
@@ -20,12 +22,19 @@ const handleMetricsUpload = async (req, res) => {
     );
 
     // Send a success response
-    return res.status(200).json({ message: "File upload successful", result });
+    return res.status(200).json({ 
+      success: true, 
+      message: "Files uploaded successfully", 
+      result 
+    });
   } catch (error) {
     console.error("Error in file upload:", error);
-    return res
-      .status(500)
-      .json({ message: "Internal Server Error", error: error.message });
+    
+    // Send the exact error message to the client
+    return res.status(400).json({ 
+      success: false,
+      message: error.message // Send the exact error message
+    });
   }
 };
 
