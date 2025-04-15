@@ -1,5 +1,6 @@
 /**
  * Find mismatches between attendance data and metrics data by reporting group
+ * Only count mismatches for dates that exist in metrics data
  * @param {Array} finalAttendanceData - Combined attendance data from MySQL and Redis
  * @param {Array} metricsData - Metrics data with punch codes and hours
  * @returns {Array} Array of objects with reporting groups and their mismatch counts
@@ -20,20 +21,48 @@ function findMismatchesByGroup(finalAttendanceData, metricsData) {
   // Group by punch_code and month_year for faster lookups
   const metricsMap = new Map();
   
+  // Track which dates exist in the metrics data by punch code and month/year
+  const availableDatesMap = new Map();
+  
+  // Process metrics data to build lookup maps
   for (const metric of metricsData) {
-    if (!metric.dataValues?.punch_code) continue;
+    if (!metric.dataValues?.punch_code || !metric.dataValues?.month_year) continue;
     
     const punchCode = metric.dataValues.punch_code;
     const monthYear = metric.dataValues.month_year;
     
-    if (!monthYear) continue;
-    
     const key = `${punchCode}:${monthYear}`;
     metricsMap.set(key, metric);
+    
+    // Extract available dates from network_hours and overtime_hours
+    try {
+      const networkHoursArray = JSON.parse(metric.dataValues.network_hours || '[]');
+      const overtimeHoursArray = JSON.parse(metric.dataValues.overtime_hours || '[]');
+      
+      // Get all dates from both arrays
+      const datesWithData = new Set();
+      
+      // Add dates from network hours
+      networkHoursArray.forEach(entry => {
+        if (entry.date && entry.hours) {
+          datesWithData.add(entry.date);
+        }
+      });
+      
+      // Add dates from overtime hours
+      overtimeHoursArray.forEach(entry => {
+        if (entry.date && entry.hours) {
+          datesWithData.add(entry.date);
+        }
+      });
+      
+      // Store available dates for this punch code and month/year
+      availableDatesMap.set(key, datesWithData);
+    } catch (error) {
+      // If parsing fails, assume no dates are available
+      availableDatesMap.set(key, new Set());
+    }
   }
-  
-  // Set to track processed reporting groups
-  const processedGroups = new Set();
   
   // Process each attendance record
   for (const attendance of finalAttendanceData) {
@@ -45,7 +74,6 @@ function findMismatchesByGroup(finalAttendanceData, metricsData) {
     
     // Track this group
     const group = attendance.reporting_group;
-    processedGroups.add(group);
     
     if (mismatchesByGroup[group] === undefined) {
       mismatchesByGroup[group] = 0;
@@ -74,6 +102,20 @@ function findMismatchesByGroup(finalAttendanceData, metricsData) {
     
     // If no matching metric found for this month/year combination, skip
     if (!matchingMetric) {
+      continue;
+    }
+    
+    // Check if this day exists in metrics data
+    const availableDates = availableDatesMap.get(key);
+    if (!availableDates) {
+      continue;
+    }
+    
+    // Skip days that don't exist in metrics data
+    const dayString = day.toString();
+    const paddedDay = dayString.padStart(2, '0');
+    
+    if (!availableDates.has(dayString) && !availableDates.has(paddedDay)) {
       continue;
     }
     
