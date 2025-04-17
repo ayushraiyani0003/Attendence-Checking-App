@@ -222,34 +222,85 @@ function initWebSocket(server) {
  * @param {WebSocket} ws - WebSocket connection
  * @param {Object} data - Request data
  */
+// Cache implementation to avoid redundant data fetching
+const cache = {
+  adminGroups: {
+    data: null,
+    timestamp: 0,
+    ttl: 5 * 60 * 1000 // 5 minutes
+  },
+  employees: {
+    data: {},
+    timestamp: {},
+    ttl: 10 * 60 * 1000 // 10 minutes
+  },
+  metricsData: {
+    data: {},
+    timestamp: {},
+    ttl: 5 * 60 * 1000 // 5 minutes
+  }
+};
+
+
+// Optimized implementation of handleAttendanceDataRetrieval
 async function handleAttendanceDataRetrieval(ws, data) {
   try {
     const { year, month } = convertMonthToYearMonthFormat(data.month);
     const userRole = data.user.role || data.user.userRole;
     const userGroup = data.user.userReportingGroup;
 
-    // console.log(`Fetching attendance data for ${month}/${year}, User: ${data.user.name}, Role: ${userRole}, Group: ${userGroup}`);
-    // get the all groups for admin
-    const forAdminGroups = await getAllGroupNames();
-    // console.log(forAdminGroups);
+    // Get admin groups with caching
+    let group;
+    if (userRole === 'admin') {
+      const now = Date.now();
+      if (!cache.adminGroups.data || (now - cache.adminGroups.timestamp > cache.adminGroups.ttl)) {
+        cache.adminGroups.data = await getAllGroupNames();
+        cache.adminGroups.timestamp = now;
+      }
+      group = cache.adminGroups.data;
+    } else {
+      group = userGroup;
+    }
 
-    // If user is not admin, only allow access to their own group
-    const group = userRole === 'admin' ? forAdminGroups : userGroup;
+    // Create a cache key for employees
+    const groupKey = Array.isArray(group) ? JSON.stringify(group.sort()) : group;
+    // Get employees with caching
+    let employees;
+    const now = Date.now();
+    if (!cache.employees.data[groupKey] || (now - (cache.employees.timestamp[groupKey] || 0) > cache.employees.ttl)) {
+      cache.employees.data[groupKey] = await getEmployeesByGroup(group);
+      cache.employees.timestamp[groupKey] = now;
+    }
+    employees = cache.employees.data[groupKey];
 
-    // Fetch employees in the selected group
-    const employees = await getEmployeesByGroup(group);
-    // console.log(`Found ${employees.length} employees in group ${group}`);
+    // Start fetching metrics data early in parallel
+    const metricsPromise = fetchMetricsPromise(month, year);
 
-    // Fetch attendance data from MySQL
-    const mysqlAttendanceData = await getEmployeesAttendanceByMonthAndGroup(group, year, month);
+    // Fetch all other data in parallel
+    async function timeFunction(fn, ...args) {
+      const start = Date.now();
+      const result = await fn(...args);
+      const elapsed = Date.now() - start;
+      return { result, elapsed };
+    }
+    
+    // Then use it like this
+    const [mysqlResult, redisResult, lockStatusResult] = await Promise.all([
+      timeFunction(getEmployeesAttendanceByMonthAndGroup, group, year, month, employees),
+      timeFunction(getRedisAttendanceData, year, month, group),
+      timeFunction(getLockStatusDataForMonthAndGroup, group, month, year)
+    ]);
+    
+    console.log(`MySQL data retrieval took ${mysqlResult.elapsed}ms`);
+    console.log(`Redis data retrieval took ${redisResult.elapsed}ms`);
+    console.log(`Lock status data retrieval took ${lockStatusResult.elapsed}ms`);
+    
+    // Extract the actual results
+    const mysqlAttendanceData = mysqlResult.result;
+    const redisAttendanceData = redisResult.result;
+    const lockStatusData = lockStatusResult.result;
 
-    // Fetch attendance data from Redis
-    const redisAttendanceData = await getRedisAttendanceData(year, month, group);
-
-    // Get lock status
-    const lockStatusData = await getLockStatusDataForMonthAndGroup(group, month, year);
-
-    // Compare Redis and MySQL data
+    // Process attendance comparison
     const finalAttendanceData = await redisMysqlAttendanceCompare(
       employees,
       redisAttendanceData,
@@ -258,8 +309,10 @@ async function handleAttendanceDataRetrieval(ws, data) {
       lockStatusData
     );
 
-    // Get the metrics attendance and send to the clients
-    const metricsAttendanceData = await fetchMetricsForMonthYear(month, year);
+    // Get the metrics attendance (which has been fetching in parallel)
+    const metricsAttendanceData = await metricsPromise;
+    
+    // Process metrics data
     const metricsAttendanceDifference = await processAllMetricsData(metricsAttendanceData, finalAttendanceData);
 
     // Send the final attendance data back to the client
@@ -272,8 +325,6 @@ async function handleAttendanceDataRetrieval(ws, data) {
       lockStatus: lockStatusData,
       metricsAttendanceDifference: metricsAttendanceDifference
     }));
-    
-    // console.log(`Successfully sent attendance data for ${group}, ${month}/${year}`);
   } catch (error) {
     console.error('Error retrieving attendance data:', error);
     ws.send(JSON.stringify({
@@ -282,6 +333,19 @@ async function handleAttendanceDataRetrieval(ws, data) {
       details: error.message
     }));
   }
+}
+
+// Helper function to handle metrics fetching with caching
+async function fetchMetricsPromise(month, year) {
+  const cacheKey = `${month}-${year}`;
+  const now = Date.now();
+  
+  if (!cache.metricsData.data[cacheKey] || (now - (cache.metricsData.timestamp[cacheKey] || 0) > cache.metricsData.ttl)) {
+    cache.metricsData.data[cacheKey] = await fetchMetricsForMonthYear(month, year);
+    cache.metricsData.timestamp[cacheKey] = now;
+  }
+  
+  return cache.metricsData.data[cacheKey];
 }
 
 /**

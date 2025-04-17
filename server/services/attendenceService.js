@@ -23,7 +23,7 @@ async function getEmployeesByGroup(groups) {
 }
 
 // New function to get all attendance for employees in the selected group and month
-async function getEmployeesAttendanceByMonthAndGroup(groups, year, month) {
+async function getEmployeesAttendanceByMonthAndGroup(groups, year, month, employees = null) {
   try {
     // Fetch employees for the selected group
     const employees = await getEmployeesByGroup(groups);

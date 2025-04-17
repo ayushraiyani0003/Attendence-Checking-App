@@ -7,7 +7,7 @@ async function getRedisAttendanceData(year, month, groups) {
     const result = [];
 
     // Loop through all the groups
-    for (const group of groups) {
+    for (const group of groups) {        
         // Loop through all the days of the month
         for (let day = startDate.getDate(); day <= endDate.getDate(); day++) {
             const date = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
