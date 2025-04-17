@@ -615,7 +615,7 @@ if (itemCopy.attendance && Array.isArray(itemCopy.attendance)) {
   const handleCellDataUpdate = (rowIndex, date, field, value) => {
     if (rowIndex < 0 || rowIndex >= attendanceData.length) {
       console.error("Invalid rowIndex:", rowIndex);
-      toast.error("Invalid row selection");
+      // toast.error("Invalid row selection");
       return;
     }
 
