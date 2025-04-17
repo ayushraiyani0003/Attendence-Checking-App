@@ -9,6 +9,8 @@ const {
 
 // Create a new employee
 const createEmployee = async (req, res) => {
+  console.log(req);
+  
   try {
     const { 
       name, 
@@ -16,6 +18,7 @@ const createEmployee = async (req, res) => {
       punch_code, 
       designation, 
       reporting_group,
+      mobile_no,
       net_hr,
       week_off,
       resign_date,
@@ -30,7 +33,12 @@ const createEmployee = async (req, res) => {
       !department ||
       !punch_code ||
       !designation ||
-      !reporting_group
+      !reporting_group || 
+      !mobile_no || 
+      !net_hr || 
+      !week_off || 
+      !branch || 
+      !sections
     ) {
       return res.status(400).json({ message: "All fields are required." });
     }
@@ -41,6 +49,7 @@ const createEmployee = async (req, res) => {
       punch_code,
       designation,
       reporting_group,
+      mobile_no,
       net_hr,
       week_off,
       resign_date,
@@ -69,6 +78,7 @@ const editEmployee = async (req, res) => {
       punch_code, 
       designation, 
       reporting_group,
+      mobile_no,
       net_hr,
       week_off,
       resign_date,
@@ -87,6 +97,7 @@ const editEmployee = async (req, res) => {
       department,
       punch_code,
       designation,
+      mobile_no,
       reporting_group,
       net_hr,
       week_off,

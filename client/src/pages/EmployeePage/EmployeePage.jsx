@@ -39,19 +39,19 @@ const EmployeePage = () => {
       return null;
     }
   };
-  
+
   const downloadEmployeeDemo = () => {
     // Create a temporary anchor element
     const link = document.createElement('a');
     link.href = employeeDemo;
     link.download = 'employee_demo.xlsx';
-    
+
     // Append to the document, click it, and remove it
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
-  
+
 
   // Improved search functionality with exact match for status
   useEffect(() => {
@@ -59,12 +59,12 @@ const EmployeePage = () => {
       setFilteredData([]);
       return;
     }
-    
+
     const lowerSearchText = searchText.toLowerCase();
     const filtered = employees.filter(item => {
       // Convert punch_code to string and lowercase to handle mixed types
       const punchCodeStr = String(item.punch_code || '').toLowerCase();
-      
+
       // Special handling for status field - exact match
       if (lowerSearchText === 'active' || lowerSearchText === 'inactive' || lowerSearchText === 'resigned' || lowerSearchText === 'on_leave') {
         if (item.status && item.status.toLowerCase() === lowerSearchText) {
@@ -83,10 +83,10 @@ const EmployeePage = () => {
           punchCodeStr.includes(lowerSearchText)
         );
       }
-      
+
       return false;
     });
-    
+
     setFilteredData(filtered);
   }, [employees, searchText]);
 
@@ -110,20 +110,22 @@ const EmployeePage = () => {
     setIsDeleteModalVisible(false);
     setEmployeeToDelete(null);
   };
+  console.log(employees);
 
   // Function to export employee data to Excel
   const exportToExcel = () => {
     try {
       // Determine which data to export (filtered or all)
       const dataToExport = filteredData.length > 0 ? filteredData : employees;
-
+      
       // Create a new array with only the data we want to export
       const exportData = dataToExport.map(employee => ({
-        'EmployeeId':employee.employee_id,
+        'EmployeeId': employee.employee_id,
         'Punch Code': employee.punch_code,
         'Name': employee.name,
         'Department': employee.department,
         'Designation': employee.designation,
+        'Mobile No.': employee.mobile_number,
         'Net Hours': employee.net_hr,
         'Branch': employee.branch,
         'Sections': employee.sections,
@@ -221,6 +223,13 @@ const EmployeePage = () => {
       key: 'designation',
       filters: designations && designations.length ? designations.map((desig) => ({ text: desig.designation_name, value: desig.designation_name })) : [],
       onFilter: (value, record) => record.designation === value,
+      render: (text) => <span>{text}</span>,
+    },
+    {
+      title: 'Mobile no.',
+      dataIndex: 'mobile_number',
+      key: 'mobile_number',
+      sorter: (a, b) => (a.mobile_number || 0) - (b.mobile_number || 0),
       render: (text) => <span>{text}</span>,
     },
     {
@@ -391,7 +400,6 @@ const EmployeePage = () => {
 
     setIsModalVisible(true);
   };
-console.log(employees);
 
   const handlePageSizeChange = (current, size) => {
     setPageSize(size);
@@ -439,7 +447,7 @@ console.log(employees);
                 type="default"
                 icon={<UploadOutlined />}
                 className="import-button"
-                onClick={() => handleImportFromExcel(employees,addEmployee, editEmployee)}
+                onClick={() => handleImportFromExcel(employees, addEmployee, editEmployee)}
               >
                 Import Excel
               </Button>
@@ -543,6 +551,12 @@ console.log(employees);
               ))}
             </Select>
           </Form.Item>
+
+          {/* Add Mobile Number field */}
+          <Form.Item label="Mobile Number" name="mobile_no" rules={[{ required: true, message: 'Please enter mobile number!' }]}>
+            <Input placeholder="Enter mobile number" />
+          </Form.Item>
+
 
           {/* New form fields for the additional columns */}
           <Form.Item label="Net Hours" name="net_hr" rules={[{ required: true, message: 'Please enter net hours!' }]}>

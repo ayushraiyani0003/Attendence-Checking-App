@@ -60,6 +60,7 @@ export const EmployeeProvider = ({ children, userRole, userReportingGroup }) => 
         punch_code: employeeData.punch_code,
         designation: employeeData.designation,
         reporting_group: employeeData.reporting_group,
+        mobile_no: employeeData.mobile_no, // Added mobile number
         net_hr: employeeData.net_hr,
         week_off: employeeData.week_off,
         resign_date: employeeData.resign_date,
@@ -89,6 +90,7 @@ export const EmployeeProvider = ({ children, userRole, userReportingGroup }) => 
         punch_code: updatedData.punch_code,
         designation: updatedData.designation,
         reporting_group: updatedData.reporting_group,
+        mobile_no: updatedData.mobile_no, // Added mobile number
         net_hr: updatedData.net_hr,
         week_off: updatedData.week_off,
         resign_date: updatedData.resign_date,

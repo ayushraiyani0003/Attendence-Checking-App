@@ -62,6 +62,11 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
         comment: "Sections or teams the employee belongs to",
       },
+      mobile_number: {
+        type: DataTypes.STRING(20),
+        allowNull: true,
+        comment: "Employee mobile contact number",
+      },
     },
     {
       tableName: "employees",

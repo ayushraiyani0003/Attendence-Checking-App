@@ -6,7 +6,11 @@ const { processNewEmployeeAttendance } = require("../utils/quickFunction");
 const createEmployeeService = async (employeeData) => {
   try {
     // console.log("employeeData", employeeData);
-    const newEmployee = await Employee.create(employeeData);
+    const dataForDatabase = {
+      ...employeeData,
+      mobile_number: employeeData.mobile_no
+    };
+    const newEmployee = await Employee.create(dataForDatabase);
 
     // Process attendance records for the new employee
     if (employeeData.reporting_group) {
@@ -33,6 +37,7 @@ const editEmployeeService = async (employeeId, updatedData) => {
     employee.punch_code = updatedData.punch_code;
     employee.designation = updatedData.designation;
     employee.reporting_group = updatedData.reporting_group;
+    employee.mobile_number = updatedData.mobile_no; // Updated to handle the mobile number
     
     // Update the new fields
     employee.net_hr = updatedData.net_hr;
