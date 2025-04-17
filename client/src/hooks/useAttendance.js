@@ -18,6 +18,7 @@ export const useAttendance = (user, monthYear, ws, send) => {
   const [view, setView] = useState("all"); // 'all', 'day', 'night'
   const [hasChanges, setHasChanges] = useState(false);
   const [attendanceData, setAttendanceData] = useState([]);
+  const [howMuchMistake, sethowMuchMistake] = useState();
   const [lockStatusData, setLockStatusData] = useState([]);
   const [MetrixDiffData, setMetrixDiffData] = useState([]);
   const [TotalDiffData, setTotalDiffData] = useState([]);
@@ -173,6 +174,28 @@ export const useAttendance = (user, monthYear, ws, send) => {
           setLockStatusData(data.lockStatus);
           setMetrixDiffData(data.metricsAttendanceDifference || []);
           setTotalDiffData(data.totalTimeDiff || []);
+
+          // Calculate total mistakes
+          if (data.metricsAttendanceDifference && Array.isArray(data.metricsAttendanceDifference)) {
+            let totalMistakes = 0;
+            
+            data.metricsAttendanceDifference.forEach(item => {
+              // Count netHRDiff > 0.25 as one mistake
+              if (Math.abs(parseFloat(item.netHRDiff)) > 0.25) {
+                totalMistakes += 1;
+              }
+              
+              // Count otHRDiff > 0.25 as another mistake
+              if (Math.abs(parseFloat(item.otHRDiff)) > 0.25) {
+                totalMistakes += 1;
+              }
+            });
+            
+            console.log("Total mistakes calculated:", totalMistakes);
+            sethowMuchMistake(totalMistakes);
+          } else {
+            sethowMuchMistake(0);
+          }
 
           // Check if any date has unlocked status
           const hasUnlockedDate = data.lockStatus?.some(item => item.status === 'unlocked');
@@ -358,6 +381,29 @@ export const useAttendance = (user, monthYear, ws, send) => {
       headerWrapper.removeEventListener("scroll", handleHeaderScroll);
     };
   }, [attendanceData]);
+
+  // Calculate total mistakes when MetrixDiffData changes
+  useEffect(() => {
+    if (MetrixDiffData && Array.isArray(MetrixDiffData)) {
+      let totalMistakes = 0;
+      
+      MetrixDiffData.forEach(item => {
+        // Count netHRDiff > 0.25 as one mistake
+        if (Math.abs(parseFloat(item.netHRDiff)) > 0.25) {
+          totalMistakes += 1;
+        }
+        
+        // Count otHRDiff > 0.25 as another mistake
+        if (Math.abs(parseFloat(item.otHRDiff)) > 0.25) {
+          totalMistakes += 1;
+        }
+      });
+      
+      sethowMuchMistake(totalMistakes);
+    } else {
+      sethowMuchMistake(0);
+    }
+  }, [MetrixDiffData]);
 
   // Logic for filtering data
   const getFilteredData = useCallback(() => {
@@ -821,6 +867,7 @@ const employeeMetrics = calculateEmployeeMetrics(attendanceData);
     dataContainerRef,
     // for the employe totals
     employeeMetrics,
+    howMuchMistake,
     // Functions
     toggleColumn,
     fixedColumns,

@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import SimplifiedDatePicker from './CustomDatePicker';
 import ColumnVisibilityControl from './ColumnVisibilityControl';
+import MistakeCounter from '../../components/MistakeCounter/MistakeCounter'
 
 function AttendencePageSearchFilters({
   filterText,
@@ -19,8 +20,11 @@ function AttendencePageSearchFilters({
   dateRange, 
   setDateRange,
   columns, 
-  onToggleColumn
+  onToggleColumn,
+  howMuchMistake
 }) {
+  console.log(howMuchMistake);
+  
   return (
     <div>
       <div className="attendance-controls">
@@ -39,7 +43,7 @@ function AttendencePageSearchFilters({
               width: "240px",
             }}
           />
-          {isAdmin ? <select
+           <select
             value={view}
             onChange={(e) => setView(e.target.value)}
             style={{
@@ -47,6 +51,7 @@ function AttendencePageSearchFilters({
               borderRadius: "4px",
               border: "1px solid var(--gray-300)",
               background: "white",
+              marginRight: "12px",
             }}
           >
             <option value="all">All</option>
@@ -58,7 +63,8 @@ function AttendencePageSearchFilters({
             <option value="site">Only Site</option>
             <option value="absent">Only Absent</option>
           </select>
-            : null}
+            {/* // disply the howMuchMistake in the red box with rounded corener and good ui. */}
+            <MistakeCounter totalMistakes={howMuchMistake}  />
         </div>
         <div className="button-group" style={{ display: "flex", gap: "12px", alignItems: "center" }}>
           {isAdmin && (

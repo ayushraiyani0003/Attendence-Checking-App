@@ -231,7 +231,7 @@ async function handleAttendanceDataRetrieval(ws, data) {
     // console.log(`Fetching attendance data for ${month}/${year}, User: ${data.user.name}, Role: ${userRole}, Group: ${userGroup}`);
     // get the all groups for admin
     const forAdminGroups = await getAllGroupNames();
-console.log(forAdminGroups);
+    // console.log(forAdminGroups);
 
     // If user is not admin, only allow access to their own group
     const group = userRole === 'admin' ? forAdminGroups : userGroup;
