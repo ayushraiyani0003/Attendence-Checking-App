@@ -26,12 +26,13 @@
 
 /* Fixed data cells */
 .fixed-data-cells {
+  position: sticky;
   display: flex;
   min-width: 600px;
   flex-shrink: 0;
   position: s;
   left: 0;
-  z-index: 0;
+  z-index: 1;
   background: white;
   border-radius: var(--border-radius) 0 0 var(--border-radius);
 }
