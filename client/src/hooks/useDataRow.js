@@ -7,8 +7,7 @@ import { validateNetHR, validateOtHR, formatValue, canEdit, createPasswordModal 
  */
 const useDataRow = ({
     row, rowIndex, hoveredRow, isAdmin, setHoveredRow, data, onCellUpdate,
-    getFilteredData, attendanceData, isShowMetrixData,isShowDiffData, MetrixDiffData, attDateStart, attDateEnd, TotalDiffData
-}) => {
+    getFilteredData, attendanceData, isShowMetrixData,isShowDiffData, MetrixDiffData, attDateStart, attDateEnd, TotalDiffData, onRowNavigation,     registerInputRef, handleVerticalKeyDown, sequentialIndex}) => {
     const [editableCell, setEditableCell] = useState(null);
     const [editValue, setEditValue] = useState({});
     const [netDiffValue, setNetDiffValue] = useState({});
@@ -438,135 +437,348 @@ const useDataRow = ({
         }));
     };
 
-    // Improved keyboard navigation handling
-    const onKeyDown = (e, column) => {
-        if (e.key === "Enter" || e.key === "Tab") {
-            e.preventDefault();
-
-            // Parse column and index
-            const [currentField, currentColIndex] = column.split("-");
-            const colIndex = parseInt(currentColIndex);
-
-            // Get current edit value
-            const editKey = `${column}`;
-            let currentValue = editValue[editKey] || displayData[colIndex]?.[currentField] || "0";
-            // Convert to string to ensure we can use string methods
-            currentValue = String(currentValue);
-            const originalValue = String(displayData[colIndex]?.[currentField] || "0");
-
-            // Convert time format to decimal if needed (for final submission)
-            if ((currentField === "netHR" || currentField === "otHR") && currentValue.includes(':')) {
-                const timeFormatRegex = /^(\d+):([0-5]\d)$/;
-                const timeMatch = currentValue.match(timeFormatRegex);
-
-                if (timeMatch) {
-                    const hours = parseInt(timeMatch[1], 10);
-                    const minutes = parseInt(timeMatch[2], 10);
-                    // Convert minutes to decimal (e.g., 30 minutes = 0.5 hours)
-                    const minuteDecimal = minutes / 60;
-                    const decimalHours = hours + minuteDecimal;
-
-                    // Use exact decimal representation without rounding
-                    if (minutes === 0) {
-                        currentValue = hours.toString();
-                    } else if (minutes === 30) {
-                        currentValue = (hours + 0.5).toString();
-                    } else {
-                        // For other minute values, use up to 2 decimal places if needed
-                        currentValue = decimalHours.toFixed(2).replace(/\.?0+$/, '');
-                    }
-
-                    // Update the editValue state with the converted value
-                    setEditValue(prev => ({ ...prev, [editKey]: currentValue }));
-                } else {
-                    // Invalid time format, revert to original
-                    currentValue = originalValue;
-                    setEditValue(prev => ({ ...prev, [editKey]: currentValue }));
-                }
-            }
-
-            // Validate values before saving
-            let validationFailed = false;
-
-            if (currentField === "netHR" && !validateNetHR(currentValue)) {
-                alert("Net hours cannot exceed 11");
-                setEditValue(prev => ({ ...prev, [editKey]: "11" }));
-                validationFailed = true;
-            }
-
-            if (currentField === "otHR" && !validateOtHR(currentValue)) {
-                alert("Overtime hours cannot exceed 15");
-                setEditValue(prev => ({ ...prev, [editKey]: "15" }));
-                validationFailed = true;
-            }
-
-            if (validationFailed) return;
-
-            // Only update if the value has changed
-            if (currentValue !== originalValue) {
-                const formattedValue = formatValue(currentValue, currentField);
-                // Pass the date instead of colIndex
-                const attendanceDate = displayData[colIndex]?.date;
-                onCellUpdate(rowIndex, attendanceDate, currentField, formattedValue);
-            }
-
-            // Define the order of editable fields
-            const fields = ["netHR", "otHR", "dnShift"];
-
-            // Get the full and filtered data sources
-            const fullData = attendanceData || data;
-            const filteredData = getFilteredData ? getFilteredData() : fullData;
-
-            // Find the next cell to focus
-            const findNextCell = () => {
-                const currentFieldIndex = fields.indexOf(currentField);
-
-                // Try next field in the same column
-                if (currentFieldIndex < fields.length - 1) {
-                    return {
-                        rowIndex,
-                        column: `${fields[currentFieldIndex + 1]}-${colIndex}`
-                    };
-                }
-
-                // Try first field in the next column
-                if (colIndex < displayData.length - 1) {
-                    return {
-                        rowIndex,
-                        column: `${fields[0]}-${colIndex + 1}`
-                    };
-                }
-
-                // Try first field in the first column of the next row
-                if (rowIndex < filteredData.length - 1) {
-                    const nextRowId = filteredData[rowIndex + 1].id;
-                    const nextRowIndex = fullData.findIndex(item => item.id === nextRowId);
-
-                    if (nextRowIndex >= 0) {
-                        return {
-                            rowIndex: nextRowIndex,
-                            column: `${fields[0]}-0`
-                        };
-                    }
-                }
-
-                return null;
-            };
-
-            const nextCell = findNextCell();
-
-            if (nextCell) {
-                // Move to next cell - we'll just set the editableCell here
-                // and let the parent component handle focusing the right row
-                setEditableCell(nextCell.column);
-            } else {
-                setEditableCell(null);
-            }
-        } else if (e.key === "Escape") {
-            e.preventDefault();
-            setEditableCell(null);
+// Modified onKeyDown function with reliable update saving
+// Modified onKeyDown function with reliable update saving
+const onKeyDown = (e, column) => {
+    try {
+      // Handle vertical navigation with arrow keys
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        // console.log(`Arrow ${e.key} pressed in row ${row.id}, cell ${column}`);
+        
+        // Parse column and index
+        const [currentField, currentColIndex] = column.split("-");
+        const colIndex = parseInt(currentColIndex);
+        
+        // Verify the column index is valid
+        if (!displayData || colIndex >= displayData.length || colIndex < 0) {
+          console.error(`Invalid column index ${colIndex} for row ${row.id}`);
+          return;
         }
+        
+        // Get the date for this attendance record
+        const attendanceDate = displayData[colIndex]?.date;
+        if (!attendanceDate) {
+          console.error(`No date found for index ${colIndex} in row ${row.id}`);
+          return;
+        }
+        
+        // Always save current value before navigating - use the EXACT row ID from the row object
+        const editKey = `${column}`;
+        let currentValue = editValue[editKey];
+        
+        // If no edit value exists, use the original value
+        if (currentValue === undefined) {
+          currentValue = displayData[colIndex]?.[currentField] || (currentField === "dnShift" ? "" : "0");
+        }
+        
+        currentValue = String(currentValue);
+        
+        // Format the value according to field type
+        let formattedValue;
+        if (currentField === "dnShift") {
+          formattedValue = currentValue.toUpperCase();
+          if (!['D', 'N', 'E'].includes(formattedValue)) {
+            formattedValue = 'D'; // Default to day shift
+          }
+        } else {
+          // For numeric fields
+          if (isNaN(parseFloat(currentValue)) || currentValue.trim() === '') {
+            formattedValue = "0";
+          } else {
+            const numValue = parseFloat(currentValue);
+            formattedValue = numValue.toString();
+          }
+        }
+        
+        // console.log(`Saving ${currentField}=${formattedValue} for date ${attendanceDate} in row ID ${row.id}`);
+        
+        // IMPORTANT: Use the sequential index for updates, not the employee ID
+        onCellUpdate(sequentialIndex, attendanceDate, currentField, formattedValue);
+        
+        // Let the parent component handle vertical navigation with BOTH parameters
+        if (typeof handleVerticalKeyDown === 'function') {
+          handleVerticalKeyDown(e, sequentialIndex, row.id, column);
+        } else {
+          console.error("handleVerticalKeyDown function not available");
+        }
+        return;
+      }
+      
+      // Handle Enter and Tab as before
+      if (e.key === "Enter" || e.key === "Tab") {
+        e.preventDefault();
+  
+        // Parse column and index
+        const [currentField, currentColIndex] = column.split("-");
+        const colIndex = parseInt(currentColIndex);
+        
+        // Get the date for this attendance record (no need for error log here)
+        const attendanceDate = displayData[colIndex]?.date;
+        if (!attendanceDate) {
+          console.error(`No date found for index ${colIndex} in row ${row.id}`);
+          return;
+        }
+        
+        // Get current edit value
+        const editKey = `${column}`;
+        let currentValue = editValue[editKey] || displayData[colIndex]?.[currentField] || "0";
+        // Convert to string to ensure we can use string methods
+        currentValue = String(currentValue);
+        const originalValue = String(displayData[colIndex]?.[currentField] || "0");
+  
+        // Convert time format to decimal if needed (for final submission)
+        if ((currentField === "netHR" || currentField === "otHR") && currentValue.includes(':')) {
+          const timeFormatRegex = /^(\d+):([0-5]\d)$/;
+          const timeMatch = currentValue.match(timeFormatRegex);
+  
+          if (timeMatch) {
+            const hours = parseInt(timeMatch[1], 10);
+            const minutes = parseInt(timeMatch[2], 10);
+            // Convert minutes to decimal (e.g., 30 minutes = 0.5 hours)
+            const minuteDecimal = minutes / 60;
+            const decimalHours = hours + minuteDecimal;
+  
+            // Use exact decimal representation without rounding
+            if (minutes === 0) {
+              currentValue = hours.toString();
+            } else if (minutes === 30) {
+              currentValue = (hours + 0.5).toString();
+            } else {
+              // For other minute values, use up to 2 decimal places if needed
+              currentValue = decimalHours.toFixed(2).replace(/\.?0+$/, '');
+            }
+  
+            // Update the editValue state with the converted value
+            setEditValue(prev => ({ ...prev, [editKey]: currentValue }));
+          } else {
+            // Invalid time format, revert to original
+            currentValue = originalValue;
+            setEditValue(prev => ({ ...prev, [editKey]: currentValue }));
+          }
+        }
+  
+        // Validate values before saving
+        let validationFailed = false;
+  
+        if (currentField === "netHR" && !validateNetHR(currentValue)) {
+          alert("Net hours cannot exceed 11");
+          setEditValue(prev => ({ ...prev, [editKey]: "11" }));
+          validationFailed = true;
+        }
+  
+        if (currentField === "otHR" && !validateOtHR(currentValue)) {
+          alert("Overtime hours cannot exceed 15");
+          setEditValue(prev => ({ ...prev, [editKey]: "15" }));
+          validationFailed = true;
+        }
+  
+        if (validationFailed) return;
+  
+        // Only update if the value has changed
+        if (currentValue !== originalValue) {
+          const formattedValue = formatValue(currentValue, currentField);
+          
+          // IMPORTANT: Use the sequential index for cell updates, not the employee ID
+          onCellUpdate(sequentialIndex, attendanceDate, currentField, formattedValue);
+        }
+  
+        // Define the order of editable fields
+        const fields = ["netHR", "otHR", "dnShift"];
+  
+        // Get the filtered data directly
+        const filteredData = getFilteredData ? getFilteredData() : [];
+  
+        // Find the next cell to focus - USING SEQUENTIAL INDEX
+        const findNextCell = () => {
+          const currentFieldIndex = fields.indexOf(currentField);
+  
+          // Try next field in the same column
+          if (currentFieldIndex < fields.length - 1) {
+            return {
+              rowIndex: sequentialIndex, // Use sequentialIndex instead of rowIndex
+              column: `${fields[currentFieldIndex + 1]}-${colIndex}`
+            };
+          }
+  
+          // Try first field in the next column
+          if (colIndex < displayData.length - 1) {
+            return {
+              rowIndex: sequentialIndex, // Use sequentialIndex instead of rowIndex
+              column: `${fields[0]}-${colIndex + 1}`
+            };
+          }
+  
+          // Try first field in the first column of the next row
+          if (sequentialIndex < filteredData.length - 1) {
+            // Move to the next sequential index
+            const nextSequentialIndex = sequentialIndex + 1;
+            
+            if (nextSequentialIndex < filteredData.length) {
+              return {
+                rowIndex: nextSequentialIndex, // Use nextSequentialIndex
+                column: `${fields[0]}-0`
+              };
+            }
+          }
+  
+          return null;
+        };
+  
+        const nextCell = findNextCell();
+  
+        if (nextCell) {
+          // If next cell is in the same row, just set the editable cell
+          if (nextCell.rowIndex === sequentialIndex) {
+            setEditableCell(nextCell.column);
+            
+            // Focus the input after a brief delay
+            setTimeout(() => {
+              if (inputRef.current) {
+                inputRef.current.focus();
+                if (inputRef.current.select) {
+                  inputRef.current.select();
+                }
+              }
+            }, 10);
+          } else {
+            // If next cell is in a different row, first clear this cell's editable state
+            setEditableCell(null);
+            
+            // Then fire a navigation event to the next row
+            const navigationEvent = new CustomEvent('verticalNavigate', {
+              detail: {
+                rowIndex: nextCell.rowIndex,
+                employeeId: filteredData[nextCell.rowIndex]?.id,
+                cellKey: nextCell.column
+              },
+              bubbles: true
+            });
+            document.dispatchEvent(navigationEvent);
+          }
+        } else {
+          setEditableCell(null);
+        }
+      } 
+      else if (e.key === "Escape") {
+        e.preventDefault();
+        setEditableCell(null);
+      }
+    } catch (err) {
+      console.error("Error in onKeyDown:", err, "row:", row.id, "column:", column);
+    }
+  };
+  
+// Updated event handlers for DataRow component
+useEffect(() => {
+    // Handler for saving the current cell value
+    const handleSaveEvent = (event) => {
+      try {
+        // Match by sequential index
+        if (event.detail.rowIndex === sequentialIndex) {
+          if (!editableCell) return;
+          
+        //   console.log(`Row ${sequentialIndex} (Employee ${row.id}) saving editable cell ${editableCell}`);
+          
+          const [field, indexStr] = editableCell.split('-');
+          const colIndex = parseInt(indexStr);
+          
+          // Safety check
+          if (displayData && displayData[colIndex]) {
+            // Get current edit value
+            const editKey = `${editableCell}`;
+            let currentValue = editValue[editKey] || displayData[colIndex]?.[field] || "0";
+            currentValue = String(currentValue);
+            
+            // Apply value formatting
+            let formattedValue = currentValue;
+            if (field === "dnShift") {
+              formattedValue = currentValue.toUpperCase();
+              if (!['D', 'N', 'E'].includes(formattedValue)) {
+                formattedValue = 'D'; // Default
+              }
+            } else {
+              // For numeric fields
+              if (isNaN(parseFloat(currentValue))) {
+                formattedValue = "0";
+              } else {
+                formattedValue = parseFloat(currentValue).toString();
+              }
+            }
+            
+            const attendanceDate = displayData[colIndex]?.date;
+            if (attendanceDate) {
+              // IMPORTANT: Use the actual array index that matches your update logic
+              // If your update function expects the index position in the data array, use rowIndex
+              // If your update function expects a sequential position in filtered data, use sequentialIndex
+            //   console.log(`💾 Saving ${field}=${formattedValue} for date ${attendanceDate} in row index ${sequentialIndex}`);
+              
+              // Pass the row index from the filtered data (sequentialIndex)
+              // This is what your handleCellDataUpdate expects
+              onCellUpdate(sequentialIndex, attendanceDate, field, formattedValue);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error handling save event:", err);
+      }
     };
+  
+    // Handler for receiving navigation events
+    const handleNavigationEvent = (event) => {
+      try {
+        // Match by sequential index
+        if (event.detail.rowIndex === sequentialIndex) {
+        //   console.log(`Row ${sequentialIndex} (Employee ${row.id}) received navigation event for cell ${event.detail.cellKey}`);
+          
+          // Set this cell as editable
+          setEditableCell(event.detail.cellKey);
+          
+          // Ensure the input gets focus after a brief delay
+          setTimeout(() => {
+            try {
+              if (inputRef.current) {
+                inputRef.current.focus();
+                if (inputRef.current.select) {
+                  inputRef.current.select();
+                }
+              }
+            } catch (err) {
+              console.error("Error focusing input:", err);
+            }
+          }, 50);
+        }
+      } catch (err) {
+        console.error("Error handling navigation event:", err);
+      }
+    };
+    
+    // Handler for clearing editable state
+    const handleClearEvent = (event) => {
+      try {
+        // Match by sequential index
+        if (event.detail.rowIndex === sequentialIndex) {
+        //   console.log(`Row ${sequentialIndex} (Employee ${row.id}) clearing editable state`);
+          setEditableCell(null);
+        }
+      } catch (err) {
+        console.error("Error handling clear event:", err);
+      }
+    };
+    
+    // Add event listeners
+    document.addEventListener('saveEditableCell', handleSaveEvent);
+    document.addEventListener('verticalNavigate', handleNavigationEvent);
+    document.addEventListener('clearEditableCell', handleClearEvent);
+    
+    // Clean up event listeners
+    return () => {
+      document.removeEventListener('saveEditableCell', handleSaveEvent);
+      document.removeEventListener('verticalNavigate', handleNavigationEvent);
+      document.removeEventListener('clearEditableCell', handleClearEvent);
+    };
+  }, [sequentialIndex, row.id, editableCell, editValue, displayData, onCellUpdate]);
+
 
     // Function to check if row has any comments
     const hasAnyComments = () => {

@@ -33,7 +33,6 @@ export const useAttendance = (user, monthYear, ws, send) => {
     { id: 'designation', label: 'Designation', isVisible: true },
     { id: 'department', label: 'Department', isVisible: false },
   ]);
-console.log(dateRange);
 
   const headerRef = useRef(null);
   const dataContainerRef = useRef(null);
@@ -384,7 +383,7 @@ if (itemCopy.attendance && Array.isArray(itemCopy.attendance)) {
         return parsed;
       }
     }
-    console.log(`Could not parse date: ${dateStr}`);
+    // console.log(`Could not parse date: ${dateStr}`);
     return null;
   };
   

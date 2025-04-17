@@ -1,11 +1,12 @@
 // components/AttendancePage/AttendancePage.jsx
-import React from "react";
+import React, {useEffect} from "react";
 import "./AttendancePage.css";
 import AttendanceHeader from "./AttendanceHeader";
 import AttendencePageSearchFilters from "./AttendencePageSearchFilters";
 import DataRow from "./DataRow";
 import { useWebSocket } from "../../hooks/useWebSocket";
 import { useAttendance } from "../../hooks/useAttendance";
+import { useVerticalNavigation } from "../../hooks/useVerticalNavigation.js"; // Import the dual reference hook
 
 function AttendancePage({ user, monthYear }) {
   const { ws, send } = useWebSocket();
@@ -54,6 +55,9 @@ function AttendancePage({ user, monthYear }) {
 
   // Get filtered data without setting state directly
   const { data: filteredData } = getFilteredData();
+  
+  // Use the vertical navigation hook
+  const { registerInputRef, handleKeyDown } = useVerticalNavigation(filteredData);
 
   // Helper function to get metrics for a specific employee
   const getEmployeeMetricsById = (employeeId) => {
@@ -83,6 +87,49 @@ function AttendancePage({ user, monthYear }) {
     
     return metrics;
   };
+
+
+useEffect(() => {
+  if (filteredData && filteredData.length > 0) {
+    console.log("===== EMPLOYEE ID MAPPING =====");
+    filteredData.forEach((row, index) => {
+      console.log(`Row ${index} (filtered): Employee ID=${row.id}, Name=${row.name}, PunchCode=${row.punchCode}`);
+    });
+    console.log("===============================");
+  }
+}, [filteredData]);
+
+// Add this to your AttendancePage component
+// This is a wrapper function for handleCellDataUpdate that adds more debugging
+
+const wrappedHandleCellDataUpdate = (rowIndex, attendanceDate, field, value) => {
+  console.log(`🔍 UPDATE ATTEMPT: row index=${rowIndex}, date=${attendanceDate}, field=${field}, value=${value}`);
+  
+  // Additional debugging to verify what's happening
+  if (typeof rowIndex === 'number' && filteredData && filteredData[rowIndex]) {
+    const employeeId = filteredData[rowIndex].id;
+    const employeeName = filteredData[rowIndex].name;
+    const employeePunchCode = filteredData[rowIndex].punchCode;
+    
+    console.log(`✅ Found employee at filtered index ${rowIndex}: ID=${employeeId}, Name=${employeeName}, PunchCode=${employeePunchCode}`);
+    
+    // Now find the corresponding index in the full attendanceData
+    const fullDataIndex = attendanceData.findIndex(emp => emp.id === employeeId);
+    console.log(`👉 This corresponds to index ${fullDataIndex} in the full attendance data`);
+    
+    // Now call the original handler - here you can decide which index to pass
+    // depending on what your original function expects
+    handleCellDataUpdate(rowIndex, attendanceDate, field, value);
+  } else {
+    console.error(`❌ ERROR: Invalid row index ${rowIndex} - not found in filtered data!`);
+  }
+};
+
+// Then in your JSX, pass this wrapper instead of the original
+// i.e., change:
+// onCellUpdate={handleCellDataUpdate}
+// to:
+// onCellUpdate={wrappedHandleCellDataUpdate}
 
   if (!attendanceData.length) {
     return (
@@ -176,7 +223,7 @@ function AttendancePage({ user, monthYear }) {
             </div>
 
             <div className="data-container" ref={dataContainerRef}>
-              {filteredData.map((row) => {
+              {filteredData.map((row, sequentialIndex) => {
                 // Find the actual index in the attendanceData array
                 const rowIndex = attendanceData.findIndex((item) => item.id === row.id);
                 
@@ -189,6 +236,7 @@ function AttendancePage({ user, monthYear }) {
                     row={row}
                     punchCode={row.punchCode}
                     rowIndex={rowIndex}
+                    sequentialIndex={sequentialIndex} // Pass the sequential index
                     hoveredRow={hoveredRow}
                     setHoveredRow={setHoveredRow}
                     data={attendanceData}
@@ -210,6 +258,9 @@ function AttendancePage({ user, monthYear }) {
                     eveningShiftCount={metrics.eveningShiftCount}
                     siteCommentCount={metrics.siteCommentCount}
                     absentCount={metrics.absentCount}
+                    // Pass navigation props
+                    registerInputRef={registerInputRef}
+                    handleVerticalKeyDown={handleKeyDown}
                   />
                 );
               })}
