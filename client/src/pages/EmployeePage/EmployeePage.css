@@ -149,6 +149,7 @@
   max-height: calc(80vh - 230px) !important;
   /* Adjust this value based on your layout */
   overflow-y: auto !important;
+  overflow-x: auto;
   scrollbar-width: thin;
 }
 
@@ -215,8 +216,8 @@
 
 .employee-table th:nth-child(5),
 .employee-table td:nth-child(5) {
-  width: 70px;
-  max-width: 70px;
+  width: 100px;
+  max-width: 100px;
 }
 .employee-table th:nth-child(6),
 .employee-table td:nth-child(6) {
@@ -240,19 +241,24 @@
 }
 .employee-table th:nth-child(10),
 .employee-table td:nth-child(10) {
-  width: 70px;
-  max-width: 70px;
+  width: 150px;
+  max-width: 150px;
 }
 .employee-table th:nth-child(11),
 .employee-table td:nth-child(11) {
   width: 120px;
   max-width: 120px;
 }
+.employee-table th:nth-child(12),
+.employee-table td:nth-child(12) {
+  width: 90px;
+  max-width: 90px;
+}
 
 .employee-table th:last-child,
 .employee-table td:last-child {
-  width: 140px;
-  max-width: 140px;
+  width: 150px;
+  max-width: 15x0px;
 }
 
 .employee-table .ant-table-tbody>tr:hover>td {

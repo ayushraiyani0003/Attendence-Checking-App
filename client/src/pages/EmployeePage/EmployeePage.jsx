@@ -489,7 +489,7 @@ const EmployeePage = () => {
             }}
             rowKey="employee_id"
             bordered
-            scroll={{ x: 'max-content', y: 'calc(78vh - 230px)' }}
+            scroll={{ x: true, y: 'calc(78vh - 230px)' }}
             className="employee-table"
             size="small"
             summary={() => (

@@ -9,7 +9,6 @@ const {
 
 // Create a new employee
 const createEmployee = async (req, res) => {
-  console.log(req);
   
   try {
     const { 
