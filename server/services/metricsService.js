@@ -18,7 +18,7 @@ const validateFileFormat = (data, fileType) => {
 
   // Get all column headers and log them for debugging
   const headers = Object.keys(data[0]);
-  console.log(`[DEBUG] ${fileType} file headers:`, headers);
+  // console.log(`[DEBUG] ${fileType} file headers:`, headers);
   
   // More flexible User ID column detection
   const userIdColumn = headers.find(h => 
@@ -51,7 +51,7 @@ const validateFileFormat = (data, fileType) => {
 
   // Check if date columns exist (columns with numeric names like 1, 2, 3, etc.)
   const dateColumns = headers.filter(header => /^(0?[1-9]|[12][0-9]|3[01])(\s+[A-Za-z]{3})?$/.test(header));
-  console.log(`[DEBUG] ${fileType} file date columns:`, dateColumns);
+  // console.log(`[DEBUG] ${fileType} file date columns:`, dateColumns);
   
   if (dateColumns.length === 0) {
     return {
@@ -95,17 +95,17 @@ const validateFileFormat = (data, fileType) => {
 
 const processMetricsFiles = async (networkFile, otFile, monthYear) => {
   try {
-    console.log("[DEBUG] Starting file processing");
-    console.log("[DEBUG] Network file name:", networkFile.originalname);
-    console.log("[DEBUG] OT file name:", otFile.originalname);
+    // console.log("[DEBUG] Starting file processing");
+    // console.log("[DEBUG] Network file name:", networkFile.originalname);
+    // console.log("[DEBUG] OT file name:", otFile.originalname);
     
     // Parse Network Hours and OT Hours files
     const networkData = await parseExcelFile(networkFile);
     const otData = await parseExcelFile(otFile);
 
-    console.log("[DEBUG] Files parsed successfully");
-    console.log("[DEBUG] Network data rows:", networkData.length);
-    console.log("[DEBUG] OT data rows:", otData.length);
+    // console.log("[DEBUG] Files parsed successfully");
+    // console.log("[DEBUG] Network data rows:", networkData.length);
+    // console.log("[DEBUG] OT data rows:", otData.length);
 
     // Validate file formats
     const networkValidation = validateFileFormat(networkData, 'network');
@@ -118,9 +118,9 @@ const processMetricsFiles = async (networkFile, otFile, monthYear) => {
       throw new Error(`Overtime hours file: ${otValidation.errorMessage}`);
     }
 
-    console.log("[DEBUG] Files validated successfully");
-    console.log("[DEBUG] Network User ID column:", networkValidation.userIdColumn);
-    console.log("[DEBUG] OT User ID column:", otValidation.userIdColumn);
+    // console.log("[DEBUG] Files validated successfully");
+    // console.log("[DEBUG] Network User ID column:", networkValidation.userIdColumn);
+    // console.log("[DEBUG] OT User ID column:", otValidation.userIdColumn);
 
     // Get the actual User ID column names found in each file
     const networkUserIdColumn = networkValidation.userIdColumn;

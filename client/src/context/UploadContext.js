@@ -44,8 +44,8 @@ export const UploadProvider = ({ children }) => {
       
       // Check if there's a response object (typical of axios errors)
       if (error.response) {
-        console.log("Error response status:", error.response.status);
-        console.log("Error response data:", error.response.data);
+        // console.log("Error response status:", error.response.status);
+        // console.log("Error response data:", error.response.data);
         
         if (error.response.data) {
           // Extract specific error details if available
