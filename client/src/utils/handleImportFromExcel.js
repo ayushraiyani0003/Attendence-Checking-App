@@ -46,7 +46,8 @@ const handleImportFromExcel = (employees, addEmployee, editEmployee) => {
                 name: row['Name'] || '',
                 department: row['Department'] || '',
                 designation: row['Designation'] || '',
-                mobile_no: row['Mobile No.'] || '',  // Added mobile number field
+                mobile_number: row['Mobile No.'] || '',  // Added mobile number field
+                whats_app_number: row['whatsApp number'] || '',  // Added mobile number field
                 net_hr: row['Net Hours'] || 0,
                 branch: row['Branch'] || '',
                 sections: row['Sections'] || '',

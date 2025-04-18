@@ -52,6 +52,8 @@ export const EmployeeProvider = ({ children, userRole, userReportingGroup }) => 
   };
 
   const addNewEmployee = async (employeeData) => {
+    // console.log(employeeData);
+    
     try {
       // Prepare employee data with all fields including new ones
       const completeEmployeeData = {
@@ -61,6 +63,7 @@ export const EmployeeProvider = ({ children, userRole, userReportingGroup }) => 
         designation: employeeData.designation,
         reporting_group: employeeData.reporting_group,
         mobile_no: employeeData.mobile_no, // Added mobile number
+        whatsApp_no: employeeData.whatsApp_no,
         net_hr: employeeData.net_hr,
         week_off: employeeData.week_off,
         resign_date: employeeData.resign_date,
@@ -82,6 +85,8 @@ export const EmployeeProvider = ({ children, userRole, userReportingGroup }) => 
   };
 
   const editEmployee = async (employeeId, updatedData) => {
+    // console.log(updatedData);
+    
     try {
       // Ensure all fields are included in the update
       const completeUpdateData = {
@@ -91,6 +96,7 @@ export const EmployeeProvider = ({ children, userRole, userReportingGroup }) => 
         designation: updatedData.designation,
         reporting_group: updatedData.reporting_group,
         mobile_no: updatedData.mobile_no, // Added mobile number
+        whatsApp_no: updatedData.whatsApp_no,
         net_hr: updatedData.net_hr,
         week_off: updatedData.week_off,
         resign_date: updatedData.resign_date,

@@ -18,6 +18,7 @@ const createEmployee = async (req, res) => {
       designation, 
       reporting_group,
       mobile_no,
+      whatsApp_no,
       net_hr,
       week_off,
       resign_date,
@@ -34,6 +35,7 @@ const createEmployee = async (req, res) => {
       !designation ||
       !reporting_group || 
       !mobile_no || 
+      !whatsApp_no ||
       !net_hr || 
       !week_off || 
       !branch || 
@@ -49,6 +51,7 @@ const createEmployee = async (req, res) => {
       designation,
       reporting_group,
       mobile_no,
+      whatsApp_no,
       net_hr,
       week_off,
       resign_date,
@@ -69,6 +72,8 @@ const createEmployee = async (req, res) => {
 
 // Edit an existing employee
 const editEmployee = async (req, res) => {
+  // console.log(req);
+  
   try {
     const { employee_id } = req.params;
     const { 
@@ -78,6 +83,7 @@ const editEmployee = async (req, res) => {
       designation, 
       reporting_group,
       mobile_no,
+      whatsApp_no,
       net_hr,
       week_off,
       resign_date,
@@ -97,6 +103,7 @@ const editEmployee = async (req, res) => {
       punch_code,
       designation,
       mobile_no,
+      whatsApp_no,
       reporting_group,
       net_hr,
       week_off,

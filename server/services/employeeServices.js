@@ -8,7 +8,8 @@ const createEmployeeService = async (employeeData) => {
     // console.log("employeeData", employeeData);
     const dataForDatabase = {
       ...employeeData,
-      mobile_number: employeeData.mobile_no
+      mobile_number: employeeData.mobile_no,
+      whats_app_number: employeeData.whatsApp_no,
     };
     const newEmployee = await Employee.create(dataForDatabase);
 
@@ -25,6 +26,8 @@ const createEmployeeService = async (employeeData) => {
 
 // Service for editing an existing employee
 const editEmployeeService = async (employeeId, updatedData) => {
+  // console.log(updatedData);
+  
   try {
     const employee = await Employee.findByPk(employeeId);
     if (!employee) {
@@ -38,6 +41,7 @@ const editEmployeeService = async (employeeId, updatedData) => {
     employee.designation = updatedData.designation;
     employee.reporting_group = updatedData.reporting_group;
     employee.mobile_number = updatedData.mobile_no; // Updated to handle the mobile number
+    employee.whats_app_number = updatedData.whatsApp_no; // Updated to handle the mobile number
     
     // Update the new fields
     employee.net_hr = updatedData.net_hr;

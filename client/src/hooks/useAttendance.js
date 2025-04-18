@@ -191,7 +191,7 @@ export const useAttendance = (user, monthYear, ws, send) => {
               }
             });
             
-            console.log("Total mistakes calculated:", totalMistakes);
+            // console.log("Total mistakes calculated:", totalMistakes);
             sethowMuchMistake(totalMistakes);
           } else {
             sethowMuchMistake(0);

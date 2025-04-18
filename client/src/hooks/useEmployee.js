@@ -20,6 +20,8 @@ const useEmployee = () => {
   }, [employees]);
 
   const addEmployee = async (employeeData) => {
+    // console.log(employeeData);
+    
     try {
       // Make sure all fields are included
       const completeEmployeeData = {
@@ -28,7 +30,8 @@ const useEmployee = () => {
         punch_code: employeeData.punch_code,
         designation: employeeData.designation,
         reporting_group: employeeData.reporting_group,
-        mobile_no: employeeData.mobile_no, // Added mobile number
+        mobile_no: employeeData.mobile_number, // Added mobile number
+        whatsApp_no: employeeData.whats_app_number, // Added WhatsApp number
         net_hr: employeeData.net_hr,
         week_off: employeeData.week_off,
         resign_date: employeeData.resign_date,
@@ -44,6 +47,8 @@ const useEmployee = () => {
   };
 
   const editEmployeeById = async (employeeId, updatedData) => {
+    // console.log(updatedData);
+    
     try {
       // Make sure all fields are included in the update
       const completeUpdateData = {
@@ -52,7 +57,8 @@ const useEmployee = () => {
         punch_code: updatedData.punch_code,
         designation: updatedData.designation,
         reporting_group: updatedData.reporting_group,
-        mobile_no: updatedData.mobile_no, // Added mobile number
+        mobile_no: updatedData.mobile_number, // Added mobile number
+        whatsApp_no: updatedData.whats_app_number, // Added WhatsApp number
         net_hr: updatedData.net_hr,
         week_off: updatedData.week_off,
         resign_date: updatedData.resign_date,

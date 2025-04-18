@@ -126,6 +126,7 @@ const EmployeePage = () => {
         'Department': employee.department,
         'Designation': employee.designation,
         'Mobile No.': employee.mobile_number,
+        'whatsApp number': employee.whats_app_number,
         'Net Hours': employee.net_hr,
         'Branch': employee.branch,
         'Sections': employee.sections,
@@ -229,6 +230,13 @@ const EmployeePage = () => {
       title: 'Mobile no.',
       dataIndex: 'mobile_number',
       key: 'mobile_number',
+      sorter: (a, b) => (a.mobile_number || 0) - (b.mobile_number || 0),
+      render: (text) => <span>{text}</span>,
+    },
+    {
+      title: 'whatsApp no.',
+      dataIndex: 'whats_app_number',
+      key: 'whats_app_number',
       sorter: (a, b) => (a.mobile_number || 0) - (b.mobile_number || 0),
       render: (text) => <span>{text}</span>,
     },
@@ -553,7 +561,12 @@ const EmployeePage = () => {
           </Form.Item>
 
           {/* Add Mobile Number field */}
-          <Form.Item label="Mobile Number" name="mobile_no" rules={[{ required: true, message: 'Please enter mobile number!' }]}>
+          <Form.Item label="Mobile Number" name="mobile_number" rules={[{ required: true, message: 'Please enter mobile number!' }]}>
+            <Input placeholder="Enter mobile number" />
+          </Form.Item>
+
+          {/* Add Mobile Number field */}
+          <Form.Item label="Whatsapp Number" name="whats_app_number" rules={[{ required: true, message: 'Please enter mobile number!' }]}>
             <Input placeholder="Enter mobile number" />
           </Form.Item>
 
