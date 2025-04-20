@@ -8,11 +8,16 @@ class LogRedisService {
   }
 
   /**
-   * Generate a unique log ID based on date and sequence
-   * @param {string} dateStr - Date string (format: DD/MM/YYYY)
-   * @returns {Promise<string>} - Log ID in format YYYYMMDD+id+sequence
-   */
-  async generateLogId(dateStr) {
+ * Generate a unique log ID based on date and sequence
+ * @param {string} dateStr - Date string (format: DD/MM/YYYY)
+ * @returns {Promise<string>} - Log ID in format YYYYMMDD+id+sequence
+ */
+/**
+ * Generate a unique log ID based on date and timestamp
+ * @param {string} dateStr - Date string (format: DD/MM/YYYY)
+ * @returns {Promise<string>} - Log ID in format YYYYMMDD+timestamp
+ */
+async generateLogId(dateStr) {
     // Parse the date string (from DD/MM/YYYY to YYYYMMDD)
     const [day, month, year] = dateStr.split('/');
     
@@ -20,6 +25,12 @@ class LogRedisService {
     const paddedMonth = month.padStart(2, '0');
     const paddedDay = day.padStart(2, '0');
     const formattedDate = `${year}${paddedMonth}${paddedDay}`;
+    
+    // Get current timestamp (milliseconds since epoch)
+    const timestamp = Date.now();
+    
+    // Return the full log ID: YYYYMMDD + timestamp
+    return `${formattedDate}id${timestamp}`;
   }
 
   /**
@@ -58,6 +69,8 @@ class LogRedisService {
     
     // Generate unique log ID
     const logId = await this.generateLogId(editDate);
+    console.log(logId);
+    
     
     // Create log entry as a single JSON object
     const logEntry = {

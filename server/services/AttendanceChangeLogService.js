@@ -54,10 +54,10 @@ class AttendanceChangeLogService {
         changed_by,
         employee_punch_code
       } = changeData;
-
+  
       // Ensure log_id is not too long (max 20 chars for our DB schema)
       const truncatedLogId = log_id.substring(0, 19);
-
+  
       // Format date properly (ensure it's YYYY-MM-DD)
       let formattedDate = attendance_date;
       if (typeof attendance_date === 'string') {
@@ -67,18 +67,22 @@ class AttendanceChangeLogService {
           formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
         }
       }
-
-      // Get employee name from Employee model
+  
+      // Get employee name, department, and reporting group from Employee model
       let employeeName = null;
+      let employeeDepartment = null;
+      let employeeReportingGroup = null;
       try {
         const employee = await this.Employee.findByPk(employee_id);
         if (employee) {
           employeeName = employee.name || null;
+          employeeDepartment = employee.department || null;
+          employeeReportingGroup = employee.reporting_group || null;
         }
       } catch (err) {
-        console.warn(`Couldn't fetch employee name: ${err.message}`);
+        console.warn(`Couldn't fetch employee data: ${err.message}`);
       }
-
+  
       // Create the log in database
       return await this.AttendanceChangeLog.create({
         log_id: truncatedLogId,
@@ -91,7 +95,9 @@ class AttendanceChangeLogService {
         changed_by_id,
         changed_by,
         employee_punch_code: employee_punch_code || '',
-        employee_name: employeeName || ''
+        employee_name: employeeName || '',
+        employee_department: employeeDepartment || '',
+        employee_reporting_group: employeeReportingGroup || ''
       });
     } catch (error) {
       throw new Error(`Error creating attendance change log: ${error.message}`);

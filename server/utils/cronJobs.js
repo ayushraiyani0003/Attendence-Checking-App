@@ -25,7 +25,7 @@ cron.schedule('0 30 0 * * *', () => {
 });
 
 // make a conns sedual for run the all attndence update as redis one in mysql. all attendence are update and update all status as lock status
-cron.schedule('30 14 * * *', async () => {
+cron.schedule('12 9 * * *', async () => {
   try {
     const allDates = [];
     const allGroups = [];
@@ -39,7 +39,7 @@ cron.schedule('30 14 * * *', async () => {
 
     // Handle success
     if (result.success) {
-      // console.log(`${result.updatedRecords} records updated successfully.`);
+      console.log(`${result.updatedRecords} records updated successfully.`);
       
       // Extract unique dates and groups
       redisAttData.forEach(item => {
@@ -56,8 +56,8 @@ cron.schedule('30 14 * * *', async () => {
         }
       });
 
-      // console.log('All Dates:', allDates);
-      // console.log('All Groups:', allGroups);
+      console.log('All Dates:', allDates);
+      console.log('All Groups:', allGroups);
 
       // Delete Redis keys for each date and group combination
       for (const date of allDates) {
@@ -96,7 +96,7 @@ const logService = new AttendanceChangeLogService();
 
 // Cron job to sync logs from Redis to MySQL every 2 minutes
 // Format: '*/2 * * * *' means "every 2 minutes"
-cron.schedule('*/2 * * * *', async () => {
+cron.schedule('*/5 * * * *', async () => {
   try {
     console.log('Running Redis to MySQL log sync...');
     
@@ -110,7 +110,7 @@ cron.schedule('*/2 * * * *', async () => {
 });
 
 // Cron job to clean up Redis logs at midnight (0 0 * * *)
-cron.schedule('30 8 7 * * *', async () => {
+cron.schedule('30 46 7 * * *', async () => {
   try {
     console.log('Running Redis logs cleanup...');
     

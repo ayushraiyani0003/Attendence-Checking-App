@@ -48,6 +48,14 @@ module.exports = (sequelize, DataTypes) => {
       employee_name: {
         type: DataTypes.STRING(100),
         allowNull: true,
+      },
+      employee_department: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      employee_reporting_group: {
+        type: DataTypes.TEXT,
+        allowNull: true,
       }
     },
     {
