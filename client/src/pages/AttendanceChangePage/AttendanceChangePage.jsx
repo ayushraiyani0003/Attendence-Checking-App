@@ -108,7 +108,7 @@ const AttendanceChangePage = () => {
           employee_name: log.employee_name,
           employee_department: log.employee_department,
           employee_reporting_group: log.employee_reporting_group,
-          employee_punch_code: log.punch_code,
+          employee_punch_code: log.employee_punch_code,
           attendance_date: log.attendance_date
         });
       }
@@ -200,6 +200,7 @@ const AttendanceChangePage = () => {
               <thead>
                 <tr>
                   <th>Employee ID</th>
+                  <th>Punch Code</th>
                   <th>Name</th>
                   <th>Department</th>
                   <th>Reporting Group</th>
@@ -218,6 +219,7 @@ const AttendanceChangePage = () => {
                         onClick={() => handleRowClick(employee)}
                       >
                         <td>{employee.employee_id}</td>
+                        <td>{employee.employee_punch_code}</td>
                         <td>{employee.employee_name}</td>
                         <td>{employee.employee_department}</td>
                         <td>{employee.employee_reporting_group}</td>
