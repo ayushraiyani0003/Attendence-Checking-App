@@ -211,22 +211,19 @@ class AttendanceChangeLogService {
    * @param {Object} options - Query options
    * @returns {Promise<Object>} - Logs and count
    */
-  async getLogsByDateRange(startDate, endDate, options = {}) {
+  async getLogsByDateRange(startDate, endDate) {
     try {
-      const { limit = 100, offset = 0 } = options;
       
-      const { count, rows } = await this.AttendanceChangeLog.findAndCountAll({
+      const rows = await this.AttendanceChangeLog.findAndCountAll({
         where: {
           attendance_date: {
             [Op.between]: [startDate, endDate]
           }
         },
-        limit,
-        offset,
         order: [['attendance_date', 'DESC'], ['update_datetime', 'DESC']]
       });
       
-      return { total: count, logs: rows };
+      return rows
     } catch (error) {
       throw new Error(`Error fetching logs for date range: ${error.message}`);
     }

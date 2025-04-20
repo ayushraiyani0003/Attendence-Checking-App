@@ -14,7 +14,8 @@ export const pageRedirect = {
   upload: "/upload",
   userList: "/user-list",
   session:"/sessions",
-  notification:"/make-notification"
+  notification:"/make-notification",
+  logs:"/logs"
 };
 
 // Utility functions for week calculation
