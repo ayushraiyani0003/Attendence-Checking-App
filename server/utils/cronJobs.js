@@ -110,7 +110,7 @@ cron.schedule('*/5 * * * *', async () => {
 });
 
 // Cron job to clean up Redis logs at midnight (0 0 * * *)
-cron.schedule('30 46 7 * * *', async () => {
+cron.schedule('30 0 0 * * *', async () => {
   try {
     console.log('Running Redis logs cleanup...');
     
