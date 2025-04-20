@@ -1,7 +1,5 @@
 async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysqlAttendanceData, groups, lockStatusData) {
   try {
-    // console.log("Redis data:", JSON.stringify(redisAttendanceData, null, 2));
-    
     // Convert the Redis data into a lookup object for easier comparison
     const redisAttendanceLookup = {};
     
@@ -57,7 +55,6 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
 
       // NEW: Check for inactive status or if attendance is after resignation date
       if (employeeDetails.status === "inactive") {
-        // console.log(`Skipping inactive employee with ID ${employee_id}`);
         continue; // Skip inactive employees
       }
 
@@ -68,7 +65,6 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
         
         // Skip if attendance date is after resignation date
         if (attendanceDate > resignDate) {
-          // console.log(`Skipping record for employee ${employee_id}, attendance date ${attendance_date} is after resignation date ${employeeDetails.resign_date}`);
           continue;
         }
       }
@@ -107,8 +103,8 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
       let attendanceRecord = {
         date: formattedDate,
         day: dayOfWeek,
-        netHR: network_hours || 0,
-        otHR: overtime_hours || 0,
+        netHR: network_hours !== undefined && network_hours !== null ? network_hours : 0,
+        otHR: overtime_hours !== undefined && overtime_hours !== null ? overtime_hours : 0,
         dnShift: shift_type || 'Off',
         lock_status: lockStatus,
         comment: comment || '',
@@ -131,19 +127,22 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
             
             // NEW: Skip this record if the employee is inactive in Redis data
             if (redisData.status === "inactive") {
-              // console.log(`Skipping record for employee ${employee_id} because status is inactive in Redis data`);
               redisDataFound = true;
               continue;
             }
             
             // Replace MySQL data with Redis data if available
+            // FIX: Use nullish coalescing instead of logical OR to handle 0 values correctly
             attendanceRecord = {
               date: formattedDate,
               day: dayOfWeek,
-              netHR: redisData.network_hours || attendanceRecord.netHR,
-              otHR: redisData.overtime_hours || attendanceRecord.otHR,
+              // Fix: Check if property exists and is not null, rather than relying on truthy/falsy
+              netHR: redisData.network_hours !== undefined && redisData.network_hours !== null ? 
+                     parseFloat(redisData.network_hours) : attendanceRecord.netHR,
+              otHR: redisData.overtime_hours !== undefined && redisData.overtime_hours !== null ? 
+                   parseFloat(redisData.overtime_hours) : attendanceRecord.otHR,
               dnShift: redisData.shift_type || attendanceRecord.dnShift,
-              comment: redisData.comment|| attendanceRecord.comment,
+              comment: redisData.comment || attendanceRecord.comment,
               // Preserve the original lock status from MySQL/determination
               lock_status: lockStatus,
             };
@@ -154,7 +153,7 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
         }
         if (redisDataFound) break;
       }
-
+      
       // Add attendance record to the employee's attendance array
       employeeRecord.attendance.push(attendanceRecord);
     }
@@ -178,18 +177,18 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
 
 // Helper function to determine lock status
 function determineLockStatus(date, group, lockStatusData) {
-// Handle case where lockStatusData might be undefined or null
-if (!lockStatusData || !Array.isArray(lockStatusData)) {
-  return 'unlocked';
-}
+  // Handle case where lockStatusData might be undefined or null
+  if (!lockStatusData || !Array.isArray(lockStatusData)) {
+    return 'unlocked';
+  }
 
-const formattedInputDate = new Date(date).toISOString().split('T')[0];
-const lockEntry = lockStatusData.find(entry => 
-  entry.date === formattedInputDate && 
-  entry.reporting_group === group
-);
+  const formattedInputDate = new Date(date).toISOString().split('T')[0];
+  const lockEntry = lockStatusData.find(entry => 
+    entry.date === formattedInputDate && 
+    entry.reporting_group === group
+  );
 
-return lockEntry ? lockEntry.status : 'unlocked';
+  return lockEntry ? lockEntry.status : 'unlocked';
 }
 
 module.exports = { redisMysqlAttendanceCompare };
