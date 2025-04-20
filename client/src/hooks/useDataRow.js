@@ -438,13 +438,11 @@ const useDataRow = ({
     };
 
 // Modified onKeyDown function with reliable update saving
-// Modified onKeyDown function with reliable update saving
 const onKeyDown = (e, column) => {
   try {
     // Handle vertical navigation with arrow keys
-    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+    if (e.key === 'dowm ArrowUp' || e.key === 'up ArrowDown') {
       e.preventDefault();
-      // console.log(`Arrow ${e.key} pressed in row ${row.id}, cell ${column}`);
       
       // Parse column and index
       const [currentField, currentColIndex] = column.split("-");
@@ -463,40 +461,77 @@ const onKeyDown = (e, column) => {
         return;
       }
       
-      // Always save current value before navigating - use the EXACT row ID from the row object
+      // Get current edit value
       const editKey = `${column}`;
-      let currentValue = editValue[editKey];
-      
-      // If no edit value exists, use the original value
-      if (currentValue === undefined) {
-        currentValue = displayData[colIndex]?.[currentField] || (currentField === "dnShift" ? "" : "0");
-      }
-      
+      let currentValue = editValue[editKey] || displayData[colIndex]?.[currentField] || "0";
+      // Convert to string to ensure we can use string methods
       currentValue = String(currentValue);
+      const originalValue = String(displayData[colIndex]?.[currentField] || "0");
       
-      // Format the value according to field type
-      let formattedValue;
-      if (currentField === "dnShift") {
-        formattedValue = currentValue.toUpperCase();
-        if (!['D', 'N', 'E'].includes(formattedValue)) {
-          formattedValue = 'D'; // Default to day shift
-        }
-      } else {
-        // For numeric fields
-        if (isNaN(parseFloat(currentValue)) || currentValue.trim() === '') {
-          formattedValue = "0";
+      // Convert time format to decimal if needed (for final submission)
+      if ((currentField === "netHR" || currentField === "otHR") && currentValue.includes(':')) {
+        const timeFormatRegex = /^(\d+):([0-5]\d)$/;
+        const timeMatch = currentValue.match(timeFormatRegex);
+
+        if (timeMatch) {
+          const hours = parseInt(timeMatch[1], 10);
+          const minutes = parseInt(timeMatch[2], 10);
+          // Convert minutes to decimal (e.g., 30 minutes = 0.5 hours)
+          const minuteDecimal = minutes / 60;
+          const decimalHours = hours + minuteDecimal;
+
+          // Use exact decimal representation without rounding
+          if (minutes === 0) {
+            currentValue = hours.toString();
+          } else if (minutes === 30) {
+            currentValue = (hours + 0.5).toString();
+          } else {
+            // For other minute values, use up to 2 decimal places if needed
+            currentValue = decimalHours.toFixed(2).replace(/\.?0+$/, '');
+          }
+
+          // Update the editValue state with the converted value
+          setEditValue(prev => ({ ...prev, [editKey]: currentValue }));
         } else {
-          const numValue = parseFloat(currentValue);
-          formattedValue = numValue.toString();
+          // Invalid time format, revert to original
+          currentValue = originalValue;
+          setEditValue(prev => ({ ...prev, [editKey]: currentValue }));
         }
       }
+
+      // Validate values before saving
+      let validationFailed = false;
+
+      if (currentField === "netHR" && !validateNetHR(currentValue)) {
+        alert("Net hours cannot exceed 11");
+        setEditValue(prev => ({ ...prev, [editKey]: "11" }));
+        validationFailed = true;
+      }
+
+      if (currentField === "otHR" && !validateOtHR(currentValue)) {
+        alert("Overtime hours cannot exceed 15");
+        setEditValue(prev => ({ ...prev, [editKey]: "15" }));
+        validationFailed = true;
+      }
+
+      if (validationFailed) return;
+
+      // Only update if the value has changed
+      if (currentValue !== originalValue) {
+        console.log("Updating cell value for arrow key navigation", 
+                    "rowId:", row.id, 
+                    "rowIndex:", rowIndex, // This should be the actual index in attendanceData
+                    "field:", currentField, 
+                    "value:", currentValue);
+        const formattedValue = formatValue(currentValue, currentField);
+        
+        // IMPORTANT: Use the rowIndex (index in the full attendanceData array)
+        // This matches what handleCellDataUpdate expects
+        onCellUpdate(rowIndex, attendanceDate, currentField, formattedValue);
+      }
       
-      // console.log(`Saving ${currentField}=${formattedValue} for date ${attendanceDate} in row ID ${row.id}`);
-      
-      // IMPORTANT: Use the sequential index for updates, not the employee ID
-      onCellUpdate(sequentialIndex, attendanceDate, currentField, formattedValue);
-      
-      // Let the parent component handle vertical navigation with BOTH parameters
+      // Let the parent component handle vertical navigation - NO NEED TO SAVE AGAIN
+      // The actual navigation and focus change will be handled by the parent
       if (typeof handleVerticalKeyDown === 'function') {
         handleVerticalKeyDown(e, sequentialIndex, row.id, column);
       } else {
@@ -577,10 +612,16 @@ const onKeyDown = (e, column) => {
 
       // Only update if the value has changed
       if (currentValue !== originalValue) {
+        console.log("Updating cell value for Tab/Enter navigation", 
+                    "rowId:", row.id, 
+                    "rowIndex:", rowIndex, // This should be the actual index in attendanceData
+                    "field:", currentField, 
+                    "value:", currentValue);
         const formattedValue = formatValue(currentValue, currentField);
         
-        // IMPORTANT: Use the sequential index for cell updates, not the employee ID
-        onCellUpdate(sequentialIndex, attendanceDate, currentField, formattedValue);
+        // IMPORTANT: Use the rowIndex (index in the full attendanceData array)
+        // This matches what handleCellDataUpdate expects
+        onCellUpdate(rowIndex, attendanceDate, currentField, formattedValue);
       }
 
       // Define the order of editable fields
