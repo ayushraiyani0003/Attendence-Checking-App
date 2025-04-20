@@ -11,6 +11,7 @@ const AttendanceDateLockStatus = require("./attendanceDateLockStatus")(sequelize
 const Audit = require("./audit")(sequelize, Sequelize.DataTypes);
 const HeaderMessage = require("./HeaderMessage")(sequelize, Sequelize.DataTypes);
 const PopupMessage = require("./PopupMessage")(sequelize, Sequelize.DataTypes);
+const AttendanceChangeLog = require("./AttendanceChangeLog")(sequelize, Sequelize.DataTypes);
 
 // Export models for use in controllers
 module.exports = {
@@ -24,4 +25,5 @@ module.exports = {
   Audit,
   HeaderMessage,
   PopupMessage,
+  AttendanceChangeLog,
 };

@@ -3,7 +3,10 @@ const { generateDailyAttendance } = require("../controllers/attendanceController
 const { getReportingGroupData } = require("../controllers/reportingGroupController")
 const { getAllAttendenceDataFromRedis,deleteRedisGroupKeysForSelectedDate } = require("./getRedisAttendenceData");
 const {updateAttendanceFromRedisBySystumn} = require("../services/attendenceService");
+const AttendanceChangeLogService = require('../services/AttendanceChangeLogService');
+const redisClient = require('../config/redisConfig'); // Adjust path to your Redis client
 const Session = require("../models/session")
+
 
 // Cron job to generate attendance at 12:00 AM every day
 cron.schedule('0 30 0 * * *', () => {
@@ -86,5 +89,55 @@ cron.schedule('0 0 * * *', async () => {
     console.log('Weekly session cleanup completed');
   } catch (error) {
     console.error('Error in weekly session cleanup:', error);
+  }
+});
+
+const logService = new AttendanceChangeLogService();
+
+// Cron job to sync logs from Redis to MySQL every 2 minutes
+// Format: '*/2 * * * *' means "every 2 minutes"
+cron.schedule('*/2 * * * *', async () => {
+  try {
+    console.log('Running Redis to MySQL log sync...');
+    
+    // Sync logs from Redis to MySQL (the service already handles duplicate prevention)
+    const syncedCount = await logService.syncLogsFromRedis();
+    
+    console.log(`Redis to MySQL log sync completed. Synced ${syncedCount} new logs.`);
+  } catch (error) {
+    console.error('Error in Redis to MySQL log sync:', error);
+  }
+});
+
+// Cron job to clean up Redis logs at midnight (0 0 * * *)
+cron.schedule('30 8 7 * * *', async () => {
+  try {
+    console.log('Running Redis logs cleanup...');
+    
+    // Get all logs from Redis
+    const logsKey = logService.logsKey;
+    const logsJson = await redisClient.get(logsKey);
+    
+    if (logsJson) {
+      const logs = JSON.parse(logsJson);
+      
+      if (logs.length > 0) {
+        console.log(`Found ${logs.length} logs in Redis before cleanup`);
+        
+        // Before deleting, ensure all logs are synced to MySQL
+        await logService.syncLogsFromRedis();
+        
+        // Reset logs to empty array
+        await redisClient.set(logsKey, JSON.stringify([]));
+        
+        console.log('Redis logs cleanup completed - All logs cleared');
+      } else {
+        console.log('No logs found in Redis to clean up');
+      }
+    } else {
+      console.log('No logs key found in Redis');
+    }
+  } catch (error) {
+    console.error('Error in Redis logs cleanup:', error);
   }
 });

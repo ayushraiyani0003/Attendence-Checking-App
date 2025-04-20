@@ -19,6 +19,7 @@ const { redisMysqlAttendanceCompare } = require('./redisMysqlAttendenceCompare')
 const { getLockStatusDataForMonthAndGroup, setStatusFromDateGroup } = require('../services/groupAttendenceLockServices');
 const { fetchMetricsForMonthYear } = require('../services/metricsService');
 const  {getAllGroupNames} = require('../services/reportingGroupService')
+const LogRedisService = require('../services/LogRedisService');
 
 /**
  * Initialize WebSocket server for real-time attendance management
@@ -384,6 +385,9 @@ async function handleAttendanceUpdate(ws, data, broadcastToClients) {
     if (data.user.role !== 'admin' && !userReportingGroups.includes(data.reportGroup)) {
       throw new Error('Unauthorized to update attendance for this group');
     }
+    
+    const logService = new LogRedisService();
+    await logService.logAttendanceChange(data);
 
     // Extract month from the editDate (format: YYYY-MM-DD)
     const editDate = new Date(data.editDate);
