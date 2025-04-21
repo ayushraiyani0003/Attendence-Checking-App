@@ -634,7 +634,8 @@ if (itemCopy.attendance && Array.isArray(itemCopy.attendance)) {
     const originalValue = updatedEmployee.attendance[columnIndex][field];
 
     // Only send update if the value has actually changed
-    if (originalValue !== value) {
+    if (String(originalValue).trim() !== String(value).trim()) { // the vause is in the string thats why problem acured.
+
       // Prepare minimal payload with only necessary information
       const updatePayload = {
         action: "updateAttendance",
