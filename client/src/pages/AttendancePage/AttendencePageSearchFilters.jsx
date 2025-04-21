@@ -23,7 +23,6 @@ function AttendencePageSearchFilters({
   onToggleColumn,
   howMuchMistake
 }) {
-  console.log(howMuchMistake);
   
   return (
     <div>
@@ -40,7 +39,7 @@ function AttendencePageSearchFilters({
               borderRadius: "4px",
               border: "1px solid var(--gray-300)",
               marginRight: "12px",
-              width: "240px",
+            width: "240px",
             }}
           />
            <select
