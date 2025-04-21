@@ -5,13 +5,13 @@ import { useAttendanceLogs } from '../../context/AttendanceLogContext';
 
 const AttendanceChangePage = () => {
   // Use the context for logs, loading, error states and date management
-  const { 
-    logs, 
-    loading, 
-    error, 
-    selectedDate, 
-    setSelectedDate, 
-    fetchLogs 
+  const {
+    logs,
+    loading,
+    error,
+    selectedDate,
+    setSelectedDate,
+    fetchLogs
   } = useAttendanceLogs();
 
   // Local component state
@@ -20,73 +20,73 @@ const AttendanceChangePage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDepartment, setFilterDepartment] = useState('all');
   const [filterReportingGroup, setFilterReportingGroup] = useState('all');
-  
+
   // Fetch logs whenever the selected date changes
   useEffect(() => {
     if (selectedDate) {
       fetchLogs(selectedDate);
     }
   }, [selectedDate, fetchLogs]);
-  
+
   const formatDate = (date) => {
     return date.toISOString().split('T')[0];
   };
-  
+
   const handleDateChange = (e) => {
     setSelectedDate(e.target.value);
     setSelectedEmployee(null);
     setShowPopup(false);
   };
-  
+
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
   };
-  
+
   const handleDepartmentFilterChange = (e) => {
     setFilterDepartment(e.target.value);
   };
-  
+
   const handleReportingGroupFilterChange = (e) => {
     setFilterReportingGroup(e.target.value);
   };
-  
+
   const handleRowClick = (employee) => {
     setSelectedEmployee(employee);
     setShowPopup(true);
   };
-  
+
   // Get unique employees for the selected date with filters applied
   const getUniqueEmployeesForDate = () => {
     // First, ensure we have logs before filtering
     if (!logs || logs.length === 0) {
       return [];
     }
-    
+
     // Filter by selected date
     let filteredLogs = logs.filter(log => log.attendance_date === selectedDate);
-    
+
     // Apply search filter - handle null/undefined safely
     if (searchTerm) {
-      filteredLogs = filteredLogs.filter(log => 
+      filteredLogs = filteredLogs.filter(log =>
         (log.employee_name && log.employee_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
         (log.employee_id !== undefined && String(log.employee_id).includes(searchTerm))
       );
     }
-    
+
     // Apply department filter - handle null/undefined safely
     if (filterDepartment && filterDepartment !== 'all') {
-      filteredLogs = filteredLogs.filter(log => 
+      filteredLogs = filteredLogs.filter(log =>
         log.employee_department === filterDepartment
       );
     }
-    
+
     // Apply reporting group filter - handle null/undefined safely
     if (filterReportingGroup && filterReportingGroup !== 'all') {
-      filteredLogs = filteredLogs.filter(log => 
+      filteredLogs = filteredLogs.filter(log =>
         log.employee_reporting_group === filterReportingGroup
       );
     }
-    
+
     // Debug logs - remove in production
     console.log("Applied filters:", {
       date: selectedDate,
@@ -95,11 +95,11 @@ const AttendanceChangePage = () => {
       reportingGroup: filterReportingGroup,
       resultCount: filteredLogs.length
     });
-    
+
     // Extract unique employees
     const uniqueEmployees = [];
     const seenIds = new Set();
-    
+
     filteredLogs.forEach(log => {
       if (!seenIds.has(log.employee_id)) {
         seenIds.add(log.employee_id);
@@ -113,24 +113,24 @@ const AttendanceChangePage = () => {
         });
       }
     });
-    
+
     return uniqueEmployees;
   };
-  
+
   // Get all changes for a specific employee on the selected date
   const getEmployeeChanges = (employeeId) => {
-    return logs.filter(log => 
-      log.employee_id === employeeId && 
+    return logs.filter(log =>
+      log.employee_id === employeeId &&
       log.attendance_date === selectedDate
     );
   };
-  
+
   // Close popup when close button is clicked or when clicking outside
   const closePopup = () => {
     setShowPopup(false);
     setSelectedEmployee(null);
   };
-  
+
   // Handle outside click
   const handleOverlayClick = (e) => {
     // Only close if the click is directly on the overlay, not on its children
@@ -138,7 +138,7 @@ const AttendanceChangePage = () => {
       closePopup();
     }
   };
-  
+
   // Get unique departments for filter options
   const getDepartments = () => {
     const departments = new Set();
@@ -151,7 +151,7 @@ const AttendanceChangePage = () => {
     }
     return Array.from(departments);
   };
-  
+
   // Get unique reporting groups for filter options
   const getReportingGroups = () => {
     const groups = new Set();
@@ -164,10 +164,10 @@ const AttendanceChangePage = () => {
     }
     return Array.from(groups);
   };
-  
+
   return (
     <div className="attendance-change-page">
-      <ChangesHeader 
+      <ChangesHeader
         title="Attendance Change Logs"
         selectedDate={selectedDate}
         onDateChange={handleDateChange}
@@ -179,8 +179,8 @@ const AttendanceChangePage = () => {
         onDepartmentFilterChange={handleDepartmentFilterChange}
         filterReportingGroup={filterReportingGroup}
         onReportingGroupFilterChange={handleReportingGroupFilterChange}
-        />
-      
+      />
+
       {loading ? (
         <div className="loading-container">
           <div className="loading-spinner"></div>
@@ -214,8 +214,8 @@ const AttendanceChangePage = () => {
                   {getUniqueEmployeesForDate().map((employee) => {
                     const changeCount = getEmployeeChanges(employee.employee_id).length;
                     return (
-                      <tr 
-                        key={employee.employee_id} 
+                      <tr
+                        key={employee.employee_id}
                         onClick={() => handleRowClick(employee)}
                       >
                         <td>{employee.employee_id}</td>
@@ -251,7 +251,7 @@ const AttendanceChangePage = () => {
           </div>
         </div>
       )}
-      
+
       {/* Popup Card */}
       {showPopup && selectedEmployee && (
         <div className="popup-overlay" onClick={handleOverlayClick}>
@@ -261,14 +261,14 @@ const AttendanceChangePage = () => {
               <h2>
                 Attendance Changes: {selectedEmployee.employee_name}
               </h2>
-              <button 
+              <button
                 onClick={closePopup}
                 className="close-button"
               >
                 ✕
               </button>
             </div>
-          
+
             {/* Part 2: Employee info in grid format */}
             <div className="employee-info">
               <div className="info-item">
@@ -288,10 +288,10 @@ const AttendanceChangePage = () => {
                 <p className="info-value">{selectedEmployee.attendance_date}</p>
               </div>
             </div>
-            
+
             {/* Part 3: Changes table with responsive scrolling */}
             <h3 className="changes-title">Change History</h3>
-            
+
             <div className="changes-table-container">
               <table className="changes-table">
                 <thead>
@@ -313,14 +313,18 @@ const AttendanceChangePage = () => {
                           <td className="field-cell">
                             {change.field.replace(/_/g, ' ')}
                           </td>
-                          <td>
-                            <span className="old-value">{change.old_value}</span>
+                          <td className="value-cell">
+                            <span className="old-value" title={change.old_value}>{change.old_value}</span>
                           </td>
-                          <td>
-                            <span className="new-value">{change.new_value}</span>
+                          <td className="value-cell">
+                            <span className="new-value" title={change.new_value}>{change.new_value}</span>
                           </td>
-                          <td>{change.changed_by}</td>
-                          <td>{new Date(change.update_datetime).toLocaleTimeString()}</td>
+                          <td className="user-cell" title={change.changed_by}>
+                            <div className="user-info">
+                              {change.changed_by}
+                            </div>
+                          </td>
+                          <td className="time-cell">{new Date(change.update_datetime).toLocaleTimeString()}</td>
                         </tr>
                       ))
                     ) : (
