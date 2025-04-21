@@ -51,65 +51,127 @@ function initWebSocket(server) {
     
     clients.set(id, clientInfo);
 
-    /**
-     * Broadcasts messages to relevant clients based on role and group
-     * @param {Object} broadcastData - Data to broadcast
-     * @param {WebSocket} sourceSocket - Original sender socket (to avoid echoing)
-     * @param {Array} targetGroups - Specific groups to target (optional)
-     * @param {boolean} adminOnly - Whether to broadcast only to admin users
-     * @param {boolean} restrictedBroadcast - Whether this is a restricted broadcast for specific groups only
-     */
-    const broadcastToClients = (broadcastData, sourceSocket = null, targetGroups = null, adminOnly = false, restrictedBroadcast = false) => {
-      // console.log(`Broadcasting to clients. Action: ${broadcastData.action || broadcastData.type}, Target Groups: ${targetGroups ? targetGroups.join(', ') : 'All'}`);
+/**
+ * Broadcasts messages to relevant clients based on role and group
+ * @param {Object} broadcastData - Data to broadcast
+ * @param {WebSocket} sourceSocket - Original sender socket (to avoid echoing)
+ * @param {Array} targetGroups - Specific groups to target (optional)
+ * @param {boolean} adminOnly - Whether to broadcast only to admin users
+ * @param {boolean} restrictedBroadcast - Whether this is a restricted broadcast for specific groups only
+ */
+const broadcastToClients = (broadcastData, sourceSocket = null, targetGroups = null, adminOnly = false, restrictedBroadcast = false) => {
+  console.log(`Broadcasting to clients. Action: ${broadcastData.action || broadcastData.type}, Target Groups: ${targetGroups ? targetGroups.join(', ') : 'All'}, Restricted: ${restrictedBroadcast}`);
+  
+  // For lockStatusUpdate, ensure we send to all users in the target groups
+  const isLockStatusUpdate = broadcastData.action === 'lockStatusUpdate';
+  
+  for (const [clientId, targetClientInfo] of clients.entries()) {
+    try {
+      // Skip clients without proper initialization
+      if (!targetClientInfo.userRole || !targetClientInfo.userGroup) {
+        console.log(`Skipping client ${clientId} - missing role or group info`);
+        continue;
+      }
       
-      for (const [clientId, targetClientInfo] of clients.entries()) {
-        try {
-          // Skip clients without proper initialization
-          if (!targetClientInfo.userRole || !targetClientInfo.userGroup) {
-            continue;
-          }
+      // Skip the source client to avoid echoing
+      if (targetClientInfo.socket === sourceSocket) {
+        console.log(`Skipping source client ${clientId}`);
+        continue;
+      }
+      
+      // Determine if the client should receive the broadcast
+      let shouldReceive = false;
+      
+      // Admin-only broadcasts
+      if (adminOnly && targetClientInfo.userRole === 'admin') {
+        shouldReceive = true;
+        console.log(`Admin client ${clientId} should receive admin-only broadcast`);
+      }
+      // Special case for lock status updates - ensure all users in target groups receive this
+      else if (isLockStatusUpdate) {
+        // All admins receive lock status updates
+        if (targetClientInfo.userRole === 'admin') {
+          shouldReceive = true;
+          console.log(`Admin client ${clientId} should receive lock status update`);
+        }
+        // For users, check if they're in one of the target groups
+        else if (targetGroups && Array.isArray(targetGroups)) {
+          // For user groups that could be arrays or single values
+          const clientGroups = Array.isArray(targetClientInfo.userGroup) 
+              ? targetClientInfo.userGroup 
+              : [targetClientInfo.userGroup];
           
-          // Skip the source client to avoid echoing
-          if (targetClientInfo.socket === sourceSocket) {
-            continue;
-          }
-          
-          // Determine if the client should receive the broadcast
-          let shouldReceive = false;
-          
-          // Admin-only broadcasts
-          if (adminOnly && targetClientInfo.userRole === 'admin') {
-            shouldReceive = true;
-          }
-          // Normal broadcasts
-          else if (!adminOnly) {
-            // Admins should always receive all updates unless it's a restricted broadcast
-            if (targetClientInfo.userRole === 'admin' && !restrictedBroadcast) {
+          // Check if any of the client groups match any of the target groups
+          for (const clientGroup of clientGroups) {
+            if (targetGroups.includes(clientGroup)) {
               shouldReceive = true;
-            } 
-            // For users or admins in restricted broadcasts
-            else {
-              // For targeted broadcasts to specific groups
-              if (targetGroups) {
-                shouldReceive = targetGroups.includes(targetClientInfo.userGroup);
-              } 
-              // For general broadcasts
-              else if (broadcastData.userReportingGroup) {
-                shouldReceive = targetClientInfo.userGroup === broadcastData.userReportingGroup;
+              console.log(`User client ${clientId} in group ${clientGroup} should receive lock status update`);
+              break;
+            }
+          }
+        }
+      }
+      // Normal broadcasts
+      else if (!adminOnly) {
+        // Admins should always receive all updates unless it's a restricted broadcast
+        if (targetClientInfo.userRole === 'admin' && !restrictedBroadcast) {
+          shouldReceive = true;
+          console.log(`Admin client ${clientId} should receive normal broadcast`);
+        } 
+        // For users or admins in restricted broadcasts
+        else {
+          // For targeted broadcasts to specific groups
+          if (targetGroups) {
+            // For user groups that could be arrays or single values
+            const clientGroups = Array.isArray(targetClientInfo.userGroup) 
+                ? targetClientInfo.userGroup 
+                : [targetClientInfo.userGroup];
+                
+            // Check if any of the client groups match any of the target groups
+            for (const clientGroup of clientGroups) {
+              if (targetGroups.includes(clientGroup)) {
+                shouldReceive = true;
+                console.log(`Client ${clientId} in group ${clientGroup} should receive targeted broadcast`);
+                break;
+              }
+            }
+          } 
+          // For general broadcasts
+          else if (broadcastData.userReportingGroup) {
+            // Handle arrays for userReportingGroup in the broadcastData
+            const broadcastGroups = Array.isArray(broadcastData.userReportingGroup)
+                ? broadcastData.userReportingGroup
+                : [broadcastData.userReportingGroup];
+                
+            // For user groups that could be arrays or single values
+            const clientGroups = Array.isArray(targetClientInfo.userGroup) 
+                ? targetClientInfo.userGroup 
+                : [targetClientInfo.userGroup];
+                
+            // Check if any of the client groups match any of the broadcast groups
+            for (const clientGroup of clientGroups) {
+              if (broadcastGroups.includes(clientGroup)) {
+                shouldReceive = true;
+                console.log(`Client ${clientId} in group ${clientGroup} should receive general broadcast`);
+                break;
               }
             }
           }
-
-          // Send data if conditions are met
-          if (shouldReceive) {
-            // console.log(`Sending broadcast to ${targetClientInfo.userName} (${targetClientInfo.userRole}) in group ${targetClientInfo.userGroup}`);
-            targetClientInfo.socket.send(JSON.stringify(broadcastData));
-          }
-        } catch (error) {
-          console.error(`Error broadcasting to client ${clientId}:`, error);
         }
       }
-    };
+
+      // Send data if conditions are met
+      if (shouldReceive) {
+        console.log(`Sending broadcast to ${targetClientInfo.userName} (${targetClientInfo.userRole}) in group ${targetClientInfo.userGroup}`);
+        targetClientInfo.socket.send(JSON.stringify(broadcastData));
+      } else {
+        console.log(`Client ${clientId} (${targetClientInfo.userName}) does NOT receive the broadcast`);
+      }
+    } catch (error) {
+      console.error(`Error broadcasting to client ${clientId}:`, error);
+    }
+  }
+};
 
     ws.on('message', async (message) => {
       try {
@@ -217,91 +279,34 @@ function initWebSocket(server) {
 
   return wss;
 }
-
-/**
- * Handles attendance data retrieval requests
- * @param {WebSocket} ws - WebSocket connection
- * @param {Object} data - Request data
- */
-// Cache implementation to avoid redundant data fetching
-const cache = {
-  adminGroups: {
-    data: null,
-    timestamp: 0,
-    ttl: 5 * 60 * 1000 // 5 minutes
-  },
-  employees: {
-    data: {},
-    timestamp: {},
-    ttl: 10 * 60 * 1000 // 10 minutes
-  },
-  metricsData: {
-    data: {},
-    timestamp: {},
-    ttl: 5 * 60 * 1000 // 5 minutes
-  }
-};
-
-
-// Optimized implementation of handleAttendanceDataRetrieval
 async function handleAttendanceDataRetrieval(ws, data) {
   try {
     const { year, month } = convertMonthToYearMonthFormat(data.month);
     const userRole = data.user.role || data.user.userRole;
     const userGroup = data.user.userReportingGroup;
 
-    // Get admin groups with caching
-    let group;
-    if (userRole === 'admin') {
-      const now = Date.now();
-      if (!cache.adminGroups.data || (now - cache.adminGroups.timestamp > cache.adminGroups.ttl)) {
-        cache.adminGroups.data = await getAllGroupNames();
-        cache.adminGroups.timestamp = now;
-      }
-      group = cache.adminGroups.data;
-    } else {
-      group = userGroup;
-    }
+    // console.log(`Fetching attendance data for ${month}/${year}, User: ${data.user.name}, Role: ${userRole}, Group: ${userGroup}`);
+    // get the all groups for admin
+    const forAdminGroups = await getAllGroupNames();
+    // console.log(forAdminGroups);
 
-    // Create a cache key for employees
-    const groupKey = Array.isArray(group) ? JSON.stringify(group.sort()) : group;
-    // Get employees with caching
-    let employees;
-    const now = Date.now();
-    if (!cache.employees.data[groupKey] || (now - (cache.employees.timestamp[groupKey] || 0) > cache.employees.ttl)) {
-      cache.employees.data[groupKey] = await getEmployeesByGroup(group);
-      cache.employees.timestamp[groupKey] = now;
-    }
-    employees = cache.employees.data[groupKey];
+    // If user is not admin, only allow access to their own group
+    const group = userRole === 'admin' ? forAdminGroups : userGroup;
 
-    // Start fetching metrics data early in parallel
-    const metricsPromise = fetchMetricsPromise(month, year);
+    // Fetch employees in the selected group
+    const employees = await getEmployeesByGroup(group);
+    // console.log(`Found ${employees.length} employees in group ${group}`);
 
-    // Fetch all other data in parallel
-    async function timeFunction(fn, ...args) {
-      const start = Date.now();
-      const result = await fn(...args);
-      const elapsed = Date.now() - start;
-      return { result, elapsed };
-    }
-    
-    // Then use it like this
-    const [mysqlResult, redisResult, lockStatusResult] = await Promise.all([
-      timeFunction(getEmployeesAttendanceByMonthAndGroup, group, year, month, employees),
-      timeFunction(getRedisAttendanceData, year, month, group),
-      timeFunction(getLockStatusDataForMonthAndGroup, group, month, year)
-    ]);
-    
-    console.log(`MySQL data retrieval took ${mysqlResult.elapsed}ms`);
-    console.log(`Redis data retrieval took ${redisResult.elapsed}ms`);
-    console.log(`Lock status data retrieval took ${lockStatusResult.elapsed}ms`);
-    
-    // Extract the actual results
-    const mysqlAttendanceData = mysqlResult.result;
-    const redisAttendanceData = redisResult.result;
-    const lockStatusData = lockStatusResult.result;
+    // Fetch attendance data from MySQL
+    const mysqlAttendanceData = await getEmployeesAttendanceByMonthAndGroup(group, year, month);
 
-    // Process attendance comparison
+    // Fetch attendance data from Redis
+    const redisAttendanceData = await getRedisAttendanceData(year, month, group);
+
+    // Get lock status
+    const lockStatusData = await getLockStatusDataForMonthAndGroup(group, month, year);
+
+    // Compare Redis and MySQL data
     const finalAttendanceData = await redisMysqlAttendanceCompare(
       employees,
       redisAttendanceData,
@@ -310,10 +315,8 @@ async function handleAttendanceDataRetrieval(ws, data) {
       lockStatusData
     );
 
-    // Get the metrics attendance (which has been fetching in parallel)
-    const metricsAttendanceData = await metricsPromise;
-    
-    // Process metrics data
+    // Get the metrics attendance and send to the clients
+    const metricsAttendanceData = await fetchMetricsForMonthYear(month, year);
     const metricsAttendanceDifference = await processAllMetricsData(metricsAttendanceData, finalAttendanceData);
 
     // Send the final attendance data back to the client
@@ -326,6 +329,8 @@ async function handleAttendanceDataRetrieval(ws, data) {
       lockStatus: lockStatusData,
       metricsAttendanceDifference: metricsAttendanceDifference
     }));
+    
+    // console.log(`Successfully sent attendance data for ${group}, ${month}/${year}`);
   } catch (error) {
     console.error('Error retrieving attendance data:', error);
     ws.send(JSON.stringify({
@@ -335,7 +340,6 @@ async function handleAttendanceDataRetrieval(ws, data) {
     }));
   }
 }
-
 // Helper function to handle metrics fetching with caching
 async function fetchMetricsPromise(month, year) {
   const cacheKey = `${month}-${year}`;
@@ -356,6 +360,8 @@ async function fetchMetricsPromise(month, year) {
  * @param {Function} broadcastToClients - Function to broadcast updates
  */
 async function handleAttendanceUpdate(ws, data, broadcastToClients) {
+  console.log(data);
+  
   try {
     // Validate required fields with comprehensive checks
     const requiredFields = [
@@ -386,8 +392,7 @@ async function handleAttendanceUpdate(ws, data, broadcastToClients) {
       throw new Error('Unauthorized to update attendance for this group');
     }
     
-    const logService = new LogRedisService();
-    await logService.logAttendanceChange(data);
+
 
     // Extract month from the editDate (format: YYYY-MM-DD)
     const editDate = new Date(data.editDate);
@@ -410,7 +415,10 @@ async function handleAttendanceUpdate(ws, data, broadcastToClients) {
 
     // Call service to update attendance in Redis
     const updateResult = await updateRedisAttendanceData(updatePayload);
-
+    if(updateResult.success){
+      const logService = new LogRedisService();
+      await logService.logAttendanceChange(data);
+    }
     // Determine if the update is from an admin user
     const isAdminUpdate = data.user.role === 'admin';
     
@@ -668,6 +676,13 @@ async function saveDataRedisToMysql(ws, data, broadcastToClients) {
  * @param {Object} data - Request data
  * @param {Function} broadcastToClients - Function to broadcast updates
  */
+
+/**
+ * Toggles lock/unlock status for attendance records
+ * @param {WebSocket} ws - WebSocket connection
+ * @param {Object} data - Request data
+ * @param {Function} broadcastToClients - Function to broadcast updates
+ */
 async function lockUnlockStatusToggle(ws, data, broadcastToClients) {
   try {
     // Ensure only admin can toggle lock status
@@ -679,6 +694,7 @@ async function lockUnlockStatusToggle(ws, data, broadcastToClients) {
     // Extract group, date, user, and status from the received data
     const { group, date, user, status } = data;
     // console.log(`Processing ${status} request for groups [${group}], date ${date}`);
+    console.log(data);
 
     // Convert the date from "DD/MM/YYYY" to "YYYY-MM-DD"
     const [day, month, year] = date.split('/').map(part => parseInt(part, 10));
@@ -760,17 +776,16 @@ async function processUnlockRequest(ws, formattedDateString, groupList, user, br
   // Change status to unlocked in database
   const result = await setStatusFromDateGroup(groupList, formattedDateString, "unlocked", user);
 
-  // Broadcast lock status change to only relevant admins and the affected groups
-  // We use restrictedBroadcast=true to ensure it only goes to the specified groups and admins
+  // Broadcast lock status change to both admins and users of the affected groups
+  // Modified broadcast - use action: 'lockStatusUpdate' instead of type for consistency
   broadcastToClients({
-    type: 'lockUnlockStatusChanged',
     action: 'lockStatusUpdate',
     date: formattedDateString,
     monthYear: monthYear,
     groups: unavailableGroups,
     status: 'unlocked',
     changedBy: user.name
-  }, ws, unavailableGroups, false, true);
+  }, ws, unavailableGroups, false, false); // Set restrictedBroadcast to false to ensure users get the update
 
   // Send success response
   ws.send(JSON.stringify({
@@ -805,17 +820,16 @@ async function processLockRequest(ws, date, formattedDateString, groupList, user
   // Change the status to lock in DB
   const result = await setStatusFromDateGroup(groupList, formattedDateString, "locked", user);
 
-  // Broadcast lock status change only to the affected groups and admins
-  // We use restrictedBroadcast=true to ensure it only goes to the specified groups and admins
+  // Broadcast lock status change to both admins and users of the affected groups
+  // Modified broadcast - use action: 'lockStatusUpdate' instead of type for consistency
   broadcastToClients({
-    type: 'lockUnlockStatusChanged',
     action: 'lockStatusUpdate',
     date: formattedDateString,
     monthYear: monthYear,
     groups: groupList,
     status: 'locked',
     changedBy: user.name
-  }, ws, groupList, false, true);
+  }, ws, groupList, false, false); // Set restrictedBroadcast to false to ensure users get the update
   
   // Send success response
   ws.send(JSON.stringify({
@@ -825,6 +839,7 @@ async function processLockRequest(ws, date, formattedDateString, groupList, user
     groups: groupList
   }));
 }
+
 
 // Module exports
 module.exports = {
