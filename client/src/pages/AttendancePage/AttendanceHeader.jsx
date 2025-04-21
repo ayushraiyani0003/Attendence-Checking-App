@@ -7,7 +7,7 @@ import { useWebSocket } from "../../hooks/useWebSocket";  // Use WebSocket
 import "./AttendanceHeader.css"
 import { useUsers } from "../../hooks/userList";
 
-function AttendanceHeader({ columns, isAdmin, onSort, sortConfig, handleLock, handleUnlock, popupOpen, setPopupOpen, displayWeeks, isShowMetrixData, lockUnlock, attDateStart, attDateEnd  }) {
+function AttendanceHeader({ columns, isAdmin, onSort, sortConfig, handleLock, handleUnlock, popupOpen, setPopupOpen, displayWeeks, isShowMetrixData, lockUnlock, attDateStart, attDateEnd }) {
     const { users } = useUsers();  // Fetch reporting groups using the useSettings hook
     const [selectedDate, setSelectedDate] = useState(null);
     const [popupPosition, setPopupPosition] = useState({ left: 0 });
@@ -22,17 +22,32 @@ function AttendanceHeader({ columns, isAdmin, onSort, sortConfig, handleLock, ha
 
     const handleLockClick = (e, attendance) => {
         // Only proceed if user is Admin
-        if (!isAdmin) return;
+        if (!isAdmin) {
+            // Redirect to the AttendanceUnlockPage with the attendance date user clicked
+            const currentPath = window.location.pathname;
+            const basePathMatch = currentPath.match(/^(\/[^\/]+)/);
+            const basePath = basePathMatch ? basePathMatch[0] : '';
+            
+            // Create URL with query parameters
+            const params = new URLSearchParams();
+            params.append('date', attendance.date); // Add the attendance date
+            
+            // Navigate to the unlock page with parameters
+            window.location.href = `${basePath}/request-edit?${params.toString()}`;
+            return;
+        }
+        
+        // Admin behavior continues below
         e.stopPropagation(); // Prevent event bubbling
-
+    
         // Calculate position of the popup
         const columnElement = e.currentTarget;
         const columnRect = columnElement.getBoundingClientRect();
         const headerRect = headerRef.current.getBoundingClientRect();
-
+    
         // Position popup at the center of the clicked column
         const leftPosition = columnRect.left + (columnRect.width / 2);
-
+    
         setPopupPosition({ left: leftPosition });
         setSelectedDate(attendance.date);
         setPopupOpen(true);
@@ -94,14 +109,14 @@ function AttendanceHeader({ columns, isAdmin, onSort, sortConfig, handleLock, ha
                 <div className="scrollable-columns" id="header-scrollable">
                     {filteredColumns.map((attendance, index) => (
                         <div
-                            key={index}
-                            className="header-cell attendance-header-cell"
-                            onClick={(e) => handleLockClick(e, attendance)}
-                            style={{ cursor: isAdmin ? "pointer" : "default" }}
+                        key={index}
+                        className="header-cell attendance-header-cell"
+                        onClick={(e) => handleLockClick(e, attendance)}
+                        style={{ cursor: isAdmin ? "pointer" : "default" }}
                         >
                             <div className="attendance-header-date-title-container">
                                 {attendance.date} ({attendance.day})
-                                {attendance.isLocked ? <LockIcon /> : <LockOpenIcon />}
+                                {attendance.lock_status === "locked" ? <LockIcon /> : <LockOpenIcon />}
                             </div>
                             <div className="date-header">
                                 <div className="sub-header-cell">Net HR</div>
