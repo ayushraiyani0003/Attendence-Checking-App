@@ -47,6 +47,9 @@ export default function CustomSidebar({ isOpen, toggleSidebar, userDepartments, 
                 <li className="sidebar-item">
                   <Link to="/employee-list" onClick={toggleSidebar}>Employee List</Link>
                 </li>
+                <li className="sidebar-item">
+                  <Link to="/request-edit" onClick={toggleSidebar}>Attendance Unlock</Link>
+                </li>
             </ul>
           </div>
           

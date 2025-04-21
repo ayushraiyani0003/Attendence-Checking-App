@@ -25,6 +25,7 @@ import { DashboardProvider } from "./context/DashboardContext";
 import { SessionProvider } from "./context/SessionsContext";
 import { NotificationProvider } from "./context/notificationContext";
 import {AttendanceLogProvider} from "./context/AttendanceLogContext";
+import {AttendanceUnlockProvider} from "./context/AttendanceUnlockContext";
 import { SettingsProvider } from "./context/SettingsContext"
 import ProtectedRoute from "./components/ProtectedRoute";
 import WebSocketProvider from "./context/WebSocketContext";
@@ -34,15 +35,16 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import "./App.css";
 import AttendanceChangePage from "./pages/AttendanceChangePage/AttendanceChangePage";
+import AttendanceUnlockPage from "./pages/AttendanceUnlockPage/AttendanceUnlockPage";
 
 // Create a separate component for the authenticated layout
 const AuthenticatedLayout = ({ user }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [selectedMonthYear, setSelectedMonthYear] = useState("");
+  
   const navigate = useNavigate();
   const { logout } = useContext(AuthContext);
-  console.log(user);
 
   useEffect(() => {
     const currentDate = new Date();
@@ -157,6 +159,14 @@ const AuthenticatedLayout = ({ user }) => {
               path="/make-notification"
               element={
                 <AdminNotificationPanel />
+              }
+            />
+            <Route
+              path="/request-edit"
+              element={
+                <AttendanceUnlockProvider>
+                <AttendanceUnlockPage monthYearString={selectedMonthYear} user={user} />
+                </AttendanceUnlockProvider>
               }
             />
             <Route

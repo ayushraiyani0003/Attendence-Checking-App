@@ -60,7 +60,7 @@ function initWebSocket(server) {
  * @param {boolean} restrictedBroadcast - Whether this is a restricted broadcast for specific groups only
  */
 const broadcastToClients = (broadcastData, sourceSocket = null, targetGroups = null, adminOnly = false, restrictedBroadcast = false) => {
-  console.log(`Broadcasting to clients. Action: ${broadcastData.action || broadcastData.type}, Target Groups: ${targetGroups ? targetGroups.join(', ') : 'All'}, Restricted: ${restrictedBroadcast}`);
+  // console.log(`Broadcasting to clients. Action: ${broadcastData.action || broadcastData.type}, Target Groups: ${targetGroups ? targetGroups.join(', ') : 'All'}, Restricted: ${restrictedBroadcast}`);
   
   // For lockStatusUpdate, ensure we send to all users in the target groups
   const isLockStatusUpdate = broadcastData.action === 'lockStatusUpdate';
@@ -69,13 +69,13 @@ const broadcastToClients = (broadcastData, sourceSocket = null, targetGroups = n
     try {
       // Skip clients without proper initialization
       if (!targetClientInfo.userRole || !targetClientInfo.userGroup) {
-        console.log(`Skipping client ${clientId} - missing role or group info`);
+        // console.log(`Skipping client ${clientId} - missing role or group info`);
         continue;
       }
       
       // Skip the source client to avoid echoing
       if (targetClientInfo.socket === sourceSocket) {
-        console.log(`Skipping source client ${clientId}`);
+        // console.log(`Skipping source client ${clientId}`);
         continue;
       }
       
@@ -360,7 +360,6 @@ async function fetchMetricsPromise(month, year) {
  * @param {Function} broadcastToClients - Function to broadcast updates
  */
 async function handleAttendanceUpdate(ws, data, broadcastToClients) {
-  console.log(data);
   
   try {
     // Validate required fields with comprehensive checks
@@ -694,7 +693,6 @@ async function lockUnlockStatusToggle(ws, data, broadcastToClients) {
     // Extract group, date, user, and status from the received data
     const { group, date, user, status } = data;
     // console.log(`Processing ${status} request for groups [${group}], date ${date}`);
-    console.log(data);
 
     // Convert the date from "DD/MM/YYYY" to "YYYY-MM-DD"
     const [day, month, year] = date.split('/').map(part => parseInt(part, 10));

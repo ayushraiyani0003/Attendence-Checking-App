@@ -11,7 +11,7 @@ export const getAttendanceLogs = async (date) => {
     const response = await axios.get(`${API_URL}/attendance-logs`, {
       params: { date }
     });
-    console.log(response.data);
+    // console.log(response.data);
     return response.data;
     
   } catch (error) {

@@ -518,11 +518,11 @@ const onKeyDown = (e, column) => {
 
       // Only update if the value has changed
       if (currentValue !== originalValue) {
-        console.log("Updating cell value for arrow key navigation", 
-                    "rowId:", row.id, 
-                    "rowIndex:", rowIndex, // This should be the actual index in attendanceData
-                    "field:", currentField, 
-                    "value:", currentValue);
+        // console.log("Updating cell value for arrow key navigation", 
+        //             "rowId:", row.id, 
+        //             "rowIndex:", rowIndex, // This should be the actual index in attendanceData
+        //             "field:", currentField, 
+        //             "value:", currentValue);
         const formattedValue = formatValue(currentValue, currentField);
         
         // IMPORTANT: Use the rowIndex (index in the full attendanceData array)
@@ -612,11 +612,11 @@ const onKeyDown = (e, column) => {
 
       // Only update if the value has changed
       if (currentValue !== originalValue) {
-        console.log("Updating cell value for Tab/Enter navigation", 
-                    "rowId:", row.id, 
-                    "rowIndex:", rowIndex, // This should be the actual index in attendanceData
-                    "field:", currentField, 
-                    "value:", currentValue);
+        // console.log("Updating cell value for Tab/Enter navigation", 
+        //             "rowId:", row.id, 
+        //             "rowIndex:", rowIndex, // This should be the actual index in attendanceData
+        //             "field:", currentField, 
+        //             "value:", currentValue);
         const formattedValue = formatValue(currentValue, currentField);
         
         // IMPORTANT: Use the rowIndex (index in the full attendanceData array)

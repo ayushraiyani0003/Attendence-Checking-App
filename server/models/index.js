@@ -12,6 +12,7 @@ const Audit = require("./audit")(sequelize, Sequelize.DataTypes);
 const HeaderMessage = require("./HeaderMessage")(sequelize, Sequelize.DataTypes);
 const PopupMessage = require("./PopupMessage")(sequelize, Sequelize.DataTypes);
 const AttendanceChangeLog = require("./AttendanceChangeLog")(sequelize, Sequelize.DataTypes);
+const AttendanceUnlockRequest = require("./AttendanceUnlockRequest")(sequelize, Sequelize.DataTypes);
 
 // Export models for use in controllers
 module.exports = {
@@ -26,4 +27,5 @@ module.exports = {
   HeaderMessage,
   PopupMessage,
   AttendanceChangeLog,
+  AttendanceUnlockRequest,
 };

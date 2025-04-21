@@ -268,7 +268,7 @@ export const useAttendance = (user, monthYear, ws, send) => {
         // This is the corrected code for the lockStatusUpdate case in your handleMessage function
         case "lockStatusUpdate":
           // New case to handle lock/unlock status updates from server
-          console.log("Received lock status update:", data);
+          // console.log("Received lock status update:", data);
 
           // Get the date from the message
           const updateDate = data.date; // This should be in YYYY-MM-DD format
@@ -280,8 +280,8 @@ export const useAttendance = (user, monthYear, ws, send) => {
             formattedDate = `${day}/${month}/${year}`;
           }
 
-          console.log(`Formatted date for comparison: ${formattedDate}`);
-          console.log(`Target groups: ${JSON.stringify(data.groups)}`);
+          // console.log(`Formatted date for comparison: ${formattedDate}`);
+          // console.log(`Target groups: ${JSON.stringify(data.groups)}`);
 
           // Update the attendance data with the new lock status
           setAttendanceData((prevData) => {
@@ -316,7 +316,7 @@ export const useAttendance = (user, monthYear, ws, send) => {
               }
             }
 
-            console.log(`Updated ${updateCount} attendance records with new lock status`);
+            // console.log(`Updated ${updateCount} attendance records with new lock status`);
 
             // Apply custom employee ordering
             return sortEmployeesByCustomOrder(updatedData);
@@ -355,7 +355,7 @@ export const useAttendance = (user, monthYear, ws, send) => {
           // Update hasChanges based on lock status
           setHasChanges(prev => {
             const newHasChanges = data.status === 'unlocked';
-            console.log(`Setting hasChanges to ${newHasChanges} based on lock status ${data.status}`);
+            // console.log(`Setting hasChanges to ${newHasChanges} based on lock status ${data.status}`);
             return newHasChanges;
           });
 
@@ -365,7 +365,7 @@ export const useAttendance = (user, monthYear, ws, send) => {
         // Legacy case for backward compatibility - can be removed if all server code is updated
         case "lockUnlockStatusChanged":
           // Update attendance data with the new lock status
-          console.log("Received legacy lock status change:", data);
+          // console.log("Received legacy lock status change:", data);
 
           // Get the date from the message
           const legacyUpdateDate = data.date; // This should be in YYYY-MM-DD format

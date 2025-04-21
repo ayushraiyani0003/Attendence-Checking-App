@@ -69,7 +69,7 @@ async generateLogId(dateStr) {
     
     // Generate unique log ID
     const logId = await this.generateLogId(editDate);
-    console.log(logId);
+    // console.log(logId);
     
     
     // Create log entry as a single JSON object

@@ -110,7 +110,7 @@ const EmployeePage = () => {
     setIsDeleteModalVisible(false);
     setEmployeeToDelete(null);
   };
-  console.log(employees);
+  // console.log(employees);
 
   // Function to export employee data to Excel
   const exportToExcel = () => {

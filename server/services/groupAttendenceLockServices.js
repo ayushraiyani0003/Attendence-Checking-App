@@ -52,7 +52,7 @@ async function getLockStatusDataForMonthAndGroup(groups, month, year) {
 
 async function setStatusFromDateGroup(groups, date, status, user) {
   try {
-    // console.log(date);
+    console.log(date);
     
     // Ensure the date is in the correct format
     const formattedDate = moment(date).format('YYYY-MM-DD');
