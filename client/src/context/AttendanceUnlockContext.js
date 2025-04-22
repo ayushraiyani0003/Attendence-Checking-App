@@ -67,14 +67,22 @@ export const AttendanceUnlockProvider = ({ children }) => {
     }
   }, [filters]);
 
-  // Submit a new unlock request
+  // Submit a new unlock request with date range
   const submitRequest = useCallback(async (requestData) => {
     try {
       setLoading(true);
       setError(null);
       
+      // Prepare data with date range
+      const dataToSubmit = {
+        ...requestData,
+        requestedDate: requestData.requestedDateRange?.startDate, // For backward compatibility
+        requestedStartDate: requestData.requestedDateRange?.startDate,
+        requestedEndDate: requestData.requestedDateRange?.endDate
+      };
+      
       // Call the service function to create a new request
-      const response = await createUnlockRequest(requestData);
+      const response = await createUnlockRequest(dataToSubmit);
       
       // Refresh the requests list
       await fetchRequests();
@@ -89,13 +97,18 @@ export const AttendanceUnlockProvider = ({ children }) => {
   }, [fetchRequests]);
 
   // Approve or reject a request
-  const handleRequestStatus = useCallback(async (requestId, status, statusBy, user, date) => {
+  const handleRequestStatus = useCallback(async (requestId, status, statusBy, user, dateRange) => {
     try {
       setLoading(true);
       setError(null);
       
-      // Call the service function to update request status
-      const response = await updateRequestStatus(requestId, { status, statusBy, user, date });
+      // Call the service function to update request status with date range
+      const response = await updateRequestStatus(requestId, { 
+        status, 
+        statusBy, 
+        user, 
+        dateRange 
+      });
       
       // Refresh the requests list
       await fetchRequests();

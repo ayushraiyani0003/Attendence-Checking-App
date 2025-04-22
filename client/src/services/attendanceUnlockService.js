@@ -6,7 +6,9 @@ const API_URL = process.env.REACT_APP_API_URL;
  * @param {Object} requestData - The request data
  * @param {number} requestData.requestedById - User ID of the requester
  * @param {string} requestData.requestedBy - Name of the requester
- * @param {string} requestData.requestedDate - Date for which the attendance needs to be unlocked (YYYY-MM-DD)
+ * @param {Object} requestData.requestedDateRange - Date range for which the attendance needs to be unlocked
+ * @param {string} requestData.requestedDateRange.startDate - Start date (YYYY-MM-DD)
+ * @param {string} requestData.requestedDateRange.endDate - End date (YYYY-MM-DD)
  * @param {string} requestData.requestReason - Reason for the request
  * @returns {Promise<Object>} - The created request data
  */
@@ -28,6 +30,7 @@ export const createUnlockRequest = async (requestData) => {
  * @param {Object} statusData - Status update data
  * @param {string} statusData.status - New status ('approved' or 'rejected')
  * @param {string} statusData.statusBy - Name of the admin updating the status
+ * @param {Object} statusData.dateRange - Date range for which the attendance was requested
  * @returns {Promise<Object>} - The updated request data
  */
 export const updateRequestStatus = async (requestId, statusData) => {
@@ -68,14 +71,22 @@ export const getFilteredRequests = async (filters = {}) => {
 export const formatRequestsForDisplay = (requests) => {
   if (!requests || !Array.isArray(requests)) return [];
   
-  return requests.map(request => ({
-    id: request.request_id,
-    employeeName: request.requested_by,
-    date: new Date(request.requested_date).toLocaleDateString(),
-    reason: request.request_reason,
-    status: request.status,
-    requestedAt: new Date(request.requested_at).toLocaleString(),
-    approvedBy: request.status_by || '',
-    isPending: request.status === 'pending'
-  }));
+  return requests.map(request => {
+    // Handle date range format
+    const dateRange = {
+      startDate: request.requested_start_date || request.requested_date,
+      endDate: request.requested_end_date || request.requested_date
+    };
+    
+    return {
+      id: request.request_id,
+      employeeName: request.requested_by,
+      dateRange: dateRange,
+      reason: request.request_reason,
+      status: request.status,
+      requestedAt: new Date(request.requested_at).toLocaleString(),
+      approvedBy: request.status_by || '',
+      isPending: request.status === 'pending'
+    };
+  });
 };

@@ -15,14 +15,33 @@ class AttendanceUnlockRequestController {
    */
   async createRequest(req, res) {
     try {
-      const { requestedById, requestedBy, requestReason, requestedDate } = req.body;
-      // console.log(req.body);
-
+      const { 
+        requestedById, 
+        requestedBy, 
+        requestReason, 
+        requestedDate,  // Legacy support
+        requestedDateRange 
+      } = req.body;
+      
+      // Determine the start and end dates
+      let startDate, endDate;
+      
+      // Check if date range is provided
+      if (requestedDateRange && requestedDateRange.startDate && requestedDateRange.endDate) {
+        startDate = requestedDateRange.startDate;
+        endDate = requestedDateRange.endDate;
+      } 
+      // Fall back to legacy requestedDate (use as both start and end)
+      else if (requestedDate) {
+        startDate = requestedDate;
+        endDate = requestedDate;
+      }
+      
       // Validate required fields
-      if (!requestedById || !requestedBy || !requestedDate) {
+      if (!requestedById || !requestedBy || !startDate) {
         return res.status(400).json({
           success: false,
-          message: 'Required fields missing: requestedById, requestedBy, and requestedDate are mandatory'
+          message: 'Required fields missing: requestedById, requestedBy, and date information are mandatory'
         });
       }
 
@@ -31,7 +50,8 @@ class AttendanceUnlockRequestController {
         requestedById,
         requestedBy,
         requestReason,
-        requestedDate
+        startDate,
+        endDate
       );
 
       return res.status(201).json({
@@ -50,16 +70,14 @@ class AttendanceUnlockRequestController {
   }
 
   /**
-     * Update the status of an attendance unlock request (approve/reject)
-     * @param {Object} req - Express request object
-     * @param {Object} res - Express response object
-     */
+   * Update the status of an attendance unlock request (approve/reject)
+   * @param {Object} req - Express request object
+   * @param {Object} res - Express response object
+   */
   async updateRequestStatus(req, res) {
-    // console.log(req.body);
-
     try {
       const { requestId } = req.params;
-      const { statusBy, status, user, date } = req.body;
+      const { statusBy, status, user, date, dateRange } = req.body;
 
       // Validate required fields
       if (!requestId || !statusBy || !status || !user) {
@@ -83,29 +101,39 @@ class AttendanceUnlockRequestController {
       if (status === 'approved' && user) {
         // Extract group list from user's reporting groups
         const groupList = user.userReportingGroup || [];
-        // console.log("this is called");
-
-        // Get the requested date
-        let formattedDateString;
-
-        // Use the date from the request body
-        if (date) {
-          // Check if it's in MM/DD/YYYY format
-          if (typeof date === 'string' && date.includes('/')) {
-            const dateParts = date.split('/');
-            // Create date as YYYY-MM-DD
-            formattedDateString = `${dateParts[2]}-${dateParts[0].padStart(2, '0')}-${dateParts[1].padStart(2, '0')}`;
-          } else {
-            // Already in YYYY-MM-DD format or not a string
-            formattedDateString = date;
+        
+        // Get the dates to process
+        let datesToProcess = [];
+        
+        // Check if dateRange is provided
+        if (dateRange && dateRange.startDate && dateRange.endDate) {
+          const startDate = new Date(dateRange.startDate);
+          const endDate = new Date(dateRange.endDate);
+          
+          // Generate all dates in the range
+          for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+            datesToProcess.push(this.formatDateToYYYYMMDD(new Date(d)));
           }
-
-          // console.log(formattedDateString);
-
-          // Process the data unlocking first
-          try {
+        } 
+        // Fall back to single date
+        else if (date) {
+          // Format the date
+          const formattedDate = this.formatSingleDate(date);
+          datesToProcess.push(formattedDate);
+        } 
+        else {
+          // If no date information is available, return an error
+          return res.status(400).json({
+            success: false,
+            message: 'Requested date information is missing'
+          });
+        }
+        
+        // Process each date in the range
+        try {
+          for (const dateToProcess of datesToProcess) {
             // Check data availability in Redis
-            const availableStatus = await checkDataAvailableInRedis(formattedDateString, groupList);
+            const availableStatus = await checkDataAvailableInRedis(dateToProcess, groupList);
 
             // Identify groups that are not available in Redis
             const unavailableGroups = groupList.filter(
@@ -115,34 +143,28 @@ class AttendanceUnlockRequestController {
             // Fetch attendance data for unavailable groups
             const mysqlAttendanceData = await getAttendanceSelectedGroupDateMysql(
               unavailableGroups,
-              formattedDateString
+              dateToProcess
             );
 
             // Store attendance data in Redis
             const redisKeys = storeAttendanceInRedis(mysqlAttendanceData);
 
             // Change status to unlocked in database
-            const result = await setStatusFromDateGroup(groupList, formattedDateString, "unlocked", user);
-
-            // Only update the request status in the database after successful data unlocking
-            updatedRequest = await this.requestService.updateRequestStatus(
-              requestId,
-              statusBy,
-              status
-            );
-          } catch (unlockError) {
-            console.error('Error unlocking data:', unlockError);
-            return res.status(500).json({
-              success: false,
-              message: 'Failed to unlock attendance data',
-              error: unlockError.message
-            });
+            const result = await setStatusFromDateGroup(groupList, dateToProcess, "unlocked", user);
           }
-        } else {
-          // If no date is available, return an error
-          return res.status(400).json({
+
+          // Only update the request status in the database after successful data unlocking
+          updatedRequest = await this.requestService.updateRequestStatus(
+            requestId,
+            statusBy,
+            status
+          );
+        } catch (unlockError) {
+          console.error('Error unlocking data:', unlockError);
+          return res.status(500).json({
             success: false,
-            message: 'Requested date is missing'
+            message: 'Failed to unlock attendance data',
+            error: unlockError.message
           });
         }
       } else {
@@ -201,6 +223,39 @@ class AttendanceUnlockRequestController {
         error: error.message
       });
     }
+  }
+
+  /**
+   * Format a single date to YYYY-MM-DD
+   * @param {string} date - Date string in various formats
+   * @returns {string} - Formatted date string
+   */
+  formatSingleDate(date) {
+    if (typeof date !== 'string') {
+      return date;
+    }
+
+    // Check if it's in MM/DD/YYYY format
+    if (date.includes('/')) {
+      const dateParts = date.split('/');
+      // Create date as YYYY-MM-DD
+      return `${dateParts[2]}-${dateParts[0].padStart(2, '0')}-${dateParts[1].padStart(2, '0')}`;
+    }
+    
+    // Already in YYYY-MM-DD format
+    return date;
+  }
+
+  /**
+   * Format JavaScript Date object to YYYY-MM-DD string
+   * @param {Date} date - JavaScript Date object
+   * @returns {string} - Formatted date string YYYY-MM-DD
+   */
+  formatDateToYYYYMMDD(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 }
 

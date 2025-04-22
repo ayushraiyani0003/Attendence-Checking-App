@@ -8,8 +8,9 @@ const AttendanceUnlockPage = ({ monthYearString, user }) => {
   const userId = user?.id;
   const userName = user?.name || 'Unknown User';
 
-  // State for the date picker and reason
-  const [selectedDate, setSelectedDate] = useState('');
+  // State for the date range picker and reason
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [reason, setReason] = useState('');
   const [tabValue, setTabValue] = useState(0);
   const [openDialog, setOpenDialog] = useState(false);
@@ -17,39 +18,54 @@ const AttendanceUnlockPage = ({ monthYearString, user }) => {
   const [actionType, setActionType] = useState('');
 
   // Function to parse URL query parameters
-  const getQueryParams = () => {
-    const searchParams = new URLSearchParams(window.location.search);
-    return {
-      date: searchParams.get('date')
-    };
+const getQueryParams = () => {
+  const searchParams = new URLSearchParams(window.location.search);
+  // Get single date parameter
+  const date = searchParams.get('date');
+  return {
+    date
   };
+};
 
-  // Format the date string to YYYY-MM-DD format for the date input
-  const formatDateForInput = (dateString) => {
-    if (!dateString) return '';
-    
-    // Check if date is in DD/MM/YYYY format
-    const dateRegex = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
-    const match = dateString.match(dateRegex);
-    
-    if (match) {
-      // Convert DD/MM/YYYY to YYYY-MM-DD
-      const [_, day, month, year] = match;
-      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+// Format the date string to YYYY-MM-DD format for the date input
+const formatDateForInput = (dateString) => {
+  if (!dateString) return '';
+  
+  // Check if date is in DD/MM/YYYY format
+  const dateRegex = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/;
+  const match = dateString.match(dateRegex);
+  
+  if (match) {
+    // Convert DD/MM/YYYY to YYYY-MM-DD
+    const [_, day, month, year] = match;
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+  
+  try {
+    // Try to parse the date if it's in another format
+    const date = new Date(dateString);
+    if (!isNaN(date.getTime())) {
+      return date.toISOString().split('T')[0];
     }
-    
-    try {
-      // Try to parse the date if it's in another format
-      const date = new Date(dateString);
-      if (!isNaN(date.getTime())) {
-        return date.toISOString().split('T')[0];
-      }
-    } catch (error) {
-      console.error('Error parsing date:', error);
+  } catch (error) {
+    console.error('Error parsing date:', error);
+  }
+  
+  return '';
+};
+
+// Set the start and end dates from URL parameter when component mounts
+useEffect(() => {
+  const { date } = getQueryParams();
+  if (date) {
+    const formattedDate = formatDateForInput(date);
+    if (formattedDate) {
+      // Set both start and end date to the same value initially
+      setStartDate(formattedDate);
+      setEndDate(formattedDate);
     }
-    
-    return '';
-  };
+  }
+}, []);
 
   // Parse the month and year from string
   const parseMonthYear = (monthYearString) => {
@@ -77,17 +93,6 @@ const AttendanceUnlockPage = ({ monthYearString, user }) => {
     handleRequestStatus
   } = useAttendanceUnlock();
 
-  // Set the selected date from URL parameter when component mounts
-  useEffect(() => {
-    const { date } = getQueryParams();
-    if (date) {
-      const formattedDate = formatDateForInput(date);
-      if (formattedDate) {
-        setSelectedDate(formattedDate);
-      }
-    }
-  }, []);
-
   // Update filters when monthYearString changes
   useEffect(() => {
     if (monthYearString) {
@@ -106,10 +111,27 @@ const AttendanceUnlockPage = ({ monthYearString, user }) => {
     setTabValue(newValue);
   };
 
+  // Validate date range
+  const validateDateRange = () => {
+    if (!startDate || !endDate) {
+      return false;
+    }
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    return start <= end;
+  };
+
   // Handle submit request
   const handleSubmitRequest = async () => {
-    if (!selectedDate || !reason.trim()) {
-      alert('Please select a date and provide a reason');
+    if (!startDate || !endDate || !reason.trim()) {
+      alert('Please select start and end dates and provide a reason');
+      return;
+    }
+
+    if (!validateDateRange()) {
+      alert('End date must be after or equal to start date');
       return;
     }
 
@@ -117,16 +139,20 @@ const AttendanceUnlockPage = ({ monthYearString, user }) => {
       await submitRequest({
         requestedById: userId,
         requestedBy: userName,
-        requestedDate: selectedDate,
+        requestedDateRange: {
+          startDate,
+          endDate
+        },
         requestReason: reason,
       });
 
       // Reset form
-      setSelectedDate('');
+      setStartDate('');
+      setEndDate('');
       setReason('');
 
       // Show success message
-      alert('Request submitted successfully');
+      // alert('Request submitted successfully');
     } catch (error) {
       console.error('Error submitting request:', error);
       alert('Failed to submit request');
@@ -150,14 +176,14 @@ const AttendanceUnlockPage = ({ monthYearString, user }) => {
         actionType,
         userName,
         user,
-        selectedRequest.date
+        selectedRequest.dateRange // Using dateRange instead of single date
       );
 
       setOpenDialog(false);
       setSelectedRequest(null);
 
       // Show success message
-      alert(`Request ${actionType} successfully`);
+      // alert(`Request ${actionType} successfully`);
     } catch (error) {
       console.error(`Error ${actionType} request:`, error);
       alert(`Failed to ${actionType} request`);
@@ -178,6 +204,22 @@ const AttendanceUnlockPage = ({ monthYearString, user }) => {
     if (!dateString) return '';
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  // Format date range for display
+  const formatDateRange = (dateRange) => {
+    if (!dateRange || (!dateRange.startDate && !dateRange.endDate)) {
+      return '';
+    }
+    
+    const startFormatted = formatDate(dateRange.startDate);
+    const endFormatted = formatDate(dateRange.endDate);
+    
+    if (startFormatted === endFormatted) {
+      return startFormatted; // Single day
+    }
+    
+    return `${startFormatted} - ${endFormatted}`;
   };
 
   // Loading state
@@ -213,8 +255,8 @@ const AttendanceUnlockPage = ({ monthYearString, user }) => {
         </h3>
         <div className="request-details">
           <div className="detail">
-            <span className="detail-label">Date:</span>
-            <span className="detail-value">{formatDate(request.date)}</span>
+            <span className="detail-label">Date Range:</span>
+            <span className="detail-value">{formatDateRange(request.dateRange)}</span>
           </div>
           <div className="detail">
             <span className="detail-label">Requested At:</span>
@@ -261,8 +303,8 @@ const AttendanceUnlockPage = ({ monthYearString, user }) => {
         </h3>
         <div className="request-details">
           <div className="detail">
-            <span className="detail-label">Date:</span>
-            <span className="detail-value">{formatDate(request.date)}</span>
+            <span className="detail-label">Date Range:</span>
+            <span className="detail-value">{formatDateRange(request.dateRange)}</span>
           </div>
           <div className="detail">
             <span className="detail-label">Requested At:</span>
@@ -297,8 +339,8 @@ const AttendanceUnlockPage = ({ monthYearString, user }) => {
         </h3>
         <div className="request-details">
           <div className="detail">
-            <span className="detail-label">Date:</span>
-            <span className="detail-value">{formatDate(request.date)}</span>
+            <span className="detail-label">Date Range:</span>
+            <span className="detail-value">{formatDateRange(request.dateRange)}</span>
           </div>
           <div className="detail">
             <span className="detail-label">Requested At:</span>
@@ -324,20 +366,33 @@ const AttendanceUnlockPage = ({ monthYearString, user }) => {
     <div className="attendance-page-container">
       <header className="page-header">
         <h1>Attendance Unlock Request System</h1>
-        <p>Submit a request to unlock attendance for any date</p>
+        <p>Submit a request to unlock attendance for a date range</p>
       </header>
 
-      {/* Request form card */}
+      {/* Request form card with date range picker */}
       <div className="card request-form-card">
         <div className="date-picker-section">
-          <h2>Select Date to Unlock Attendance</h2>
-          <div className="date-picker-wrapper">
+          <h2>Select Date Range to Unlock Attendance</h2>
+          <div className="date-range-picker-wrapper">
             <div className="date-input-container">
+              <label htmlFor="start-date">Start Date:</label>
               <input
                 type="date"
-                id="attendance-date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
+                id="start-date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                max={endDate || getTodayString()}
+                required
+              />
+            </div>
+            <div className="date-input-container">
+              <label htmlFor="end-date">End Date:</label>
+              <input
+                type="date"
+                id="end-date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                min={startDate}
                 max={getTodayString()}
                 required
               />
@@ -345,7 +400,7 @@ const AttendanceUnlockPage = ({ monthYearString, user }) => {
             <button
               className="submit-btn"
               onClick={handleSubmitRequest}
-              disabled={!selectedDate || !reason.trim()}
+              disabled={!startDate || !endDate || !reason.trim() || !validateDateRange()}
             >
               Submit Request
             </button>

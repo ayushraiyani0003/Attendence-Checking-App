@@ -14,16 +14,18 @@ class AttendanceUnlockRequestService {
    * @param {number} requestedById - The ID of the employee making the request
    * @param {string} requestedBy - The name of the employee making the request
    * @param {string} requestReason - The reason for the request
-   * @param {string} requestedDate - The date for which attendance is to be unlocked (YYYY-MM-DD)
+   * @param {string} startDate - The start date for which attendance is to be unlocked (YYYY-MM-DD)
+   * @param {string} endDate - The end date for which attendance is to be unlocked (YYYY-MM-DD)
    * @returns {Promise<Object>} - The created request
    */
-  async createRequest(requestedById, requestedBy, requestReason, requestedDate) {
+  async createRequest(requestedById, requestedBy, requestReason, startDate, endDate) {
     try {
       return await AttendanceUnlockRequest.create({
         requested_by_id: requestedById,
         requested_by: requestedBy,
         request_reason: requestReason,
-        requested_date: requestedDate,
+        requested_start_date: startDate,
+        requested_end_date: endDate,
         status: 'pending'
       });
     } catch (error) {
@@ -77,22 +79,53 @@ class AttendanceUnlockRequestService {
       
       // Add month and year filter if provided
       if (filters.month && filters.year) {
-        const startDate = new Date(filters.year, filters.month - 1, 1); // months are 0-indexed in JS Date
-        const endDate = new Date(filters.year, filters.month, 0); // Last day of the month
+        const startOfMonth = new Date(filters.year, filters.month - 1, 1); // months are 0-indexed in JS Date
+        const endOfMonth = new Date(filters.year, filters.month, 0); // Last day of the month
         
-        whereClause.requested_date = {
-          [Op.between]: [startDate, endDate]
-        };
+        // Date range should overlap with the month (either start date or end date is in the month)
+        whereClause[Op.or] = [
+          // Start date is in the month
+          {
+            requested_start_date: {
+              [Op.between]: [startOfMonth, endOfMonth]
+            }
+          },
+          // End date is in the month
+          {
+            requested_end_date: {
+              [Op.between]: [startOfMonth, endOfMonth]
+            }
+          },
+          // Date range encompasses the entire month (start date before month, end date after month)
+          {
+            [Op.and]: [
+              {
+                requested_start_date: {
+                  [Op.lte]: startOfMonth
+                }
+              },
+              {
+                requested_end_date: {
+                  [Op.gte]: endOfMonth
+                }
+              }
+            ]
+          }
+        ];
       }
       
       // Add requestedById filter if provided
       if (filters.requestedById) {
         whereClause.requested_by_id = filters.requestedById;
       }
+      console.log(await AttendanceUnlockRequest.findAll({
+        where: whereClause,
+        order: [['requested_at', 'DESC']] // Sort by requested time instead of date
+      }));
       
       return await AttendanceUnlockRequest.findAll({
         where: whereClause,
-        order: [['requested_date', 'DESC']]
+        order: [['requested_at', 'DESC']] // Sort by requested time instead of date
       });
     } catch (error) {
       console.error("Error fetching filtered attendance unlock requests:", error);
