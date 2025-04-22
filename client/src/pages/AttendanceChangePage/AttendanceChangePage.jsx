@@ -88,13 +88,13 @@ const AttendanceChangePage = () => {
     }
 
     // Debug logs - remove in production
-    console.log("Applied filters:", {
-      date: selectedDate,
-      search: searchTerm,
-      department: filterDepartment,
-      reportingGroup: filterReportingGroup,
-      resultCount: filteredLogs.length
-    });
+    // console.log("Applied filters:", {
+    //   date: selectedDate,
+    //   search: searchTerm,
+    //   department: filterDepartment,
+    //   reportingGroup: filterReportingGroup,
+    //   resultCount: filteredLogs.length
+    // });
 
     // Extract unique employees
     const uniqueEmployees = [];

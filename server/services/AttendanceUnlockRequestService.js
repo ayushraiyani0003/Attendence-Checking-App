@@ -118,10 +118,10 @@ class AttendanceUnlockRequestService {
       if (filters.requestedById) {
         whereClause.requested_by_id = filters.requestedById;
       }
-      console.log(await AttendanceUnlockRequest.findAll({
-        where: whereClause,
-        order: [['requested_at', 'DESC']] // Sort by requested time instead of date
-      }));
+      // console.log(await AttendanceUnlockRequest.findAll({
+      //   where: whereClause,
+      //   order: [['requested_at', 'DESC']] // Sort by requested time instead of date
+      // }));
       
       return await AttendanceUnlockRequest.findAll({
         where: whereClause,
@@ -129,6 +129,30 @@ class AttendanceUnlockRequestService {
       });
     } catch (error) {
       console.error("Error fetching filtered attendance unlock requests:", error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Get detailed information about a specific attendance unlock request by ID
+   * 
+   * @param {number} requestId - The ID of the request to retrieve
+   * @returns {Promise<Object>} - The request details or null if not found
+   */
+  async getRequestById(requestId) {
+    console.log("called");
+    
+    try {
+      const request = await AttendanceUnlockRequest.findByPk(requestId);
+      
+      if (!request) {
+        console.log(`No request found with ID: ${requestId}`);
+        return null;
+      }
+      
+      return request;
+    } catch (error) {
+      console.error(`Error fetching request with ID ${requestId}:`, error);
       throw error;
     }
   }

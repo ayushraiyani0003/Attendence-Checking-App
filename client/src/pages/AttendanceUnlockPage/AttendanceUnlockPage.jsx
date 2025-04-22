@@ -199,6 +199,16 @@ useEffect(() => {
     return `${year}-${month}-${day}`;
   };
 
+  // Get yesterday's date in YYYY-MM-DD format for max date attribute
+  const getYesterdayString = () => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const year = yesterday.getFullYear();
+    const month = String(yesterday.getMonth() + 1).padStart(2, '0');
+    const day = String(yesterday.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   // Format date to display
   const formatDate = (dateString) => {
     if (!dateString) return '';
@@ -381,7 +391,7 @@ useEffect(() => {
                 id="start-date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                max={endDate || getTodayString()}
+                max={getYesterdayString()}
                 required
               />
             </div>
@@ -393,7 +403,7 @@ useEffect(() => {
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 min={startDate}
-                max={getTodayString()}
+                max={getYesterdayString()}
                 required
               />
             </div>

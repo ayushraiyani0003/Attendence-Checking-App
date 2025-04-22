@@ -2,6 +2,7 @@ const AttendanceUnlockRequestService = require('../services/AttendanceUnlockRequ
 const { checkDataAvailableInRedis, storeAttendanceInRedis } = require("../utils/getRedisAttendenceData");
 const { getAttendanceSelectedGroupDateMysql } = require("../services/attendenceService");
 const { setStatusFromDateGroup } = require("../services/groupAttendenceLockServices");
+const { getAllUsers } = require('../services/userService');
 
 class AttendanceUnlockRequestController {
   constructor() {
@@ -99,8 +100,45 @@ class AttendanceUnlockRequestController {
       let updatedRequest;
 
       if (status === 'approved' && user) {
-        // Extract group list from user's reporting groups
-        const groupList = user.userReportingGroup || [];
+        // First, get the request details to get the user who made the request
+        const requestDetails = await this.requestService.getRequestById(requestId);
+        
+        if (!requestDetails) {
+          return res.status(404).json({
+            success: false,
+            message: 'Request not found'
+          });
+        }
+        
+        // Get the requested_by_id from the request
+        const requestedById = requestDetails.requested_by_id;
+        console.log(requestedById);
+        
+        // Get all users to find the matching user and their reporting groups
+        const allUsers = await getAllUsers();
+        // console.log(allUsers);
+        
+        // Find the user by ID and get their reporting groups
+        const requestedUser = allUsers.find(u => u.id === requestedById);
+        console.log(requestedUser.reporting_group);
+        
+        if (!requestedUser || !requestedUser.reporting_group) {
+          return res.status(404).json({
+            success: false,
+            message: 'User or reporting groups not found'
+          });
+        }
+        
+        // Get the reporting groups from the user
+        const groupList = requestedUser.reporting_group;
+        
+        if (!groupList || groupList.length === 0) {
+          return res.status(400).json({
+            success: false,
+            message: 'No reporting groups found for this user'
+          });
+        }
+        console.log(groupList);
         
         // Get the dates to process
         let datesToProcess = [];
