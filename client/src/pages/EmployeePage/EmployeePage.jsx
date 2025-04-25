@@ -561,13 +561,13 @@ const EmployeePage = () => {
           </Form.Item>
 
           {/* Add Mobile Number field */}
-          <Form.Item label="Mobile Number" name="mobile_number" rules={[{ required: true, message: 'Please enter mobile number!' }]}>
-            <Input placeholder="Enter mobile number" />
+          <Form.Item label="Mobile Number" name="mobile_number" rules={[{ message: 'Please enter mobile number!' }]}>
+            <Input type="number" placeholder="Enter mobile number" />
           </Form.Item>
 
           {/* Add Mobile Number field */}
-          <Form.Item label="Whatsapp Number" name="whats_app_number" rules={[{ required: true, message: 'Please enter mobile number!' }]}>
-            <Input placeholder="Enter mobile number" />
+          <Form.Item label="Whatsapp Number" name="whats_app_number" rules={[{ message: 'Please enter mobile number!' }]}>
+            <Input type="number" placeholder="Enter mobile number" />
           </Form.Item>
 
 

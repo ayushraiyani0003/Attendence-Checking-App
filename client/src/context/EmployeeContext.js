@@ -56,14 +56,13 @@ export const EmployeeProvider = ({ children, userRole, userReportingGroup }) => 
     
     try {
       // Prepare employee data with all fields including new ones
+      // Note: mobile_no and whatsApp_no are now optional
       const completeEmployeeData = {
         name: employeeData.name,
         department: employeeData.department,
         punch_code: employeeData.punch_code,
         designation: employeeData.designation,
         reporting_group: employeeData.reporting_group,
-        mobile_no: employeeData.mobile_no, // Added mobile number
-        whatsApp_no: employeeData.whatsApp_no,
         net_hr: employeeData.net_hr,
         week_off: employeeData.week_off,
         resign_date: employeeData.resign_date,
@@ -71,6 +70,15 @@ export const EmployeeProvider = ({ children, userRole, userReportingGroup }) => 
         branch: employeeData.branch,
         sections: employeeData.sections
       };
+      
+      // Only add mobile_no and whatsApp_no if they are provided
+      if (employeeData.mobile_no) {
+        completeEmployeeData.mobile_no = employeeData.mobile_no;
+      }
+      
+      if (employeeData.whatsApp_no) {
+        completeEmployeeData.whatsApp_no = employeeData.whatsApp_no;
+      }
       
       const newEmployee = await createEmployee(completeEmployeeData);
       setEmployees([...employees, newEmployee]);
@@ -88,15 +96,13 @@ export const EmployeeProvider = ({ children, userRole, userReportingGroup }) => 
     // console.log(updatedData);
     
     try {
-      // Ensure all fields are included in the update
+      // Ensure required fields are included in the update
       const completeUpdateData = {
         name: updatedData.name,
         department: updatedData.department,
         punch_code: updatedData.punch_code,
         designation: updatedData.designation,
         reporting_group: updatedData.reporting_group,
-        mobile_no: updatedData.mobile_no, // Added mobile number
-        whatsApp_no: updatedData.whatsApp_no,
         net_hr: updatedData.net_hr,
         week_off: updatedData.week_off,
         resign_date: updatedData.resign_date,
@@ -104,6 +110,15 @@ export const EmployeeProvider = ({ children, userRole, userReportingGroup }) => 
         branch: updatedData.branch,
         sections: updatedData.sections
       };
+      
+      // Only include mobile_no and whatsApp_no if they are provided
+      if (updatedData.mobile_no !== undefined) {
+        completeUpdateData.mobile_no = updatedData.mobile_no;
+      }
+      
+      if (updatedData.whatsApp_no !== undefined) {
+        completeUpdateData.whatsApp_no = updatedData.whatsApp_no;
+      }
       
       const updatedEmployee = await modifyEmployee(employeeId, completeUpdateData);
       setEmployees(

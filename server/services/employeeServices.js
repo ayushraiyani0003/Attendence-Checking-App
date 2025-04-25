@@ -8,9 +8,11 @@ const createEmployeeService = async (employeeData) => {
     // console.log("employeeData", employeeData);
     const dataForDatabase = {
       ...employeeData,
-      mobile_number: employeeData.mobile_no,
-      whats_app_number: employeeData.whatsApp_no,
+      // Only add mobile_number and whats_app_number if they exist in employeeData
+      ...(employeeData.mobile_no !== undefined && { mobile_number: employeeData.mobile_no }),
+      ...(employeeData.whatsApp_no !== undefined && { whats_app_number: employeeData.whatsApp_no })
     };
+    
     const newEmployee = await Employee.create(dataForDatabase);
 
     // Process attendance records for the new employee
@@ -34,22 +36,33 @@ const editEmployeeService = async (employeeId, updatedData) => {
       throw new Error("Employee not found");
     }
 
-    // Update employee fields
+    // Update required employee fields
     employee.name = updatedData.name;
     employee.department = updatedData.department;
     employee.punch_code = updatedData.punch_code;
     employee.designation = updatedData.designation;
     employee.reporting_group = updatedData.reporting_group;
-    employee.mobile_number = updatedData.mobile_no; // Updated to handle the mobile number
-    employee.whats_app_number = updatedData.whatsApp_no; // Updated to handle the mobile number
-    
-    // Update the new fields
     employee.net_hr = updatedData.net_hr;
     employee.week_off = updatedData.week_off;
-    employee.resign_date = updatedData.resign_date;
-    employee.status = updatedData.status;
     employee.branch = updatedData.branch;
     employee.sections = updatedData.sections;
+    
+    // Only update optional fields if they are provided
+    if (updatedData.mobile_no !== undefined) {
+      employee.mobile_number = updatedData.mobile_no;
+    }
+    
+    if (updatedData.whatsApp_no !== undefined) {
+      employee.whats_app_number = updatedData.whatsApp_no;
+    }
+    
+    if (updatedData.resign_date !== undefined) {
+      employee.resign_date = updatedData.resign_date;
+    }
+    
+    if (updatedData.status !== undefined) {
+      employee.status = updatedData.status;
+    }
 
     await employee.save();
     return employee;

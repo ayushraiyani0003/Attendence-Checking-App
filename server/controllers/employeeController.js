@@ -27,21 +27,19 @@ const createEmployee = async (req, res) => {
       sections
     } = req.body;
 
-    // Validate required fields
+    // Validate required fields - mobile_no and whatsApp_no removed from required list
     if (
       !name ||
       !department ||
       !punch_code ||
       !designation ||
       !reporting_group || 
-      !mobile_no || 
-      !whatsApp_no ||
       !net_hr || 
       !week_off || 
       !branch || 
       !sections
     ) {
-      return res.status(400).json({ message: "All fields are required." });
+      return res.status(400).json({ message: "All required fields must be provided." });
     }
 
     const newEmployee = await createEmployeeService({
@@ -92,9 +90,9 @@ const editEmployee = async (req, res) => {
       sections
     } = req.body;
 
-    // Validate required fields
-    if (!name || !department || !punch_code || !designation) {
-      return res.status(400).json({ message: "All fields are required." });
+    // Validate required fields (mobile_no and whatsApp_no are now optional)
+    if (!name || !department || !punch_code || !designation || !reporting_group || !net_hr || !week_off || !branch || !sections) {
+      return res.status(400).json({ message: "All required fields must be provided." });
     }
 
     const updatedEmployee = await editEmployeeService(employee_id, {
@@ -102,15 +100,16 @@ const editEmployee = async (req, res) => {
       department,
       punch_code,
       designation,
-      mobile_no,
-      whatsApp_no,
       reporting_group,
       net_hr,
       week_off,
       resign_date,
       status,
       branch,
-      sections
+      sections,
+      // Only pass mobile_no and whatsApp_no if they're provided
+      ...(mobile_no !== undefined && { mobile_no }),
+      ...(whatsApp_no !== undefined && { whatsApp_no })
     });
 
     res.status(200).json({
