@@ -379,63 +379,88 @@ const useDataRow = ({
     };
 
     // Handle input change with improved validation
-    const handleChange = (e, column, index) => {
-        let value = e.target.value;
+   // Handle input change with improved validation
+const handleChange = (e, column, index) => {
+  let value = e.target.value;
 
-        // Validate and format input based on field type
-        if (column === "netHR" || column === "otHR") {
-            // Check if user is typing a time format
-            if (value.includes(':')) {
-                // Allow typing time format without auto-conversion
-                // Only validate once complete
-                const completeTimeRegex = /^(\d+):([0-5]\d)$/;
-                const partialTimeRegex = /^(\d+):([0-5])?$/;
+  // Validate and format input based on field type
+  if (column === "netHR" || column === "otHR") {
+      // Check if user is typing a time format
+      if (value.includes(':')) {
+          // Allow typing time format without auto-conversion
+          // Only validate once complete
+          const completeTimeRegex = /^(\d+):([0-5]\d)$/;
+          const partialTimeRegex = /^(\d+):([0-5])?$/;
 
-                if (!completeTimeRegex.test(value) && !partialTimeRegex.test(value)) {
-                    // Invalid time format, allow only valid characters
-                    value = value.replace(/[^0-9:]/g, "");
-                }
-            } else {
-                // For decimal format, allow only numbers and one decimal point
-                value = value.replace(/[^0-9.]/g, "");
+          if (!completeTimeRegex.test(value) && !partialTimeRegex.test(value)) {
+              // Invalid time format, allow only valid characters
+              value = value.replace(/[^0-9:]/g, "");
+          }
+      } else {
+          // For decimal format, allow only numbers and one decimal point
+          value = value.replace(/[^0-9.]/g, "");
 
-                // Ensure only one decimal point
-                const decimalCount = (value.match(/\./g) || []).length;
-                if (decimalCount > 1) {
-                    value = value.substring(0, value.lastIndexOf("."));
-                }
-            }
+          // Ensure only one decimal point
+          const decimalCount = (value.match(/\./g) || []).length;
+          if (decimalCount > 1) {
+              value = value.substring(0, value.lastIndexOf("."));
+          }
+      }
 
-            // Apply maximum value constraints only for fully entered values
-            if (value !== "" && !value.includes(':')) {
-                const numValue = parseFloat(value);
-                if (!isNaN(numValue)) {
-                    if (column === "netHR" && numValue > 11) {
-                        value = "11";
-                    } else if (column === "otHR" && numValue > 15) {
-                        value = "15";
-                    }
-                }
-            }
-        } else if (column === "dnShift") {
-            // Handle day/night shift values - accept only E, D, N and convert to uppercase
-            value = value.toUpperCase();
-            if (value.length > 0) {
-                const lastChar = value.charAt(value.length - 1);
-                if (['E', 'D', 'N'].includes(lastChar)) {
-                    value = lastChar;
-                } else {
-                    value = 'D'; // Default to D if invalid input
-                }
-            }
-        }
+      // Apply maximum value constraints only for fully entered values
+      if (value !== "" && !value.includes(':')) {
+          const numValue = parseFloat(value);
+          if (!isNaN(numValue)) {
+              // Check if the attendance date being edited is a Wednesday
+              const attendanceRecord = displayData[index];
+              if (attendanceRecord && attendanceRecord.date) {
+                  const [day, month, year] = attendanceRecord.date.split('/');
+                  const dateObj = new Date(year, month - 1, day);
+                  const isWednesday = dateObj.getDay() === 3; // 0 is Sunday, 3 is Wednesday
+                  console.log(isWednesday);
+                  
+                  if (isWednesday) {
+                      // For Wednesdays, allow up to 24 hours for both netHR and otHR
+                      if (numValue > 24) {
+                          value = "24";
+                      }
+                  } else {
+                      // For other days, maintain existing limits
+                      if (column === "netHR" && numValue > 11) {
+                          value = "11";
+                      } else if (column === "otHR" && numValue > 15) {
+                          value = "15";
+                      }
+                  }
+              } else {
+                  // If we can't determine the date, use the default limits
+                  if (column === "netHR" && numValue > 11) {
+                      value = "11";
+                  } else if (column === "otHR" && numValue > 15) {
+                      value = "15";
+                  }
+              }
+          }
+      }
+  } else if (column === "dnShift") {
+      // Handle day/night shift values - accept only E, D, N and convert to uppercase
+      value = value.toUpperCase();
+      if (value.length > 0) {
+          const lastChar = value.charAt(value.length - 1);
+          if (['E', 'D', 'N'].includes(lastChar)) {
+              value = lastChar;
+          } else {
+              value = 'D'; // Default to D if invalid input
+          }
+      }
+  }
 
-        // Update edit value
-        setEditValue(prev => ({
-            ...prev,
-            [`${column}-${index}`]: value
-        }));
-    };
+  // Update edit value
+  setEditValue(prev => ({
+      ...prev,
+      [`${column}-${index}`]: value
+  }));
+};
 
 // Modified onKeyDown function with reliable update saving
 const onKeyDown = (e, column) => {
@@ -502,27 +527,49 @@ const onKeyDown = (e, column) => {
       // Validate values before saving
       let validationFailed = false;
 
-      if (currentField === "netHR" && !validateNetHR(currentValue)) {
-        alert("Net hours cannot exceed 11");
-        setEditValue(prev => ({ ...prev, [editKey]: "11" }));
-        validationFailed = true;
+      // Check if the date is a Wednesday
+      const [day, month, year] = attendanceDate.split('/');
+      const dateObj = new Date(year, month - 1, day);
+      const isWednesday = dateObj.getDay() === 3; // 0 is Sunday, 3 is Wednesday
+
+      if (currentField === "netHR") {
+        const numValue = parseFloat(currentValue);
+        if (isWednesday) {
+          // For Wednesdays, allow up to 24 hours
+          if (numValue > 24) {
+            alert("Net hours cannot exceed 24 on Wednesdays");
+            setEditValue(prev => ({ ...prev, [editKey]: "24" }));
+            validationFailed = true;
+          }
+        } else if (!validateNetHR(currentValue)) {
+          // For non-Wednesdays, use standard validation
+          alert("Net hours cannot exceed 11");
+          setEditValue(prev => ({ ...prev, [editKey]: "11" }));
+          validationFailed = true;
+        }
       }
 
-      if (currentField === "otHR" && !validateOtHR(currentValue)) {
-        alert("Overtime hours cannot exceed 15");
-        setEditValue(prev => ({ ...prev, [editKey]: "15" }));
-        validationFailed = true;
+      if (currentField === "otHR") {
+        const numValue = parseFloat(currentValue);
+        if (isWednesday) {
+          // For Wednesdays, allow up to 24 hours
+          if (numValue > 24) {
+            alert("Overtime hours cannot exceed 24 on Wednesdays");
+            setEditValue(prev => ({ ...prev, [editKey]: "24" }));
+            validationFailed = true;
+          }
+        } else if (!validateOtHR(currentValue)) {
+          // For non-Wednesdays, use standard validation
+          alert("Overtime hours cannot exceed 15");
+          setEditValue(prev => ({ ...prev, [editKey]: "15" }));
+          validationFailed = true;
+        }
       }
 
       if (validationFailed) return;
 
       // Only update if the value has changed
       if (currentValue !== originalValue) {
-        // console.log("Updating cell value for arrow key navigation", 
-        //             "rowId:", row.id, 
-        //             "rowIndex:", rowIndex, // This should be the actual index in attendanceData
-        //             "field:", currentField, 
-        //             "value:", currentValue);
         const formattedValue = formatValue(currentValue, currentField);
         
         // IMPORTANT: Use the rowIndex (index in the full attendanceData array)
@@ -530,8 +577,7 @@ const onKeyDown = (e, column) => {
         onCellUpdate(rowIndex, attendanceDate, currentField, formattedValue);
       }
       
-      // Let the parent component handle vertical navigation - NO NEED TO SAVE AGAIN
-      // The actual navigation and focus change will be handled by the parent
+      // Let the parent component handle vertical navigation
       if (typeof handleVerticalKeyDown === 'function') {
         handleVerticalKeyDown(e, sequentialIndex, row.id, column);
       } else {
@@ -548,7 +594,7 @@ const onKeyDown = (e, column) => {
       const [currentField, currentColIndex] = column.split("-");
       const colIndex = parseInt(currentColIndex);
       
-      // Get the date for this attendance record (no need for error log here)
+      // Get the date for this attendance record
       const attendanceDate = displayData[colIndex]?.date;
       if (!attendanceDate) {
         console.error(`No date found for index ${colIndex} in row ${row.id}`);
@@ -596,27 +642,49 @@ const onKeyDown = (e, column) => {
       // Validate values before saving
       let validationFailed = false;
 
-      if (currentField === "netHR" && !validateNetHR(currentValue)) {
-        alert("Net hours cannot exceed 11");
-        setEditValue(prev => ({ ...prev, [editKey]: "11" }));
-        validationFailed = true;
+      // Check if the date is a Wednesday
+      const [day, month, year] = attendanceDate.split('/');
+      const dateObj = new Date(year, month - 1, day);
+      const isWednesday = dateObj.getDay() === 3; // 0 is Sunday, 3 is Wednesday
+
+      if (currentField === "netHR") {
+        const numValue = parseFloat(currentValue);
+        if (isWednesday) {
+          // For Wednesdays, allow up to 24 hours
+          if (numValue > 24) {
+            alert("Net hours cannot exceed 24 on Wednesdays");
+            setEditValue(prev => ({ ...prev, [editKey]: "24" }));
+            validationFailed = true;
+          }
+        } else if (!validateNetHR(currentValue)) {
+          // For non-Wednesdays, use standard validation
+          alert("Net hours cannot exceed 11");
+          setEditValue(prev => ({ ...prev, [editKey]: "11" }));
+          validationFailed = true;
+        }
       }
 
-      if (currentField === "otHR" && !validateOtHR(currentValue)) {
-        alert("Overtime hours cannot exceed 15");
-        setEditValue(prev => ({ ...prev, [editKey]: "15" }));
-        validationFailed = true;
+      if (currentField === "otHR") {
+        const numValue = parseFloat(currentValue);
+        if (isWednesday) {
+          // For Wednesdays, allow up to 24 hours
+          if (numValue > 24) {
+            alert("Overtime hours cannot exceed 24 on Wednesdays");
+            setEditValue(prev => ({ ...prev, [editKey]: "24" }));
+            validationFailed = true;
+          }
+        } else if (!validateOtHR(currentValue)) {
+          // For non-Wednesdays, use standard validation
+          alert("Overtime hours cannot exceed 15");
+          setEditValue(prev => ({ ...prev, [editKey]: "15" }));
+          validationFailed = true;
+        }
       }
 
       if (validationFailed) return;
 
       // Only update if the value has changed
       if (currentValue !== originalValue) {
-        // console.log("Updating cell value for Tab/Enter navigation", 
-        //             "rowId:", row.id, 
-        //             "rowIndex:", rowIndex, // This should be the actual index in attendanceData
-        //             "field:", currentField, 
-        //             "value:", currentValue);
         const formattedValue = formatValue(currentValue, currentField);
         
         // IMPORTANT: Use the rowIndex (index in the full attendanceData array)
