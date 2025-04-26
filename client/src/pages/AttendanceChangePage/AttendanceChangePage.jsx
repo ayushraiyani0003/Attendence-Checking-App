@@ -13,6 +13,7 @@ const AttendanceChangePage = () => {
     setSelectedDate,
     fetchLogs
   } = useAttendanceLogs();
+  console.log(logs);
 
   // Local component state
   const [selectedEmployee, setSelectedEmployee] = useState(null);
@@ -324,7 +325,8 @@ const AttendanceChangePage = () => {
                               {change.changed_by}
                             </div>
                           </td>
-                          <td className="time-cell">{new Date(change.update_datetime).toLocaleTimeString()}</td>
+                          <td className="time-cell" title={new Date(change.update_datetime).toLocaleString()}>{new Date(change.update_datetime).toLocaleDateString(undefined, { month: 'numeric', day: 'numeric' })}, {new Date(change.update_datetime).toLocaleTimeString()}
+                          </td>
                         </tr>
                       ))
                     ) : (
