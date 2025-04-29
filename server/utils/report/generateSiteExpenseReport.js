@@ -16,109 +16,49 @@ const moment = require('moment');
  * @returns {Promise<string>} - Path to the generated Excel file
  */
 async function generateSiteExpenseReport(finalAttendanceData, metricsData, month, year, option, dateRange, employeeType, employeeDetails) {
-  // Debug parameters
-  // console.log("=========== STARTING REPORT GENERATION ===========");
-  // console.log("Parameters received:");
-  // console.log(`Month: ${month}, Year: ${year}`);
-  // console.log(`Option: ${option}`);
-  // console.log(`Date Range: ${JSON.stringify(dateRange)}`);
-  // console.log(`Employee Type: ${employeeType}`);
-  // console.log(`Attendance Data: ${finalAttendanceData.length} records`);
-  // console.log(`Metrics Data: ${metricsData.length} records`);
-  // console.log(`Employee Details: ${employeeDetails.length} records`);
-  
   // Create Excel workbook and worksheet
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('Site Expense Report');
-  
+
   // Parse date range
   const startDate = moment(dateRange[0]);
   const endDate = moment(dateRange[1]);
-  // console.log(`Parsed Date Range: ${startDate.format('YYYY-MM-DD')} to ${endDate.format('YYYY-MM-DD')}`);
-  
-  // Debug: Show some attendance data samples
-  if (finalAttendanceData.length > 0) {
-    // console.log("Sample attendance records:");
-    // finalAttendanceData.slice(0, 3).forEach(record => console.log(JSON.stringify(record)));
-    
-    // Check for site comments in attendance data
-    const siteComments = finalAttendanceData.filter(a => 
-      a.comment && (
-        a.comment.toLowerCase().trim().startsWith("site") || 
-        a.comment.toLowerCase().includes("site")
-      )
-    );
-    // console.log(`Found ${siteComments.length} attendance records with site comments`);
-    if (siteComments.length > 0) {
-      // console.log("Sample site comments:");
-      siteComments.slice(0, 3).forEach(record => {
-        // console.log(`Employee ID: ${record.employee_id}, Comment: "${record.comment}"`);
-      });
-    }
-  } else {
-    // console.log("WARNING: No attendance data found!");
-  }
-  
-  // Debug: Show some metrics data samples
-  if (metricsData.length > 0) {
-    // console.log("Sample metrics records:");
-    metricsData.slice(0, 2).forEach(record => {
-      const dataValues = record.dataValues || record;
-      // console.log(JSON.stringify(dataValues));
-    });
-  } else {
-    // console.log("WARNING: No metrics data found!");
-  }
-  
-  // Debug: Show some employee data samples
-  if (employeeDetails.length > 0) {
-    // console.log("Sample employee records:");
-    employeeDetails.slice(0, 3).forEach(emp => {
-      const dataValues = emp.dataValues || emp;
-      // console.log(JSON.stringify(dataValues));
-    });
-  } else {
-    // console.log("WARNING: No employee data found!");
-  }
-  
+
+  // Map for faster lookups
+  const attendanceMap = createAttendanceMap(finalAttendanceData);
+  const metricsMap = createMetricsMap(metricsData);
+
   // Filter employees based on employeeType
-  // console.log(`Filtering employees by type: ${employeeType}`);
   let filteredEmployees = filterEmployeesByType(employeeDetails, employeeType, finalAttendanceData, metricsData);
-  // console.log(`After type filtering: ${filteredEmployees.length} employees`);
-  
+
   // Filter employees who have site in comment at least once
-  // console.log("Filtering employees with site visits...");
   filteredEmployees = filterEmployeesWithSiteVisits(filteredEmployees, finalAttendanceData);
-  // console.log(`After site visit filtering: ${filteredEmployees.length} employees`);
-  
+
   if (filteredEmployees.length === 0) {
-    // console.log("No employees match the criteria. Creating empty report.");
     return createEmptyReport(option, startDate, endDate, employeeType, workbook);
   }
-  
+
   // Create date headers based on date range
   const dateHeaders = generateDateHeaders(startDate, endDate);
-  // console.log(`Generated ${dateHeaders.length} date headers: ${dateHeaders.join(', ')}`);
-  
+
   // Continue with report generation...
-  // console.log("Setting up worksheet headers...");
   setupWorksheetHeaders(worksheet, dateHeaders, option);
-  
-  // console.log("Populating data rows...");
-  populateDataRows(worksheet, filteredEmployees, finalAttendanceData, metricsData, dateHeaders, option);
-  
-  // console.log("Adding totals row...");
-  addTotalsRow(worksheet, filteredEmployees.length, dateHeaders.length, option);
-  
-  // console.log("Styling worksheet...");
+
+  // Aggregate data
+  const { totals, siteCountTotal } = populateDataRows(worksheet, filteredEmployees, attendanceMap, metricsMap, dateHeaders, option);
+
+  // Add totals row with the aggregated data
+  addTotalsRow(worksheet, filteredEmployees.length, dateHeaders.length, option, totals, siteCountTotal);
+
+  // Apply styles
   styleWorksheet(worksheet, option, dateHeaders.length);
-  
+
   // Create the directory if it doesn't exist
   const reportsDir = path.join(process.cwd(), 'reports');
   if (!fs.existsSync(reportsDir)) {
     fs.mkdirSync(reportsDir, { recursive: true });
   }
-  
+
   // Generate filename based on parameters
   const startDateStr = startDate.format('YYYY-MM-DD');
   const endDateStr = endDate.format('YYYY-MM-DD');
@@ -126,119 +66,57 @@ async function generateSiteExpenseReport(finalAttendanceData, metricsData, month
   const sanitizedOption = typeof option === 'string' ? option.replace(/\s+/g, '') : 'default';
   const filename = `SiteExpenseReport_${startDateStr}_to_${endDateStr}_${sanitizedEmployeeType}_${sanitizedOption}.xlsx`;
   const filePath = path.join(reportsDir, filename);
-  
-  // console.log(`Saving report to: ${filePath}`);
+
   // Save the workbook
   await workbook.xlsx.writeFile(filePath);
-  
-  // console.log("Report generation completed successfully.");
+
   return {
     success: true,
     filepath: filePath,
     filename: filename,
-    message: `Absent report generated successfully for employees.`,
-    type: 'file' // Add this to indicate it's a file response
+    message: `Site expense report generated successfully for employees.`,
+    type: 'file'
   };
 }
 
 /**
- * Get attendance data for the specified date range
- * @param {moment} startDate - Start date
- * @param {moment} endDate - End date
- * @returns {Promise<Array>} - Attendance data
+ * Create a map of attendance data for faster lookups
+ * @param {Array} attendanceData - Attendance data
+ * @returns {Object} - Map of attendance data by employee ID and date
  */
-async function getAttendanceData(startDate, endDate) {
-  try {
-    // console.log("Inside getAttendanceData function");
-    // This function should be implemented to fetch attendance data from your data source
-    
-    // If you're using Sequelize, your implementation might look like:
-    // const records = await AttendanceModel.findAll({
-    //   where: {
-    //     attendance_date: {
-    //       [Op.between]: [startDate.format('YYYY-MM-DD'), endDate.format('YYYY-MM-DD')]
-    //     }
-    //   }
-    // });
-    
-    // For debugging, let's log how we would access your data source
-    // console.log(`Attempting to fetch attendance data between ${startDate.format('YYYY-MM-DD')} and ${endDate.format('YYYY-MM-DD')}`);
-    
-    // Since we don't have your actual DB connection, log instructions for you
-    // console.log("ACTION REQUIRED: Replace this placeholder with your actual database query");
-    // console.log("Example: const records = await AttendanceModel.findAll({ ... });");
-    
-    // Return empty array or placeholder data for now
-    // IMPORTANT: Replace this with your actual implementation
-    return []; // Replace with actual implementation
-  } catch (error) {
-    console.error("Error in getAttendanceData:", error);
-    // Return empty array in case of error
-    return [];
+function createAttendanceMap(attendanceData) {
+  const map = {};
+
+  for (const record of attendanceData) {
+    const employeeId = record.employee_id;
+    const date = moment(record.attendance_date).format('DD-MM');
+
+    if (!map[employeeId]) {
+      map[employeeId] = {};
+    }
+
+    map[employeeId][date] = record;
   }
+
+  return map;
 }
 
 /**
- * Get metrics data for the specified month and year
- * @param {number} month - Month number
- * @param {number} year - Year
- * @returns {Promise<Array>} - Metrics data
+ * Create a map of metrics data for faster lookups
+ * @param {Array} metricsData - Metrics data
+ * @returns {Object} - Map of metrics data by punch code
  */
-async function getMetricsData(month, year) {
-  try {
-    // console.log("Inside getMetricsData function");
-    // console.log(`Attempting to fetch metrics data for ${year}-${month}`);
-    
-    // For debugging, print how you'd normally access this data
-    const monthYearString = `${year}-${String(month).padStart(2, '0')}`;
-    // console.log(`Looking for month_year = ${monthYearString}`);
-    
-    // If you're using Sequelize, your implementation might look like:
-    // const records = await MetricsModel.findAll({
-    //   where: {
-    //     month_year: monthYearString
-    //   }
-    // });
-    
-    // console.log("ACTION REQUIRED: Replace this placeholder with your actual database query");
-    // console.log("Example: const records = await MetricsModel.findAll({ ... });");
-    
-    // Return empty array or placeholder data for now
-    // IMPORTANT: Replace this with your actual implementation
-    return []; // Replace with actual implementation
-  } catch (error) {
-    console.error("Error in getMetricsData:", error);
-    // Return empty array in case of error
-    return [];
-  }
-}
+function createMetricsMap(metricsData) {
+  const map = {};
 
-/**
- * Get employee details
- * @returns {Promise<Array>} - Employee details
- */
-async function getEmployeeDetails() {
-  try {
-    // console.log("Inside getEmployeeDetails function");
-    
-    // If you're using Sequelize, your implementation might look like:
-    // const employees = await EmployeeModel.findAll({
-    //   where: {
-    //     status: 'active'
-    //   }
-    // });
-    
-    // console.log("ACTION REQUIRED: Replace this placeholder with your actual database query");
-    // console.log("Example: const employees = await EmployeeModel.findAll({ ... });");
-    
-    // Return empty array or placeholder data for now
-    // IMPORTANT: Replace this with your actual implementation
-    return []; // Replace with actual implementation
-  } catch (error) {
-    console.error("Error in getEmployeeDetails:", error);
-    // Return empty array in case of error
-    return [];
+  for (const record of metricsData) {
+    const metricsDataValues = record.dataValues || record;
+    const punchCode = metricsDataValues.punch_code;
+
+    map[punchCode] = metricsDataValues;
   }
+
+  return map;
 }
 
 /**
@@ -250,76 +128,56 @@ async function getEmployeeDetails() {
  * @returns {Array} - Filtered employees
  */
 function filterEmployeesByType(employees, employeeType, attendanceData, metricsData) {
-  // console.log(`Filtering employees by type: "${employeeType}"`);
-  
   if (!employeeType || employeeType === "All Employees") {
-    // console.log("Returning all employees without filtering by type");
     return employees;
   } else if (employeeType === "Faulty Employees") {
-    // console.log("Filtering for employees with discrepancies > 0.25 hours");
     return employees.filter(employee => {
       // Get employee data, handling both direct objects and Sequelize objects
       const employeeData = employee.dataValues || employee;
       const employeeId = employeeData.employee_id;
       const punchCode = employeeData.punch_code;
-      
-      // console.log(`Checking employee ID ${employeeId} with punch code ${punchCode}`);
-      
+
       const employeeAttendance = attendanceData.filter(a => a.employee_id === employeeId);
-      
+
       if (employeeAttendance.length === 0) {
-        // console.log(`No attendance records found for employee ID ${employeeId}`);
         return false;
       }
-      
+
       // Find metrics for this employee
       const employeeMetrics = metricsData.find(m => {
         const metricsData = m.dataValues || m;
         return metricsData.punch_code === punchCode;
       });
-      
+
       if (!employeeMetrics) {
-        // console.log(`No metrics found for employee ID ${employeeId} with punch code ${punchCode}`);
         return false;
       }
-      
+
       // Check if there's any discrepancy greater than 0.25 in OT or network hours
       for (const attendance of employeeAttendance) {
         const attendanceDate = moment(attendance.attendance_date).format('DD');
         const metricsDataValues = employeeMetrics.dataValues || employeeMetrics;
         const networkHoursFromMetrics = getHoursFromMetricsJson(metricsDataValues.network_hours, attendanceDate);
         const otHoursFromMetrics = getHoursFromMetricsJson(metricsDataValues.overtime_hours, attendanceDate);
-        
+
         const networkHoursDiff = Math.abs(attendance.network_hours - networkHoursFromMetrics);
         const otHoursDiff = Math.abs(attendance.overtime_hours - otHoursFromMetrics);
-        
-        // console.log(`Employee ${employeeId} on date ${attendanceDate}:`);
-        // console.log(`  Network hours: Actual=${attendance.network_hours}, Expected=${networkHoursFromMetrics}, Diff=${networkHoursDiff}`);
-        // console.log(`  OT hours: Actual=${attendance.overtime_hours}, Expected=${otHoursFromMetrics}, Diff=${otHoursDiff}`);
-        
+
         if (networkHoursDiff > 0.25 || otHoursDiff > 0.25) {
-          // console.log(`  Employee ${employeeId} has discrepancy > 0.25, including in filtered list`);
           return true;
         }
       }
-      
-      // console.log(`No discrepancies found for employee ${employeeId}, excluding from filtered list`);
+
       return false;
     });
   } else if (employeeType === "New Employees") {
-    // console.log("Filtering for employees with 'new' in punch code");
     return employees.filter(employee => {
       const employeeData = employee.dataValues || employee;
       const punchCode = employeeData.punch_code;
-      const matches = punchCode.toLowerCase().includes("new");
-      if (matches) {
-        // console.log(`Employee ID ${employeeData.employee_id} with punch code ${punchCode} matches 'new' criteria`);
-      }
-      return matches;
+      return punchCode.toLowerCase().includes("new");
     });
   }
-  
-  // console.log(`Unknown employee type: "${employeeType}", returning all employees`);
+
   return employees;
 }
 
@@ -341,11 +199,10 @@ function getHoursFromMetricsJson(hoursJson, date) {
       console.error("Invalid hours data format:", hoursJson);
       return 0;
     }
-    
+
     const dateEntry = hoursData.find(entry => entry.date === date);
     const hours = dateEntry ? parseFloat(dateEntry.hours) : 0;
-    
-    // console.log(`For date ${date}, found hours: ${hours} from metrics data`);
+
     return hours;
   } catch (error) {
     console.error(`Error parsing metrics JSON for date ${date}:`, error);
@@ -355,11 +212,15 @@ function getHoursFromMetricsJson(hoursJson, date) {
 }
 
 /**
- * Filter employees who have site in comment at least once
- * @param {Array} employees - Employee details
- * @param {Array} attendanceData - Attendance data
- * @returns {Array} - Filtered employees
+ * Check if comment starts with "Site" (case insensitive)
+ * @param {string} comment - Comment text
+ * @returns {boolean} - True if comment starts with "Site"
  */
+function isSiteComment(comment) {
+  if (!comment) return false;
+  return comment.toLowerCase().trim().startsWith("site");
+}
+
 /**
  * Filter employees who have site in comment at least once
  * @param {Array} employees - Employee details
@@ -367,60 +228,19 @@ function getHoursFromMetricsJson(hoursJson, date) {
  * @returns {Array} - Filtered employees
  */
 function filterEmployeesWithSiteVisits(employees, attendanceData) {
-  // Debug information
-  // console.log(`Total employees before filtering: ${employees.length}`);
-  // console.log(`Total attendance records: ${attendanceData.length}`);
-  
-  // For debugging, check if any comments have "site" in them
-  const siteComments = attendanceData.filter(a => 
-    a.comment && (
-      a.comment.toLowerCase().trim().startsWith("site") || 
-      a.comment.toLowerCase().includes("site")
-    )
-  );
-  // console.log(`Attendance records with site comments: ${siteComments.length}`);
-  
-  if (siteComments.length > 0) {
-    // console.log("Sample site comments:");
-    siteComments.slice(0, 3).forEach(a => {
-      // console.log(`Comment: "${a.comment}" for employee ID: ${a.employee_id}`);
-    });
+  // Create a map of employeeIds with site visits for faster lookup
+  const employeesSiteMap = {};
+
+  for (const attendance of attendanceData) {
+    if (isSiteComment(attendance.comment)) {
+      employeesSiteMap[attendance.employee_id] = true;
+    }
   }
-  
+
   return employees.filter(employee => {
     // Get employee ID, handling both direct objects and Sequelize objects
     const employeeId = employee.dataValues ? employee.dataValues.employee_id : employee.employee_id;
-    
-    // Filter attendance records for this employee
-    const employeeAttendance = attendanceData.filter(a => 
-      a.employee_id === employeeId
-    );
-    
-    // console.log(`Employee ID ${employeeId} has ${employeeAttendance.length} attendance records`);
-    
-    // Check for site comments but be more flexible in matching
-    const hasSiteVisit = employeeAttendance.some(attendance => 
-      attendance.comment && (
-        attendance.comment.toLowerCase().trim().startsWith("site") || 
-        attendance.comment.toLowerCase().includes("site")
-      )
-    );
-    
-    if (hasSiteVisit) {
-      // console.log(`Employee ID ${employeeId} has site visits`);
-      // Show the matching comments for debugging
-      const siteVisits = employeeAttendance.filter(attendance => 
-        attendance.comment && (
-          attendance.comment.toLowerCase().trim().startsWith("site") || 
-          attendance.comment.toLowerCase().includes("site")
-        )
-      );
-      siteVisits.forEach(visit => {
-        // console.log(`  - Date: ${visit.attendance_date}, Comment: "${visit.comment}"`);
-      });
-    }
-    
-    return hasSiteVisit;
+    return employeesSiteMap[employeeId];
   });
 }
 
@@ -435,23 +255,23 @@ function filterEmployeesWithSiteVisits(employees, attendanceData) {
  */
 async function createEmptyReport(option, startDate, endDate, employeeType, workbook) {
   const worksheet = workbook.getWorksheet('Site Expense Report');
-  
+
   worksheet.addRow(['No data available for the selected criteria']);
-  
+
   const reportsDir = path.join(process.cwd(), 'reports');
   if (!fs.existsSync(reportsDir)) {
     fs.mkdirSync(reportsDir, { recursive: true });
   }
-  
+
   const startDateStr = startDate.format('YYYY-MM-DD');
   const endDateStr = endDate.format('YYYY-MM-DD');
   const sanitizedEmployeeType = typeof employeeType === 'string' ? employeeType.replace(/\s+/g, '') : 'AllEmployees';
   const sanitizedOption = typeof option === 'string' ? option.replace(/\s+/g, '') : 'default';
   const filename = `SiteExpenseReport_${startDateStr}_to_${endDateStr}_${sanitizedEmployeeType}_${sanitizedOption}_empty.xlsx`;
   const filePath = path.join(reportsDir, filename);
-  
+
   await workbook.xlsx.writeFile(filePath);
-  
+
   return filePath;
 }
 
@@ -464,12 +284,12 @@ async function createEmptyReport(option, startDate, endDate, employeeType, workb
 function generateDateHeaders(startDate, endDate) {
   const dateHeaders = [];
   const currentDate = startDate.clone();
-  
+
   while (currentDate.isSameOrBefore(endDate)) {
     dateHeaders.push(currentDate.format('DD-MM'));
     currentDate.add(1, 'day');
   }
-  
+
   return dateHeaders;
 }
 
@@ -482,7 +302,7 @@ function generateDateHeaders(startDate, endDate) {
 function setupWorksheetHeaders(worksheet, dateHeaders, option) {
   // Add employee details header
   let headerRow = ['Employee ID', 'Name', 'Punch Code', 'Department'];
-  
+
   // Add date headers based on option
   for (const date of dateHeaders) {
     if (option === "count") {
@@ -504,15 +324,16 @@ function setupWorksheetHeaders(worksheet, dateHeaders, option) {
       headerRow.push(`${date} Remarks`);
     }
   }
-  
-  // Add total column
+
+  // Add total columns
   headerRow.push('Total Net Hours');
-  if (option === "hours" || option === "remarks" || option === "hours and remarks") {
-    headerRow.push('Total OT Hours');
-  }
-  
+  headerRow.push('Total OT Hours');
+
+  // Add Site Count total column to show total site visits
+  headerRow.push('Total Site Count');
+
   worksheet.addRow(headerRow);
-  
+
   // Merge header cells for dates
   let colIndex = 5; // Start after employee details columns
   for (const date of dateHeaders) {
@@ -533,11 +354,11 @@ function setupWorksheetHeaders(worksheet, dateHeaders, option) {
       colIndex += 3;
     }
   }
-  
+
   // Add subheaders for merged cells
   if (option !== "count") {
     let subHeaderRow = ['', '', '', ''];
-    
+
     for (const date of dateHeaders) {
       if (option === "hours") {
         subHeaderRow.push('Net Hr');
@@ -556,12 +377,13 @@ function setupWorksheetHeaders(worksheet, dateHeaders, option) {
         subHeaderRow.push('Remarks');
       }
     }
-    
-    subHeaderRow.push('');
+
+    subHeaderRow.push(''); // Total Net Hours
     if (option === "hours" || option === "remarks" || option === "hours and remarks") {
-      subHeaderRow.push('');
+      subHeaderRow.push(''); // Total OT Hours
     }
-    
+    subHeaderRow.push(''); // Total Site Count
+
     worksheet.addRow(subHeaderRow);
   }
 }
@@ -570,187 +392,218 @@ function setupWorksheetHeaders(worksheet, dateHeaders, option) {
  * Populate data rows in the worksheet
  * @param {ExcelJS.Worksheet} worksheet - Excel worksheet
  * @param {Array} employees - Filtered employees
- * @param {Array} attendanceData - Attendance data
- * @param {Array} metricsData - Metrics data
+ * @param {Object} attendanceMap - Map of attendance data
+ * @param {Object} metricsMap - Map of metrics data
  * @param {Array} dateHeaders - Date headers
  * @param {string} option - Report option
+ * @returns {Object} - Object with totals for each date and overall
  */
-function populateDataRows(worksheet, employees, attendanceData, metricsData, dateHeaders, option) {
-  // console.log(`Populating data rows for ${employees.length} employees with option: ${option}`);
-  
+function populateDataRows(worksheet, employees, attendanceMap, metricsMap, dateHeaders, option) {
   // Determine starting row based on option (accounting for headers)
   const startRow = option === "count" ? 2 : 3;
-  
+
+  // Initialize totals for each date
+  const dateTotals = {
+    netHours: {},
+    otHours: {},
+    siteCount: {}
+  };
+
+  let totalNetHours = 0;
+  let totalOTHours = 0;
+  let totalSiteCount = 0;
+
   employees.forEach((employee, index) => {
     // Handle both Sequelize objects and plain objects
     const employeeData = employee.dataValues || employee;
     const employeeId = employeeData.employee_id;
     const punchCode = employeeData.punch_code;
-    
-    // console.log(`Adding row for employee ID: ${employeeId}, punch code: ${punchCode}`);
-    
+
     const rowData = [
       employeeId,
       employeeData.name,
       punchCode,
       employeeData.department
     ];
-    
-    let totalNetHours = 0;
-    let totalOTHours = 0;
-    
+
+    let employeeNetHoursTotal = 0;
+    let employeeOTHoursTotal = 0;
+    let employeeSiteCountTotal = 0;
+
     // Find metrics for this employee
-    const employeeMetrics = metricsData.find(m => {
-      const metricsData = m.dataValues || m;
-      return metricsData.punch_code === punchCode;
-    });
-    
-    if (employeeMetrics) {
-      // console.log(`Found metrics for employee ${employeeId}`);
-    } else {
-      // console.log(`No metrics found for employee ${employeeId}`);
-    }
-    
+    const employeeMetrics = metricsMap[punchCode];
+
     // Process each date
     for (const dateHeader of dateHeaders) {
-      const [day, monthStr] = dateHeader.split('-');
-      const month = parseInt(monthStr, 10);
-      
-      // Find attendance for this employee on this date
-      const attendance = attendanceData.find(a => {
-        const attendanceDate = moment(a.attendance_date);
-        return a.employee_id === employeeId && 
-               attendanceDate.date() === parseInt(day, 10) && 
-               attendanceDate.month() + 1 === month;
-      });
-      
-      if (attendance) {
-        // console.log(`Found attendance for employee ${employeeId} on ${dateHeader}`);
-      }
-      
-      // Get expected hours from metrics
-      let expectedNetHours = 0;
-      let expectedOTHours = 0;
-      
-      if (employeeMetrics) {
-        const metricsDataValues = employeeMetrics.dataValues || employeeMetrics;
-        expectedNetHours = getHoursFromMetricsJson(metricsDataValues.network_hours, day);
-        expectedOTHours = getHoursFromMetricsJson(metricsDataValues.overtime_hours, day);
-      }
-      
+      // Get attendance for this employee on this date
+      const attendance = attendanceMap[employeeId] ? attendanceMap[employeeId][dateHeader] : null;
+
+      // Initialize date totals if not exists
+      if (!dateTotals.netHours[dateHeader]) dateTotals.netHours[dateHeader] = 0;
+      if (!dateTotals.otHours[dateHeader]) dateTotals.otHours[dateHeader] = 0;
+      if (!dateTotals.siteCount[dateHeader]) dateTotals.siteCount[dateHeader] = 0;
+
       // Handle different report options
       if (option === "count") {
-        const hasSiteVisit = attendance && attendance.comment && 
-          (attendance.comment.toLowerCase().trim().startsWith("site") || 
-           attendance.comment.toLowerCase().includes("site"));
+        const hasSiteVisit = attendance && isSiteComment(attendance.comment);
         rowData.push(hasSiteVisit ? 1 : 0);
+
+        if (hasSiteVisit) {
+          employeeSiteCountTotal += 1;
+          dateTotals.siteCount[dateHeader] += 1;
+        }
       } else if (option === "hours") {
         const netHours = attendance ? attendance.network_hours || 0 : 0;
         const otHours = attendance ? attendance.overtime_hours || 0 : 0;
-        
-        totalNetHours += netHours;
-        totalOTHours += otHours;
-        
+        const hasSiteVisit = attendance && isSiteComment(attendance.comment);
+
+        employeeNetHoursTotal += netHours;
+        employeeOTHoursTotal += otHours;
+        if (hasSiteVisit) employeeSiteCountTotal += 1;
+
+        dateTotals.netHours[dateHeader] += netHours;
+        dateTotals.otHours[dateHeader] += otHours;
+        if (hasSiteVisit) dateTotals.siteCount[dateHeader] += 1;
+
         // Add the cell values
         rowData.push(netHours);
         rowData.push(otHours);
       } else if (option === "remarks") {
         const netHours = attendance ? attendance.network_hours || 0 : 0;
         const otHours = attendance ? attendance.overtime_hours || 0 : 0;
-        const remark = attendance && attendance.comment ? attendance.comment : '';
-        
-        totalNetHours += netHours;
-        totalOTHours += otHours;
-        
+        const hasSiteVisit = attendance && isSiteComment(attendance.comment);
+        const remark = hasSiteVisit && attendance.comment ? attendance.comment : '';
+
+        employeeNetHoursTotal += netHours;
+        employeeOTHoursTotal += otHours;
+        if (hasSiteVisit) employeeSiteCountTotal += 1;
+
+        dateTotals.netHours[dateHeader] += netHours;
+        dateTotals.otHours[dateHeader] += otHours;
+        if (hasSiteVisit) dateTotals.siteCount[dateHeader] += 1;
+
         rowData.push(netHours);
         rowData.push(otHours);
         rowData.push(remark);
       } else if (option === "count and remarks") {
-        const hasSiteVisit = attendance && attendance.comment && 
-          (attendance.comment.toLowerCase().trim().startsWith("site") || 
-           attendance.comment.toLowerCase().includes("site"));
-        const remark = attendance && attendance.comment ? attendance.comment : '';
-        
+        const hasSiteVisit = attendance && isSiteComment(attendance.comment);
+        const remark = hasSiteVisit && attendance.comment ? attendance.comment : '';
+
+        if (hasSiteVisit) {
+          employeeSiteCountTotal += 1;
+          dateTotals.siteCount[dateHeader] += 1;
+        }
+
         rowData.push(hasSiteVisit ? 1 : 0);
         rowData.push(remark);
       } else {
         // Default to hours and remarks
         const netHours = attendance ? attendance.network_hours || 0 : 0;
         const otHours = attendance ? attendance.overtime_hours || 0 : 0;
-        const remark = attendance && attendance.comment ? attendance.comment : '';
-        
-        totalNetHours += netHours;
-        totalOTHours += otHours;
-        
+        const hasSiteVisit = attendance && isSiteComment(attendance.comment);
+        const remark = hasSiteVisit && attendance.comment ? attendance.comment : '';
+
+        employeeNetHoursTotal += netHours;
+        employeeOTHoursTotal += otHours;
+        if (hasSiteVisit) employeeSiteCountTotal += 1;
+
+        dateTotals.netHours[dateHeader] += netHours;
+        dateTotals.otHours[dateHeader] += otHours;
+        if (hasSiteVisit) dateTotals.siteCount[dateHeader] += 1;
+
         rowData.push(netHours);
         rowData.push(otHours);
         rowData.push(remark);
       }
     }
-    
+
     // Add total columns
-    rowData.push(totalNetHours);
-    if (option === "hours" || option === "remarks" || option === "hours and remarks") {
-      rowData.push(totalOTHours);
-    }
-    
+    rowData.push(employeeNetHoursTotal);
+    totalNetHours += employeeNetHoursTotal;
+
+    rowData.push(employeeOTHoursTotal);
+    totalOTHours += employeeOTHoursTotal;
+
+    // Add total site count for this employee
+    rowData.push(employeeSiteCountTotal);
+    totalSiteCount += employeeSiteCountTotal;
+
     // Add the row with all data
     const excelRow = worksheet.addRow(rowData);
     const rowIndex = startRow + index;
-    
-    // Now apply conditional formatting for discrepancies > 0.25
-    if (option === "hours" || option === "remarks" || option === "hours and remarks") {
-      let colIndex = 5; // Start after employee details columns
-      
-      for (const dateHeader of dateHeaders) {
-        const [day, monthStr] = dateHeader.split('-');
-        
-        // Find attendance and metrics for this date
-        const attendance = attendanceData.find(a => {
-          const attendanceDate = moment(a.attendance_date);
-          return a.employee_id === employeeId && 
-                attendanceDate.date() === parseInt(day, 10) && 
-                attendanceDate.month() + 1 === parseInt(monthStr, 10);
-        });
-        
-        if (attendance && employeeMetrics) {
-          const metricsDataValues = employeeMetrics.dataValues || employeeMetrics;
-          const expectedNetHours = getHoursFromMetricsJson(metricsDataValues.network_hours, day);
-          const expectedOTHours = getHoursFromMetricsJson(metricsDataValues.overtime_hours, day);
-          
-          const netHours = attendance.network_hours || 0;
-          const otHours = attendance.overtime_hours || 0;
-          
-          // Check for net hours discrepancy
-          if (Math.abs(netHours - expectedNetHours) > 0.25) {
-            worksheet.getCell(rowIndex, colIndex).fill = {
-              type: 'pattern',
-              pattern: 'solid',
-              fgColor: { argb: 'FFFFC0CB' } // Light red/pink
-            };
-          }
-          
-          // Check for OT hours discrepancy
-          if (Math.abs(otHours - expectedOTHours) > 0.25) {
-            worksheet.getCell(rowIndex, colIndex + 1).fill = {
-              type: 'pattern',
-              pattern: 'solid',
-              fgColor: { argb: 'FFFFC0CB' } // Light red/pink
-            };
-          }
-        }
-        
-        // Advance column index based on option
-        if (option === "hours") {
-          colIndex += 2; // Net Hr + OT Hr
-        } else if (option === "remarks") {
-          colIndex += 3; // Net Hr + OT Hr + Remarks
-        } else {
-          colIndex += 3; // Default: Net Hr + OT Hr + Remarks
-        }
-      }
+
+    // Apply conditional formatting for discrepancies if metrics data exists
+    if ((option === "hours" || option === "remarks" || option === "hours and remarks") && employeeMetrics) {
+      applyConditionalFormatting(worksheet, rowIndex, employeeId, employeeMetrics, attendanceMap, dateHeaders, option);
     }
   });
+
+  return {
+    totals: {
+      netHours: totalNetHours,
+      otHours: totalOTHours,
+      dailyNetHours: dateTotals.netHours,
+      dailyOTHours: dateTotals.otHours,
+      dailySiteCount: dateTotals.siteCount
+    },
+    siteCountTotal: totalSiteCount
+  };
+}
+
+/**
+ * Apply conditional formatting for hour discrepancies
+ * @param {ExcelJS.Worksheet} worksheet - Excel worksheet
+ * @param {number} rowIndex - Row index
+ * @param {string} employeeId - Employee ID
+ * @param {Object} employeeMetrics - Employee metrics data
+ * @param {Object} attendanceMap - Map of attendance data
+ * @param {Array} dateHeaders - Date headers
+ * @param {string} option - Report option
+ */
+function applyConditionalFormatting(worksheet, rowIndex, employeeId, employeeMetrics, attendanceMap, dateHeaders, option) {
+  let colIndex = 5; // Start after employee details columns
+
+  for (const dateHeader of dateHeaders) {
+    const [day, monthStr] = dateHeader.split('-');
+
+    // Get attendance for this employee on this date
+    const attendance = attendanceMap[employeeId] ? attendanceMap[employeeId][dateHeader] : null;
+
+    if (attendance) {
+      const expectedNetHours = getHoursFromMetricsJson(employeeMetrics.network_hours, day);
+      const expectedOTHours = getHoursFromMetricsJson(employeeMetrics.overtime_hours, day);
+
+      const netHours = attendance.network_hours || 0;
+      const otHours = attendance.overtime_hours || 0;
+
+      // Check for net hours discrepancy
+      if (Math.abs(netHours - expectedNetHours) > 0.25) {
+        worksheet.getCell(rowIndex, colIndex).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFC0CB' } // Light red/pink
+        };
+      }
+
+      // Check for OT hours discrepancy
+      if (Math.abs(otHours - expectedOTHours) > 0.25) {
+        worksheet.getCell(rowIndex, colIndex + 1).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFC0CB' } // Light red/pink
+        };
+      }
+    }
+
+    // Advance column index based on option
+    if (option === "hours") {
+      colIndex += 2; // Net Hr + OT Hr
+    } else if (option === "remarks") {
+      colIndex += 3; // Net Hr + OT Hr + Remarks
+    } else {
+      colIndex += 3; // Default: Net Hr + OT Hr + Remarks
+    }
+  }
 }
 
 /**
@@ -759,160 +612,43 @@ function populateDataRows(worksheet, employees, attendanceData, metricsData, dat
  * @param {number} employeeCount - Number of employees
  * @param {number} dateCount - Number of dates
  * @param {string} option - Report option
+ * @param {Object} totals - Object with totals data
+ * @param {number} siteCountTotal - Total site count
  */
-function addTotalsRow(worksheet, employeeCount, dateCount, option) {
-  // console.log(`Adding totals row for ${employeeCount} employees and ${dateCount} dates`);
-  
-  // Get the current row count
-  const rowCount = worksheet.rowCount;
-  const startRow = option === "count" ? 2 : 3;
-  
+function addTotalsRow(worksheet, employeeCount, dateCount, option, totals, siteCountTotal) {
   const totalsRow = ['TOTAL', '', '', ''];
-  
-  let colIndex = 5;
-  let netHoursTotal = 0;
-  let otHoursTotal = 0;
-  
-  try {
-    // Calculate totals for each date
-    for (let dateIndex = 0; dateIndex < dateCount; dateIndex++) {
-      if (option === "count") {
-        // Sum the count column
-        let dateTotal = 0;
-        for (let empIndex = 0; empIndex < employeeCount; empIndex++) {
-          try {
-            const cellValue = worksheet.getCell(startRow + empIndex, colIndex).value;
-            dateTotal += cellValue ? parseInt(cellValue, 10) : 0;
-          } catch (err) {
-            // console.log(`Warning: Failed to get cell value for row ${startRow + empIndex}, column ${colIndex}`);
-          }
-        }
-        totalsRow.push(dateTotal);
-        colIndex += 1;
-      } else if (option === "hours") {
-        // Sum the net hours column
-        let dateNetTotal = 0;
-        for (let empIndex = 0; empIndex < employeeCount; empIndex++) {
-          try {
-            const cellValue = worksheet.getCell(startRow + empIndex, colIndex).value;
-            dateNetTotal += cellValue || 0;
-          } catch (err) {
-            // console.log(`Warning: Failed to get cell value for row ${startRow + empIndex}, column ${colIndex}`);
-          }
-        }
-        totalsRow.push(dateNetTotal);
-        
-        // Sum the OT hours column
-        let dateOTTotal = 0;
-        for (let empIndex = 0; empIndex < employeeCount; empIndex++) {
-          try {
-            const cellValue = worksheet.getCell(startRow + empIndex, colIndex + 1).value;
-            dateOTTotal += cellValue || 0;
-          } catch (err) {
-            // console.log(`Warning: Failed to get cell value for row ${startRow + empIndex}, column ${colIndex + 1}`);
-          }
-        }
-        totalsRow.push(dateOTTotal);
-        
-        netHoursTotal += dateNetTotal;
-        otHoursTotal += dateOTTotal;
-        colIndex += 2;
-      } else if (option === "remarks") {
-        // Sum the net hours column
-        let dateNetTotal = 0;
-        for (let empIndex = 0; empIndex < employeeCount; empIndex++) {
-          try {
-            const cellValue = worksheet.getCell(startRow + empIndex, colIndex).value;
-            dateNetTotal += cellValue || 0;
-          } catch (err) {
-            // console.log(`Warning: Failed to get cell value for row ${startRow + empIndex}, column ${colIndex}`);
-          }
-        }
-        totalsRow.push(dateNetTotal);
-        
-        // Sum the OT hours column
-        let dateOTTotal = 0;
-        for (let empIndex = 0; empIndex < employeeCount; empIndex++) {
-          try {
-            const cellValue = worksheet.getCell(startRow + empIndex, colIndex + 1).value;
-            dateOTTotal += cellValue || 0;
-          } catch (err) {
-            // console.log(`Warning: Failed to get cell value for row ${startRow + empIndex}, column ${colIndex + 1}`);
-          }
-        }
-        totalsRow.push(dateOTTotal);
-        
-        // No total for remarks
-        totalsRow.push('');
-        
-        netHoursTotal += dateNetTotal;
-        otHoursTotal += dateOTTotal;
-        colIndex += 3;
-      } else if (option === "count and remarks") {
-        // Sum the count column
-        let dateTotal = 0;
-        for (let empIndex = 0; empIndex < employeeCount; empIndex++) {
-          try {
-            const cellValue = worksheet.getCell(startRow + empIndex, colIndex).value;
-            dateTotal += cellValue ? parseInt(cellValue, 10) : 0;
-          } catch (err) {
-            // console.log(`Warning: Failed to get cell value for row ${startRow + empIndex}, column ${colIndex}`);
-          }
-        }
-        totalsRow.push(dateTotal);
-        
-        // No total for remarks
-        totalsRow.push('');
-        colIndex += 2;
-      } else {
-        // Default to hours and remarks
-        // Sum the net hours column
-        let dateNetTotal = 0;
-        for (let empIndex = 0; empIndex < employeeCount; empIndex++) {
-          try {
-            const cellValue = worksheet.getCell(startRow + empIndex, colIndex).value;
-            dateNetTotal += cellValue || 0;
-          } catch (err) {
-            // console.log(`Warning: Failed to get cell value for row ${startRow + empIndex}, column ${colIndex}`);
-          }
-        }
-        totalsRow.push(dateNetTotal);
-        
-        // Sum the OT hours column
-        let dateOTTotal = 0;
-        for (let empIndex = 0; empIndex < employeeCount; empIndex++) {
-          try {
-            const cellValue = worksheet.getCell(startRow + empIndex, colIndex + 1).value;
-            dateOTTotal += cellValue || 0;
-          } catch (err) {
-            // console.log(`Warning: Failed to get cell value for row ${startRow + empIndex}, column ${colIndex + 1}`);
-          }
-        }
-        totalsRow.push(dateOTTotal);
-        
-        // No total for remarks
-        totalsRow.push('');
-        
-        netHoursTotal += dateNetTotal;
-        otHoursTotal += dateOTTotal;
-        colIndex += 3;
-      }
+
+  // Add daily totals for each date
+  for (const dateHeader of Object.keys(totals.dailyNetHours)) {
+    if (option === "count") {
+      totalsRow.push(totals.dailySiteCount[dateHeader] || 0);
+    } else if (option === "hours") {
+      totalsRow.push(totals.dailyNetHours[dateHeader] || 0);
+      totalsRow.push(totals.dailyOTHours[dateHeader] || 0);
+    } else if (option === "remarks") {
+      totalsRow.push(totals.dailyNetHours[dateHeader] || 0);
+      totalsRow.push(totals.dailyOTHours[dateHeader] || 0);
+      totalsRow.push(''); // No total for remarks
+    } else if (option === "count and remarks") {
+      totalsRow.push(totals.dailySiteCount[dateHeader] || 0);
+      totalsRow.push(''); // No total for remarks
+    } else {
+      // Default to hours and remarks
+      totalsRow.push(totals.dailyNetHours[dateHeader] || 0);
+      totalsRow.push(totals.dailyOTHours[dateHeader] || 0);
+      totalsRow.push(''); // No total for remarks
     }
-    
-    // Add overall totals
-    totalsRow.push(netHoursTotal);
-    if (option === "hours" || option === "remarks" || option === "hours and remarks") {
-      totalsRow.push(otHoursTotal);
-    }
-    
-    // Add the row to the worksheet
-    worksheet.addRow(totalsRow);
-    // console.log("Successfully added totals row");
-  } catch (error) {
-    console.error("Error adding totals row:", error);
-    // Add a simpler totals row as a fallback
-    worksheet.addRow(['TOTAL', '', '', '', '(Error calculating totals)']);
   }
+
+  // Add overall totals
+  totalsRow.push(totals.netHours);
+  totalsRow.push(totals.otHours);
+
+  // Add total site count
+  totalsRow.push(siteCountTotal);
+
+  // Add the row to the worksheet
+  worksheet.addRow(totalsRow);
 }
 
 /**
@@ -926,17 +662,17 @@ function styleWorksheet(worksheet, option, dateCount) {
   const headerRow = worksheet.getRow(1);
   headerRow.font = { bold: true };
   headerRow.alignment = { horizontal: 'center' };
-  
+
   if (option !== "count") {
     const subHeaderRow = worksheet.getRow(2);
     subHeaderRow.font = { bold: true };
     subHeaderRow.alignment = { horizontal: 'center' };
   }
-  
+
   // Set borders for all cells
   const lastRow = worksheet.rowCount;
   const lastCol = worksheet.columnCount;
-  
+
   for (let row = 1; row <= lastRow; row++) {
     for (let col = 1; col <= lastCol; col++) {
       const cell = worksheet.getCell(row, col);
@@ -946,14 +682,14 @@ function styleWorksheet(worksheet, option, dateCount) {
         bottom: { style: 'thin' },
         right: { style: 'thin' }
       };
-      
+
       // Align numbers to right
       if (typeof cell.value === 'number') {
         cell.alignment = { horizontal: 'right' };
       }
     }
   }
-  
+
   // Make the outer border thicker
   for (let col = 1; col <= lastCol; col++) {
     // Top row
@@ -961,24 +697,29 @@ function styleWorksheet(worksheet, option, dateCount) {
     // Bottom row
     worksheet.getCell(lastRow, col).border.bottom.style = 'medium';
   }
-  
+
   for (let row = 1; row <= lastRow; row++) {
     // Left column
     worksheet.getCell(row, 1).border.left.style = 'medium';
     // Right column
     worksheet.getCell(row, lastCol).border.right.style = 'medium';
   }
-  
+
   // Style the totals row
   const totalsRow = worksheet.getRow(lastRow);
   totalsRow.font = { bold: true };
-  
+
+  // Highlight the Site Count column
+  const siteCountCol = lastCol;
+  const siteCountCell = worksheet.getCell(1, siteCountCol);
+  siteCountCell.font = { bold: true, color: { argb: '4F33FF' } };
+
   // Set column widths
   worksheet.getColumn(1).width = 12; // Employee ID
   worksheet.getColumn(2).width = 25; // Name
   worksheet.getColumn(3).width = 12; // Punch Code
   worksheet.getColumn(4).width = 15; // Department
-  
+
   // Set date column widths based on option
   let colIndex = 5;
   for (let i = 0; i < dateCount; i++) {
@@ -1006,12 +747,11 @@ function styleWorksheet(worksheet, option, dateCount) {
       colIndex += 3;
     }
   }
-  
+
   // Set total columns width
-  worksheet.getColumn(lastCol).width = 15;
-  if (option === "hours" || option === "remarks" || option === "hours and remarks") {
-    worksheet.getColumn(lastCol - 1).width = 15;
-  }
+  worksheet.getColumn(lastCol - 1).width = 20; // Total Net Hours
+    worksheet.getColumn(lastCol - 2).width = 20; // Total OT Hours
+  worksheet.getColumn(lastCol).width = 20; // Total Site Count
 }
 
 module.exports = generateSiteExpenseReport;
