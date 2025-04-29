@@ -45,10 +45,10 @@ async function generateSiteExpenseReport(finalAttendanceData, metricsData, month
   setupWorksheetHeaders(worksheet, dateHeaders, option);
 
   // Aggregate data
-  const { totals, siteCountTotal } = populateDataRows(worksheet, filteredEmployees, attendanceMap, metricsMap, dateHeaders, option);
+  const { totals, siteCountTotal, netHrCountTotal, otHrCountTotal } = populateDataRows(worksheet, filteredEmployees, attendanceMap, metricsMap, dateHeaders, option);
 
   // Add totals row with the aggregated data
-  addTotalsRow(worksheet, filteredEmployees.length, dateHeaders.length, option, totals, siteCountTotal);
+  addTotalsRow(worksheet, filteredEmployees.length, dateHeaders.length, option, totals, siteCountTotal, netHrCountTotal, otHrCountTotal);
 
   // Apply styles
   styleWorksheet(worksheet, option, dateHeaders.length);
@@ -328,9 +328,13 @@ function setupWorksheetHeaders(worksheet, dateHeaders, option) {
   // Add total columns
   headerRow.push('Total Net Hours');
   headerRow.push('Total OT Hours');
-
+  
   // Add Site Count total column to show total site visits
   headerRow.push('Total Site Count');
+  
+  // Add new total columns for Net Count and OT Count
+  headerRow.push('Total Net Count');
+  headerRow.push('Total OT Count');
 
   worksheet.addRow(headerRow);
 
@@ -379,10 +383,10 @@ function setupWorksheetHeaders(worksheet, dateHeaders, option) {
     }
 
     subHeaderRow.push(''); // Total Net Hours
-    if (option === "hours" || option === "remarks" || option === "hours and remarks") {
-      subHeaderRow.push(''); // Total OT Hours
-    }
+    subHeaderRow.push(''); // Total OT Hours
     subHeaderRow.push(''); // Total Site Count
+    subHeaderRow.push(''); // Total Net Count
+    subHeaderRow.push(''); // Total OT Count
 
     worksheet.addRow(subHeaderRow);
   }
@@ -406,12 +410,16 @@ function populateDataRows(worksheet, employees, attendanceMap, metricsMap, dateH
   const dateTotals = {
     netHours: {},
     otHours: {},
-    siteCount: {}
+    siteCount: {},
+    netCount: {},
+    otCount: {}
   };
 
   let totalNetHours = 0;
   let totalOTHours = 0;
   let totalSiteCount = 0;
+  let totalNetCount = 0;
+  let totalOTCount = 0;
 
   employees.forEach((employee, index) => {
     // Handle both Sequelize objects and plain objects
@@ -429,6 +437,8 @@ function populateDataRows(worksheet, employees, attendanceMap, metricsMap, dateH
     let employeeNetHoursTotal = 0;
     let employeeOTHoursTotal = 0;
     let employeeSiteCountTotal = 0;
+    let employeeNetCountTotal = 0;
+    let employeeOTCountTotal = 0;
 
     // Find metrics for this employee
     const employeeMetrics = metricsMap[punchCode];
@@ -437,82 +447,134 @@ function populateDataRows(worksheet, employees, attendanceMap, metricsMap, dateH
     for (const dateHeader of dateHeaders) {
       // Get attendance for this employee on this date
       const attendance = attendanceMap[employeeId] ? attendanceMap[employeeId][dateHeader] : null;
+      const hasSiteVisit = attendance && isSiteComment(attendance.comment);
 
       // Initialize date totals if not exists
       if (!dateTotals.netHours[dateHeader]) dateTotals.netHours[dateHeader] = 0;
       if (!dateTotals.otHours[dateHeader]) dateTotals.otHours[dateHeader] = 0;
       if (!dateTotals.siteCount[dateHeader]) dateTotals.siteCount[dateHeader] = 0;
+      if (!dateTotals.netCount[dateHeader]) dateTotals.netCount[dateHeader] = 0;
+      if (!dateTotals.otCount[dateHeader]) dateTotals.otCount[dateHeader] = 0;
+
+      // Only get hours and show remarks when there's a site comment
+      const netHours = hasSiteVisit && attendance ? attendance.network_hours || 0 : 0;
+      const otHours = hasSiteVisit && attendance ? attendance.overtime_hours || 0 : 0;
+      const remark = hasSiteVisit && attendance && attendance.comment ? attendance.comment : '';
+
+      // Check for Net Count and OT Count conditions
+      const isNetCount = hasSiteVisit && netHours > 0;
+      const isOTCount = hasSiteVisit && otHours > 0;
 
       // Handle different report options
       if (option === "count") {
-        const hasSiteVisit = attendance && isSiteComment(attendance.comment);
         rowData.push(hasSiteVisit ? 1 : 0);
 
         if (hasSiteVisit) {
           employeeSiteCountTotal += 1;
           dateTotals.siteCount[dateHeader] += 1;
         }
+        
+        if (isNetCount) {
+          employeeNetCountTotal += 1;
+          dateTotals.netCount[dateHeader] += 1;
+        }
+        
+        if (isOTCount) {
+          employeeOTCountTotal += 1;
+          dateTotals.otCount[dateHeader] += 1;
+        }
       } else if (option === "hours") {
-        const netHours = attendance ? attendance.network_hours || 0 : 0;
-        const otHours = attendance ? attendance.overtime_hours || 0 : 0;
-        const hasSiteVisit = attendance && isSiteComment(attendance.comment);
+        if (hasSiteVisit) {
+          employeeNetHoursTotal += netHours;
+          employeeOTHoursTotal += otHours;
+          employeeSiteCountTotal += 1;
+          
+          dateTotals.netHours[dateHeader] += netHours;
+          dateTotals.otHours[dateHeader] += otHours;
+          dateTotals.siteCount[dateHeader] += 1;
+        }
+        
+        if (isNetCount) {
+          employeeNetCountTotal += 1;
+          dateTotals.netCount[dateHeader] += 1;
+        }
+        
+        if (isOTCount) {
+          employeeOTCountTotal += 1;
+          dateTotals.otCount[dateHeader] += 1;
+        }
 
-        employeeNetHoursTotal += netHours;
-        employeeOTHoursTotal += otHours;
-        if (hasSiteVisit) employeeSiteCountTotal += 1;
-
-        dateTotals.netHours[dateHeader] += netHours;
-        dateTotals.otHours[dateHeader] += otHours;
-        if (hasSiteVisit) dateTotals.siteCount[dateHeader] += 1;
-
-        // Add the cell values
-        rowData.push(netHours);
-        rowData.push(otHours);
+        // Only show hours when there's a site comment
+        rowData.push(hasSiteVisit ? netHours : 0);
+        rowData.push(hasSiteVisit ? otHours : 0);
       } else if (option === "remarks") {
-        const netHours = attendance ? attendance.network_hours || 0 : 0;
-        const otHours = attendance ? attendance.overtime_hours || 0 : 0;
-        const hasSiteVisit = attendance && isSiteComment(attendance.comment);
-        const remark = hasSiteVisit && attendance.comment ? attendance.comment : '';
+        if (hasSiteVisit) {
+          employeeNetHoursTotal += netHours;
+          employeeOTHoursTotal += otHours;
+          employeeSiteCountTotal += 1;
+          
+          dateTotals.netHours[dateHeader] += netHours;
+          dateTotals.otHours[dateHeader] += otHours;
+          dateTotals.siteCount[dateHeader] += 1;
+        }
+        
+        if (isNetCount) {
+          employeeNetCountTotal += 1;
+          dateTotals.netCount[dateHeader] += 1;
+        }
+        
+        if (isOTCount) {
+          employeeOTCountTotal += 1;
+          dateTotals.otCount[dateHeader] += 1;
+        }
 
-        employeeNetHoursTotal += netHours;
-        employeeOTHoursTotal += otHours;
-        if (hasSiteVisit) employeeSiteCountTotal += 1;
-
-        dateTotals.netHours[dateHeader] += netHours;
-        dateTotals.otHours[dateHeader] += otHours;
-        if (hasSiteVisit) dateTotals.siteCount[dateHeader] += 1;
-
-        rowData.push(netHours);
-        rowData.push(otHours);
+        // Only show hours and remarks when there's a site comment
+        rowData.push(hasSiteVisit ? netHours : 0);
+        rowData.push(hasSiteVisit ? otHours : 0);
         rowData.push(remark);
       } else if (option === "count and remarks") {
-        const hasSiteVisit = attendance && isSiteComment(attendance.comment);
-        const remark = hasSiteVisit && attendance.comment ? attendance.comment : '';
-
         if (hasSiteVisit) {
           employeeSiteCountTotal += 1;
           dateTotals.siteCount[dateHeader] += 1;
+        }
+        
+        if (isNetCount) {
+          employeeNetCountTotal += 1;
+          dateTotals.netCount[dateHeader] += 1;
+        }
+        
+        if (isOTCount) {
+          employeeOTCountTotal += 1;
+          dateTotals.otCount[dateHeader] += 1;
         }
 
         rowData.push(hasSiteVisit ? 1 : 0);
         rowData.push(remark);
       } else {
         // Default to hours and remarks
-        const netHours = attendance ? attendance.network_hours || 0 : 0;
-        const otHours = attendance ? attendance.overtime_hours || 0 : 0;
-        const hasSiteVisit = attendance && isSiteComment(attendance.comment);
-        const remark = hasSiteVisit && attendance.comment ? attendance.comment : '';
+        if (hasSiteVisit) {
+          employeeNetHoursTotal += netHours;
+          employeeOTHoursTotal += otHours;
+          employeeSiteCountTotal += 1;
+          
+          dateTotals.netHours[dateHeader] += netHours;
+          dateTotals.otHours[dateHeader] += otHours;
+          dateTotals.siteCount[dateHeader] += 1;
+        }
+        
+        if (isNetCount) {
+          employeeNetCountTotal += 1;
+          dateTotals.netCount[dateHeader] += 1;
+        }
+        
+        if (isOTCount) {
+          employeeOTCountTotal += 1;
+          dateTotals.otCount[dateHeader] += 1;
+        }
 
-        employeeNetHoursTotal += netHours;
-        employeeOTHoursTotal += otHours;
-        if (hasSiteVisit) employeeSiteCountTotal += 1;
-
-        dateTotals.netHours[dateHeader] += netHours;
-        dateTotals.otHours[dateHeader] += otHours;
-        if (hasSiteVisit) dateTotals.siteCount[dateHeader] += 1;
-
-        rowData.push(netHours);
-        rowData.push(otHours);
+        // Only show hours and remarks when there's a site comment
+        rowData.push(hasSiteVisit ? netHours : 0);
+        rowData.push(hasSiteVisit ? otHours : 0);
         rowData.push(remark);
       }
     }
@@ -527,6 +589,14 @@ function populateDataRows(worksheet, employees, attendanceMap, metricsMap, dateH
     // Add total site count for this employee
     rowData.push(employeeSiteCountTotal);
     totalSiteCount += employeeSiteCountTotal;
+    
+    // Add total Net Count for this employee
+    rowData.push(employeeNetCountTotal);
+    totalNetCount += employeeNetCountTotal;
+    
+    // Add total OT Count for this employee
+    rowData.push(employeeOTCountTotal);
+    totalOTCount += employeeOTCountTotal;
 
     // Add the row with all data
     const excelRow = worksheet.addRow(rowData);
@@ -544,9 +614,13 @@ function populateDataRows(worksheet, employees, attendanceMap, metricsMap, dateH
       otHours: totalOTHours,
       dailyNetHours: dateTotals.netHours,
       dailyOTHours: dateTotals.otHours,
-      dailySiteCount: dateTotals.siteCount
+      dailySiteCount: dateTotals.siteCount,
+      dailyNetCount: dateTotals.netCount,
+      dailyOTCount: dateTotals.otCount
     },
-    siteCountTotal: totalSiteCount
+    siteCountTotal: totalSiteCount,
+    netHrCountTotal: totalNetCount,
+    otHrCountTotal: totalOTCount
   };
 }
 
@@ -568,8 +642,9 @@ function applyConditionalFormatting(worksheet, rowIndex, employeeId, employeeMet
 
     // Get attendance for this employee on this date
     const attendance = attendanceMap[employeeId] ? attendanceMap[employeeId][dateHeader] : null;
+    const hasSiteVisit = attendance && isSiteComment(attendance.comment);
 
-    if (attendance) {
+    if (attendance && hasSiteVisit) {
       const expectedNetHours = getHoursFromMetricsJson(employeeMetrics.network_hours, day);
       const expectedOTHours = getHoursFromMetricsJson(employeeMetrics.overtime_hours, day);
 
@@ -614,8 +689,10 @@ function applyConditionalFormatting(worksheet, rowIndex, employeeId, employeeMet
  * @param {string} option - Report option
  * @param {Object} totals - Object with totals data
  * @param {number} siteCountTotal - Total site count
+ * @param {number} netHrCountTotal - Total net hours count
+ * @param {number} otHrCountTotal - Total OT hours count
  */
-function addTotalsRow(worksheet, employeeCount, dateCount, option, totals, siteCountTotal) {
+function addTotalsRow(worksheet, employeeCount, dateCount, option, totals, siteCountTotal, netHrCountTotal, otHrCountTotal) {
   const totalsRow = ['TOTAL', '', '', ''];
 
   // Add daily totals for each date
@@ -643,9 +720,9 @@ function addTotalsRow(worksheet, employeeCount, dateCount, option, totals, siteC
   // Add overall totals
   totalsRow.push(totals.netHours);
   totalsRow.push(totals.otHours);
-
-  // Add total site count
   totalsRow.push(siteCountTotal);
+  totalsRow.push(netHrCountTotal);
+  totalsRow.push(otHrCountTotal);
 
   // Add the row to the worksheet
   worksheet.addRow(totalsRow);
@@ -710,9 +787,19 @@ function styleWorksheet(worksheet, option, dateCount) {
   totalsRow.font = { bold: true };
 
   // Highlight the Site Count column
-  const siteCountCol = lastCol;
+  const siteCountCol = lastCol - 2;
   const siteCountCell = worksheet.getCell(1, siteCountCol);
   siteCountCell.font = { bold: true, color: { argb: '4F33FF' } };
+  
+  // Highlight the Net Count column
+  const netCountCol = lastCol - 1;
+  const netCountCell = worksheet.getCell(1, netCountCol);
+  netCountCell.font = { bold: true, color: { argb: '4F33FF' } };
+  
+  // Highlight the OT Count column
+  const otCountCol = lastCol;
+  const otCountCell = worksheet.getCell(1, otCountCol);
+  otCountCell.font = { bold: true, color: { argb: '4F33FF' } };
 
   // Set column widths
   worksheet.getColumn(1).width = 12; // Employee ID
@@ -749,9 +836,11 @@ function styleWorksheet(worksheet, option, dateCount) {
   }
 
   // Set total columns width
-  worksheet.getColumn(lastCol - 1).width = 20; // Total Net Hours
-    worksheet.getColumn(lastCol - 2).width = 20; // Total OT Hours
-  worksheet.getColumn(lastCol).width = 20; // Total Site Count
+  worksheet.getColumn(lastCol - 4).width = 20; // Total Net Hours
+  worksheet.getColumn(lastCol - 3).width = 20; // Total OT Hours
+  worksheet.getColumn(lastCol - 2).width = 20; // Total Site Count
+  worksheet.getColumn(lastCol - 1).width = 20; // Total Net Count
+  worksheet.getColumn(lastCol).width = 20;     // Total OT Count
 }
 
 module.exports = generateSiteExpenseReport;

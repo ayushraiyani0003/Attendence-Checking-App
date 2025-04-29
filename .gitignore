@@ -3,3 +3,5 @@ client/.env
 server/.env
 client/.env.development
 server/.env.development
+.git
+.history
