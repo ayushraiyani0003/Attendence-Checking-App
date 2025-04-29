@@ -16,11 +16,11 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
       attendance_date: {
-        type: DataTypes.DATEONLY, // Use DATEONLY for the date field
+        type: DataTypes.DATEONLY,
         allowNull: true,
       },
       status: {
-        type: DataTypes.ENUM('locked', 'unlocked'),
+        type: DataTypes.ENUM("locked", "unlocked"),
         allowNull: true,
       },
       locked_by: {
@@ -30,8 +30,18 @@ module.exports = (sequelize, DataTypes) => {
     },
     {
       tableName: "attendance_date_lock_status",
-      timestamps: true, // No createdAt or updatedAt columns
-      underscored: true, // Converts camelCase to snake_case (e.g., 'created_at')
+      timestamps: true,
+      underscored: true,
+      indexes: [
+        {
+          name: "idx_group_date",
+          fields: ["reporting_group_name", "attendance_date"],
+        },
+        {
+          name: "idx_group_status",
+          fields: ["status", "reporting_group_name"],
+        },
+      ],
     }
   );
 

@@ -1,6 +1,3 @@
-const { Sequelize, DataTypes } = require("sequelize");
-const sequelize = require("../config/db"); // Adjust this path to your DB connection
-
 module.exports = (sequelize, DataTypes) => {
   const Attendance = sequelize.define(
     "Attendance",
@@ -16,7 +13,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
       attendance_date: {
-        type: DataTypes.DATEONLY, // DATEONLY type is used for date fields in Sequelize
+        type: DataTypes.DATEONLY,
         allowNull: true,
       },
       shift_type: {
@@ -38,8 +35,16 @@ module.exports = (sequelize, DataTypes) => {
     },
     {
       tableName: "Attendance",
-      timestamps: true, // This model does not have createdAt or updatedAt columns
-      underscored: true, // Converts camelCase to snake_case (e.g., 'created_at')
+      timestamps: true,
+      underscored: true,
+
+      // Add this part for indexes
+      indexes: [
+        {
+          name: "attendance_date_employee_id_idx",
+          fields: ["attendance_date", "employee_id"],
+        },
+      ],
     }
   );
 
