@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { Table, Button, Input, Space, message, Tooltip, Modal } from 'antd';
 import { 
   SearchOutlined, 
@@ -16,6 +16,9 @@ import './EmployeeOrderPage.css';
 
 const EmployeeOrderPage = (user) => {
   
+  // Use memo to pass the user reporting group once
+  const userReportingGroup = useMemo(() => user.userReportingGroup, [user.userReportingGroup]);
+  
   const {
     employees,
     filteredEmployees,
@@ -27,7 +30,7 @@ const EmployeeOrderPage = (user) => {
     isFiltering,
     hasChanges,
     changesCount
-  } = useEmployeeOrder(user.userReportingGroup);
+  } = useEmployeeOrder(userReportingGroup);
   
   const [messageApi, contextHolder] = message.useMessage();
   const [downloadLoading, setDownloadLoading] = useState(false);
@@ -35,19 +38,12 @@ const EmployeeOrderPage = (user) => {
   const [targetPosition, setTargetPosition] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
   
-  // Add debug state to track changes
+  // Use memo to reduce recomputation
   const [debugInfo, setDebugInfo] = useState({ lastAction: 'none', changeCount: 0 });
 
-  // Log employees whenever they change (for debugging)
-  // useEffect(() => {
-  //   console.log("Filtered employees updated:", 
-  //     filteredEmployees.map((e, i) => `${i+1}. ${e.name} (ID: ${e.employee_id})`));
-  // }, [filteredEmployees]);
-
-  // Handle move up button click
+  // Handle move up button click - use memo for stable callback
   const handleMoveUp = useCallback((index) => {
     if (index > 0) {
-      // console.log(`Moving up employee at index ${index}`);
       // Move employee up one position
       reorderEmployees(index, index - 1);
       setDebugInfo(prev => ({ 
@@ -60,7 +56,6 @@ const EmployeeOrderPage = (user) => {
   // Handle move down button click
   const handleMoveDown = useCallback((index) => {
     if (index < filteredEmployees.length - 1) {
-      // console.log(`Moving down employee at index ${index}`);
       // Move employee down one position
       reorderEmployees(index, index + 1);
       setDebugInfo(prev => ({ 
@@ -101,8 +96,6 @@ const EmployeeOrderPage = (user) => {
       return;
     }
     
-    // console.log(`Moving employee ${movingEmployee.name} from index ${movingEmployee.index} to ${targetIndex}`);
-    
     // Perform the move
     reorderEmployees(movingEmployee.index, targetIndex);
     setIsModalVisible(false);
@@ -125,21 +118,17 @@ const EmployeeOrderPage = (user) => {
 
   // Handle save button click
   const handleSave = useCallback(() => {
-    // console.log("Saving order with changes count:", debugInfo.changeCount);
     const orderData = saveOrder();
     messageApi.success({
       content: 'Employee order saved successfully!',
       duration: 3,
     });
-    // console.log('Final order data:', orderData);
     
     setDebugInfo(prev => ({ 
       lastAction: `Saved all changes (${prev.changeCount})`, 
       changeCount: 0 
     }));
-    
-    // No forced reload - employees will stay in their current positions
-  }, [debugInfo.changeCount, messageApi, saveOrder]);
+  }, [messageApi, saveOrder]);
 
   // Handle download button click
   const handleDownload = useCallback(() => {
@@ -183,8 +172,8 @@ const EmployeeOrderPage = (user) => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasChanges]);
 
-  // Table columns configuration with enhanced action column
-  const columns = [
+  // Table columns configuration - memoize to prevent recreation on every render
+  const columns = useMemo(() => [
     {
       title: 'Sr No.',
       dataIndex: 'index',
@@ -262,7 +251,7 @@ const EmployeeOrderPage = (user) => {
       ),
       align: 'center',
     },
-  ];
+  ], [filteredEmployees.length, handleMoveDown, handleMoveToPosition, handleMoveUp, isFiltering]);
 
   return (
     <div className="employee-order-container">
@@ -290,10 +279,10 @@ const EmployeeOrderPage = (user) => {
               type="primary"
               icon={<SaveOutlined />}
               onClick={handleSave}
-              disabled={isFiltering}
+              disabled={isFiltering || !hasChanges}
               className={`save-button ${hasChanges ? 'save-button-highlight' : ''}`}
             >
-              Save Order {debugInfo.changeCount > 0 ? `(${debugInfo.changeCount} changes)` : ''}
+              Save Order {changesCount > 0 ? `(${changesCount} changes)` : ''}
             </Button>
             <Button
               icon={<DownloadOutlined />}
@@ -334,7 +323,7 @@ const EmployeeOrderPage = (user) => {
         {hasChanges && !isFiltering && (
           <div className="changes-message">
             <InfoCircleOutlined /> You have unsaved changes. Don't forget to save your order.
-            {debugInfo.changeCount > 0 && ` (${debugInfo.changeCount} changes)`}
+            {changesCount > 0 && ` (${changesCount} changes)`}
           </div>
         )}
       </div>
@@ -369,4 +358,4 @@ const EmployeeOrderPage = (user) => {
   );
 };
 
-export default EmployeeOrderPage;
+export default React.memo(EmployeeOrderPage);

@@ -20,32 +20,45 @@ const useEmployeeOrder = (userReportingGroup) => {
   const initialLoadRef = useRef(true);
   const dataProcessedRef = useRef(false);
   const changesMapRef = useRef(new Map()); // Track all changes by employee_id
+  const fetchInProgressRef = useRef(false); // Prevent duplicate fetch calls
   
   // Local storage key for order data
   const getStorageKey = useCallback(() => 
     `employee_order_default`, 
-    [userReportingGroup]
+    [] // Remove userReportingGroup dependency since it's not used
   );
 
   // Fetch employees when the hook mounts or reporting group changes
   useEffect(() => {
+    // Avoid duplicate fetch calls
+    if (fetchInProgressRef.current) return;
+    
     const loadEmployees = async () => {
-      // If user is admin, they can see all employees
-      if (isAdmin) {
-        await fetchEmployeesData();
-      } 
-      // If user is not admin and has a reporting group, only show their group's employees
-      else if (userReportingGroup) {
-        await fetchEmployeesByGroup(userReportingGroup);
+      try {
+        fetchInProgressRef.current = true;
+        
+        // If user is admin, they can see all employees
+        if (isAdmin) {
+          await fetchEmployeesData();
+        } 
+        // If user is not admin and has a reporting group, only show their group's employees
+        else if (userReportingGroup) {
+          await fetchEmployeesByGroup(userReportingGroup);
+        }
+      } finally {
+        fetchInProgressRef.current = false;
       }
     };
     
-    loadEmployees();
-    // Reset the data processed flag when reporting group changes
-    dataProcessedRef.current = false;
-    initialLoadRef.current = true;
-    changesMapRef.current = new Map(); // Reset changes map
-  }, [userReportingGroup, fetchEmployeesByGroup, fetchEmployeesData, isAdmin]);
+    // Only fetch data if we don't already have employees or if reporting group changes
+    if (employees.length === 0 || initialLoadRef.current) {
+      loadEmployees();
+      // Reset the data processed flag when reporting group changes
+      dataProcessedRef.current = false;
+      initialLoadRef.current = true;
+      changesMapRef.current = new Map(); // Reset changes map
+    }
+  }, [userReportingGroup, fetchEmployeesByGroup, fetchEmployeesData, isAdmin, employees.length]);
 
   // Apply saved order to employees - IMPROVED VERSION
   const applySavedOrder = useCallback((employeeList) => {
@@ -89,6 +102,7 @@ const useEmployeeOrder = (userReportingGroup) => {
 
   // Update ordered employees when the employee list changes
   useEffect(() => {
+    // Only process if we have employees and haven't processed the data yet
     if (employees.length > 0 && !dataProcessedRef.current) {
       // Add default display order if not present
       const employeesWithOrder = employees.map((emp, index) => ({
@@ -123,6 +137,7 @@ const useEmployeeOrder = (userReportingGroup) => {
 
   // Deep equality check for arrays
   const areArraysEqual = useCallback((arr1, arr2) => {
+    if (!arr1 || !arr2) return false;
     if (arr1.length !== arr2.length) return false;
     
     for (let i = 0; i < arr1.length; i++) {
@@ -135,18 +150,25 @@ const useEmployeeOrder = (userReportingGroup) => {
   }, []);
 
   // Update filtered employees when search changes or order changes
+  // Use a more efficient approach with memoization
   useEffect(() => {
+    // Skip if nothing has changed
+    if (!orderedEmployees.length) return;
+    
     if (isFiltering && searchText.trim() !== '') {
       const filtered = orderedEmployees.filter(
         (emp) => 
-          emp.name?.toLowerCase().includes(searchText.toLowerCase()) ||
-          emp.punch_code?.toLowerCase().includes(searchText.toLowerCase()) ||
-          emp.department?.toLowerCase().includes(searchText.toLowerCase()) ||
-          emp.designation?.toLowerCase().includes(searchText.toLowerCase()) ||
-          emp.reporting_group?.toLowerCase().includes(searchText.toLowerCase())
+          (emp.name?.toLowerCase() || '').includes(searchText.toLowerCase()) ||
+          (emp.punch_code?.toLowerCase() || '').includes(searchText.toLowerCase()) ||
+          (emp.department?.toLowerCase() || '').includes(searchText.toLowerCase()) ||
+          (emp.designation?.toLowerCase() || '').includes(searchText.toLowerCase()) ||
+          (emp.reporting_group?.toLowerCase() || '').includes(searchText.toLowerCase())
       );
       
-      setFilteredEmployees(filtered);
+      // Only update if the filtered list has changed
+      if (!areArraysEqual(filtered, filteredEmployees)) {
+        setFilteredEmployees(filtered);
+      }
     } else if (!isFiltering) {
       // If not filtering, filtered employees should match ordered employees
       if (!areArraysEqual(filteredEmployees, orderedEmployees)) {
@@ -155,32 +177,45 @@ const useEmployeeOrder = (userReportingGroup) => {
     }
   }, [orderedEmployees, searchText, isFiltering, areArraysEqual, filteredEmployees]);
 
-  // Handle search text change
+  // Handle search text change - memo to prevent recreation on every render
   const handleSearch = useCallback((text) => {
     setSearchText(text);
     
     if (text.trim() === '') {
-      setFilteredEmployees(orderedEmployees);
       setIsFiltering(false);
+      // Only update if needed
+      if (!areArraysEqual(filteredEmployees, orderedEmployees)) {
+        setFilteredEmployees(orderedEmployees);
+      }
     } else {
       setIsFiltering(true);
       
       const filtered = orderedEmployees.filter(
         (emp) => 
-          emp.name?.toLowerCase().includes(text.toLowerCase()) ||
-          emp.punch_code?.toLowerCase().includes(text.toLowerCase()) ||
-          emp.department?.toLowerCase().includes(text.toLowerCase()) ||
-          emp.designation?.toLowerCase().includes(text.toLowerCase()) ||
-          emp.reporting_group?.toLowerCase().includes(text.toLowerCase())
+          (emp.name?.toLowerCase() || '').includes(text.toLowerCase()) ||
+          (emp.punch_code?.toLowerCase() || '').includes(text.toLowerCase()) ||
+          (emp.department?.toLowerCase() || '').includes(text.toLowerCase()) ||
+          (emp.designation?.toLowerCase() || '').includes(text.toLowerCase()) ||
+          (emp.reporting_group?.toLowerCase() || '').includes(text.toLowerCase())
       );
       
-      setFilteredEmployees(filtered);
+      // Only update if the filtered list has changed
+      if (!areArraysEqual(filtered, filteredEmployees)) {
+        setFilteredEmployees(filtered);
+      }
     }
-  }, [orderedEmployees]);
+  }, [orderedEmployees, filteredEmployees, areArraysEqual]);
 
   // Handle reordering of employees - COMPLETELY FIXED VERSION
   const reorderEmployees = useCallback((oldIndex, newIndex) => {
     if (isFiltering) return; // Don't allow reordering during filtering
+    
+    // Skip if indices are invalid
+    if (oldIndex < 0 || newIndex < 0 || 
+        oldIndex >= orderedEmployees.length || 
+        newIndex >= orderedEmployees.length) {
+      return;
+    }
     
     // Save the employee that is being moved
     const movingEmployee = orderedEmployees[oldIndex];
@@ -206,21 +241,14 @@ const useEmployeeOrder = (userReportingGroup) => {
     }));
     
     // Force new reference to trigger React updates
-    const employeesWithForceUpdate = [...updatedEmployees];
-    
-    setOrderedEmployees(employeesWithForceUpdate);
+    setOrderedEmployees(updatedEmployees);
     
     // Only update filtered employees if not filtering
     if (!isFiltering) {
-      setFilteredEmployees(employeesWithForceUpdate);
+      setFilteredEmployees(updatedEmployees);
     }
     
     setHasChanges(true);
-    
-    // Debug log to verify the change
-    // console.log(`Moved employee ${movingEmployee.name} from position ${oldIndex + 1} to ${newIndex + 1}`);
-    // console.log('Current changes:', Array.from(changesMapRef.current.entries()));
-    
   }, [orderedEmployees, isFiltering]);
 
   // Save the current order to localStorage - FIXED VERSION
@@ -235,10 +263,6 @@ const useEmployeeOrder = (userReportingGroup) => {
     // Save to localStorage
     localStorage.setItem(getStorageKey(), JSON.stringify(orderData));
     
-    // Log what we're saving
-    // console.log('Saving employee order:', orderData);
-    // console.log('Changes applied:', Array.from(changesMapRef.current.entries()));
-    
     // Reset changes tracking
     changesMapRef.current = new Map();
     
@@ -248,11 +272,11 @@ const useEmployeeOrder = (userReportingGroup) => {
       displayOrder: index + 1
     }));
     
-    setOrderedEmployees([...updatedEmployees]); // Force new reference
+    setOrderedEmployees(updatedEmployees); // Use updatedEmployees directly
     
     // Only update filtered employees if not filtering
     if (!isFiltering) {
-      setFilteredEmployees([...updatedEmployees]);
+      setFilteredEmployees(updatedEmployees);
     }
     
     setHasChanges(false);
@@ -262,6 +286,8 @@ const useEmployeeOrder = (userReportingGroup) => {
 
   // Reset to original order
   const resetOrder = useCallback(() => {
+    if (originalOrder.length === 0) return; // Guard against empty original order
+    
     setOrderedEmployees([...originalOrder]);
     
     // Only update filtered employees if not filtering
@@ -272,21 +298,6 @@ const useEmployeeOrder = (userReportingGroup) => {
     setHasChanges(true);
     changesMapRef.current = new Map(); // Reset changes tracking
   }, [originalOrder, isFiltering]);
-
-  // Prompt user to save changes when leaving the page
-  useEffect(() => {
-    const handleBeforeUnload = (e) => {
-      if (hasChanges) {
-        // Standard way to show a confirmation dialog when leaving the page
-        e.preventDefault();
-        e.returnValue = '';
-        return '';
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [hasChanges]);
 
   return {
     employees: orderedEmployees,
