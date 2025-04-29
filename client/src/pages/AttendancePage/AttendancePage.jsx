@@ -7,6 +7,8 @@ import DataRow from "./DataRow";
 import { useWebSocket } from "../../hooks/useWebSocket";
 import { useAttendance } from "../../hooks/useAttendance";
 import { useVerticalNavigation } from "../../hooks/useVerticalNavigation.js";
+import { Loader2 } from "lucide-react"; // Lucide spinner icon (optional)
+
 
 // Default metrics object to avoid null checks everywhere
 const DEFAULT_METRICS = {
@@ -18,22 +20,24 @@ const DEFAULT_METRICS = {
   absentCount: 0
 };
 
-// Error message component
-const ErrorMessage = ({ message }) => (
+// Error message component - memoized for better performance
+const ErrorMessage = React.memo(({ message }) => (
   <div className="error-state" style={{ textAlign: "center", padding: "40px", color: "red" }}>
     {message}
   </div>
-);
+));
 
-// Loading message component
-const LoadingMessage = () => (
-  <div className="loading-state" style={{ textAlign: "center", padding: "40px" }}>
-    Loading attendance data... or change the month
+// Loading message component - memoized for better performance
+const LoadingMessage = React.memo(() => (
+  <div className="loading-container">
+    <div className="spinner" />
+    <p className="loading-main-text">Loading attendance data...</p>
+    <p className="loading-sub-text">You can also try changing the month.</p>
   </div>
-);
+));
 
-// Disconnect notification component
-const DisconnectNotification = () => (
+// Disconnect notification component - memoized for better performance
+const DisconnectNotification = React.memo(() => (
   <div style={{
     position: 'fixed',
     top: '20px',
@@ -54,9 +58,9 @@ const DisconnectNotification = () => (
       Server is disconnected. Please reload the page.
     </p>
   </div>
-);
+));
 
-// Virtual list component for efficient rendering
+// Virtual list component for efficient rendering - optimized for better performance
 const VirtualizedTable = React.memo(({ 
   data, 
   rowHeight = 50,
@@ -68,38 +72,55 @@ const VirtualizedTable = React.memo(({
   useEffect(() => {
     if (!containerRef.current) return;
     
+    // Use requestAnimationFrame for better scroll performance
+    let frameId = null;
+    
     const handleScroll = () => {
-      const container = containerRef.current;
-      if (!container) return;
+      // Cancel any pending updates
+      if (frameId) {
+        cancelAnimationFrame(frameId);
+      }
       
-      const scrollTop = container.scrollTop;
-      const clientHeight = container.clientHeight;
-      
-      // Calculate which rows should be visible
-      const visibleStart = Math.floor(scrollTop / rowHeight);
-      const visibleCount = Math.ceil(clientHeight / rowHeight);
-      const bufferSize = 5; // Extra rows above and below for smooth scrolling
-      
-      setVisibleRange({
-        start: Math.max(0, visibleStart - bufferSize),
-        end: Math.min(data.length, visibleStart + visibleCount + bufferSize)
+      // Schedule the update on the next animation frame
+      frameId = requestAnimationFrame(() => {
+        const container = containerRef.current;
+        if (!container) return;
+        
+        const scrollTop = container.scrollTop;
+        const clientHeight = container.clientHeight;
+        
+        // Calculate which rows should be visible with increased buffer size for smoother scrolling
+        const visibleStart = Math.floor(scrollTop / rowHeight);
+        const visibleCount = Math.ceil(clientHeight / rowHeight);
+        const bufferSize = 10; // Increased buffer for smoother scrolling
+        
+        setVisibleRange({
+          start: Math.max(0, visibleStart - bufferSize),
+          end: Math.min(data.length, visibleStart + visibleCount + bufferSize)
+        });
       });
     };
     
     const container = containerRef.current;
-    container.addEventListener('scroll', handleScroll);
+    // Use passive event listener for better scroll performance
+    container.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll(); // Calculate initial visible area
     
     return () => {
       container.removeEventListener('scroll', handleScroll);
+      if (frameId) {
+        cancelAnimationFrame(frameId);
+      }
     };
   }, [containerRef, data.length, rowHeight]);
   
   // Calculate total height to maintain proper scrollbar
   const totalHeight = data.length * rowHeight;
   
-  // Extract only the visible rows
-  const visibleRows = data.slice(visibleRange.start, visibleRange.end);
+  // Extract only the visible rows - memoized to avoid unnecessary re-renders
+  const visibleRows = useMemo(() => {
+    return data.slice(visibleRange.start, visibleRange.end);
+  }, [data, visibleRange.start, visibleRange.end]);
   
   return (
     <div style={{ height: totalHeight, position: 'relative' }}>
@@ -111,7 +132,8 @@ const VirtualizedTable = React.memo(({
             style={{ 
               position: 'absolute', 
               top: actualIndex * rowHeight, 
-              width: '100%' 
+              width: '100%',
+              height: rowHeight // Explicitly set height for better layout stability
             }}
           >
             {renderRow(row, actualIndex)}
@@ -178,28 +200,50 @@ function AttendancePage({ user, monthYear }) {
     }
   }, [getFilteredData]);
   
-  // Use the vertical navigation hook
-  const { registerInputRef, handleKeyDown } = useVerticalNavigation(filteredData);
+  // Use the vertical navigation hook with enhanced handling for empty cells
+  const { registerInputRef, handleKeyDown } = useVerticalNavigation(filteredData, {
+    skipEmptyCells: false, // Ensure we don't skip cells even if they're empty
+    allowTabNavigation: true // Explicitly enable tab navigation
+  });
 
-  // Memoize the employee metrics lookup function
-  const getEmployeeMetricsById = useCallback((employeeId) => {
+  // Create a metrics lookup Map for O(1) access instead of O(n) search
+  const metricsMap = useMemo(() => {
     if (!employeeMetrics || !Array.isArray(employeeMetrics)) {
-      return DEFAULT_METRICS;
+      return new Map();
     }
     
-    const metrics = employeeMetrics.find(metric => 
-      metric && metric.employeeId === employeeId
-    );
+    const map = new Map();
+    employeeMetrics.forEach(metric => {
+      if (metric && metric.employeeId) {
+        map.set(metric.employeeId, metric);
+      }
+    });
     
-    return metrics || DEFAULT_METRICS;
+    return map;
   }, [employeeMetrics]);
 
-  // Render the data row with memoization
+  // Optimized metrics lookup function using the Map
+  const getEmployeeMetricsById = useCallback((employeeId) => {
+    return metricsMap.get(employeeId) || DEFAULT_METRICS;
+  }, [metricsMap]);
+
+  // Pre-compute row indexes for faster lookup
+  const rowIndexMap = useMemo(() => {
+    const map = new Map();
+    attendanceData.forEach((item, index) => {
+      if (item && item.id) {
+        map.set(item.id, index);
+      }
+    });
+    return map;
+  }, [attendanceData]);
+
+  // Render the data row with memoization - optimized to reduce prop passing
   const renderRow = useCallback((row, index) => {
     if (!row) return null;
     
-    // Find the actual index in the attendanceData array
-    const rowIndex = attendanceData.findIndex(item => item.id === row.id);
+    // Use precomputed row index map instead of findIndex for better performance
+    const rowIndex = rowIndexMap.get(row.id) ?? -1;
     const metrics = getEmployeeMetricsById(row.id);
     
     return (
@@ -211,12 +255,12 @@ function AttendancePage({ user, monthYear }) {
         sequentialIndex={index}
         hoveredRow={hoveredRow}
         setHoveredRow={setHoveredRow}
-        data={attendanceData}
+        data={attendanceData} // Restoring this prop for tab navigation to work properly
         user={user}
         onCellUpdate={handleCellDataUpdate}
-        getFilteredData={() => filteredData}
+        getFilteredData={() => filteredData} // Restoring this for tab navigation context
         dataContainerRef={dataContainerRef}
-        attendanceData={attendanceData}
+        attendanceData={attendanceData} // Restoring this for proper navigation context
         isShowMetrixData={showMetrics}
         isShowDiffData={showDiff}
         MetrixDiffData={MetrixDiffData}
@@ -224,6 +268,7 @@ function AttendancePage({ user, monthYear }) {
         attDateEnd={dateRange[1]}
         isAdmin={isAdmin}
         TotalDiffData={TotalDiffData}
+        // Pass metrics values directly to avoid object creation
         totalNetHR={metrics.totalNetHR}
         totalOtHR={metrics.totalOtHR}
         nightShiftCount={metrics.nightShiftCount}
@@ -235,12 +280,11 @@ function AttendancePage({ user, monthYear }) {
       />
     );
   }, [
-    attendanceData, 
+    rowIndexMap,
     hoveredRow, 
     setHoveredRow, 
     user, 
-    handleCellDataUpdate, 
-    filteredData,
+    handleCellDataUpdate,
     dataContainerRef, 
     showMetrics, 
     showDiff, 
@@ -252,6 +296,11 @@ function AttendancePage({ user, monthYear }) {
     registerInputRef,
     handleKeyDown
   ]);
+
+  // Memoize the empty state check to avoid recomputation
+  const isEmpty = useMemo(() => {
+    return nodata && filteredData.length === 0;
+  }, [nodata, filteredData.length]);
 
   // Handle loading state
   if (!attendanceData.length) {
@@ -293,15 +342,15 @@ function AttendancePage({ user, monthYear }) {
           howMuchMistake={howMuchMistake}
         />
 
-        {/* No data state */}
-        {nodata && filteredData.length === 0 && (
+        {/* No data state - using memoized isEmpty check */}
+        {isEmpty && (
           <div className="attendance-container">
             <ErrorMessage message="No data for this filter. Change the filter..." />
           </div>
         )}
 
         {/* Data table section */}
-        {!nodata && filteredData.length > 0 && (
+        {!isEmpty && filteredData.length > 0 && (
           <>
             {/* Table header */}
             <div className="header-wrapper" ref={headerRef}>
