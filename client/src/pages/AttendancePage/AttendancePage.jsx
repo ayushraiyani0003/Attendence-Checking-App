@@ -1,14 +1,16 @@
 // components/AttendancePage/AttendancePage.jsx
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import "./AttendancePage.css";
 import AttendanceHeader from "./AttendanceHeader";
 import AttendencePageSearchFilters from "./AttendencePageSearchFilters";
 import DataRow from "./DataRow";
+import QuickSearchModal from "./QuickSearchModal";
 import { useWebSocket } from "../../hooks/useWebSocket";
 import { useAttendance } from "../../hooks/useAttendance";
 import { useVerticalNavigation } from "../../hooks/useVerticalNavigation.js";
-import { Loader2 } from "lucide-react"; // Lucide spinner icon (optional)
 
+// Define the "All Groups" constant - keep it consistent across components
+const ALL_GROUPS = "All Groups";
 
 // Default metrics object to avoid null checks everywhere
 const DEFAULT_METRICS = {
@@ -144,8 +146,26 @@ const VirtualizedTable = React.memo(({
   );
 });
 
-function AttendancePage({ user, monthYear }) {
+function AttendancePage({ user, monthYear, selectedGroup = ALL_GROUPS, setSelectedGroup }) {
   const { ws, send } = useWebSocket();
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+  const pageRef = useRef(null);
+  
+  // Determine if user is admin
+  const isAdmin = useMemo(() => 
+    user && user.role && (user.role === "admin" || user.role === "superadmin")
+  , [user]);
+
+  // Determine the effective group to pass to the useAttendance hook
+  const effectiveGroup = useMemo(() => {
+    // If selectedGroup is ALL_GROUPS and user is admin, pass null or an empty string
+    // to indicate that we want data for all groups
+    if (selectedGroup === ALL_GROUPS && isAdmin) {
+      return ""; // or null, depending on how your backend API expects "all groups"
+    }
+    // Otherwise, use the selected group
+    return selectedGroup;
+  }, [selectedGroup, isAdmin]);
 
   const {
     // States
@@ -172,7 +192,6 @@ function AttendancePage({ user, monthYear }) {
     dateRange,
     setDateRange,
     columns,
-    isAdmin,
     headerRef,
     dataContainerRef,
     // total data in json format
@@ -187,7 +206,7 @@ function AttendancePage({ user, monthYear }) {
     handleCellDataUpdate,
     handleLock,
     handleUnlock
-  } = useAttendance(user, monthYear, ws, send);
+  } = useAttendance(user, monthYear, ws, send, effectiveGroup);
 
   // Create memoized filtered data
   const filteredData = useMemo(() => {
@@ -199,7 +218,17 @@ function AttendancePage({ user, monthYear }) {
       return [];
     }
   }, [getFilteredData]);
-  
+
+  // Create a handler for group change
+  // This will update both the local state and propagate up to the parent component
+  const handleGroupChange = useCallback((group) => {
+    if (setSelectedGroup && group) {
+      // Update the parent component's state (which controls the header dropdown)
+      setSelectedGroup(group);
+      console.log("Selected group changed to:", group);
+    }
+  }, [setSelectedGroup]);
+
   // Use the vertical navigation hook with enhanced handling for empty cells
   const { registerInputRef, handleKeyDown } = useVerticalNavigation(filteredData, {
     skipEmptyCells: false, // Ensure we don't skip cells even if they're empty
@@ -237,6 +266,27 @@ function AttendancePage({ user, monthYear }) {
     });
     return map;
   }, [attendanceData]);
+
+  // Keyboard shortcut handler - only for admin users
+  useEffect(() => {
+    if (!isAdmin) return; // Early return if not admin
+    
+    const handleKeyDown = (e) => {
+      // Normalize the key
+      const isAltShift = e.altKey && e.shiftKey;
+    
+      if (isAltShift && (e.code === "KeyS" || e.code === "KeyF" || e.code === "Space")) {
+        e.preventDefault();
+        setIsSearchModalOpen(true);
+      }
+    };
+    
+    window.addEventListener("keydown", handleKeyDown);
+    
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isAdmin]);
 
   // Render the data row with memoization - optimized to reduce prop passing
   const renderRow = useCallback((row, index) => {
@@ -280,6 +330,8 @@ function AttendancePage({ user, monthYear }) {
       />
     );
   }, [
+    attendanceData,
+    filteredData,
     rowIndexMap,
     hoveredRow, 
     setHoveredRow, 
@@ -320,7 +372,7 @@ function AttendancePage({ user, monthYear }) {
 
   // Render the main component
   return (
-    <div className="attendance-page">
+    <div className="attendance-page" ref={pageRef}>
       <div className="attendance-container">
         {/* Filters section */}
         <AttendencePageSearchFilters
@@ -340,13 +392,13 @@ function AttendancePage({ user, monthYear }) {
           columns={columns}
           onToggleColumn={toggleColumn}
           howMuchMistake={howMuchMistake}
+          selectedGroup={selectedGroup} // Pass selected group to the filters
+          isAllGroups={selectedGroup === ALL_GROUPS} // Indicate if "All Groups" is selected
         />
 
         {/* No data state - using memoized isEmpty check */}
         {isEmpty && (
-          <div className="attendance-container">
-            <ErrorMessage message="No data for this filter. Change the filter..." />
-          </div>
+          <ErrorMessage message="No data for this filter. Change the filter..." />
         )}
 
         {/* Data table section */}
@@ -382,6 +434,18 @@ function AttendancePage({ user, monthYear }) {
               />
             </div>
           </>
+        )}
+        
+        {/* Quick search modal - only rendered for admin users */}
+        {isAdmin && (
+          <QuickSearchModal
+            isOpen={isSearchModalOpen}
+            onClose={() => setIsSearchModalOpen(false)}
+            onSelect={handleGroupChange}  // This will update both local and parent state
+            setFilterText={setFilterText}
+            selectedGroup={selectedGroup} // Pass the current selected group
+            placeholder="Search by punch code, name, department, reporting group..."
+          />
         )}
       </div>
     </div>

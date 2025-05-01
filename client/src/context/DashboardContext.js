@@ -25,9 +25,14 @@ export const DashboardProvider = ({ children }) => {
   // Get current month in "MMM YYYY" format
   const getCurrentMonth = useCallback(() => {
     const date = new Date();
+    // If today is the 1st, move to previous month
+    if (date.getDate() === 1) {
+      date.setMonth(date.getMonth() - 1);
+    }
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
   }, []);
+  
 
   // State for selected month
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonth());

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Download, RefreshCw, Check, XCircle } from 'lucide-react';
 import SimplifiedDatePicker from '../AttendancePage/CustomDatePicker';
@@ -16,6 +16,9 @@ const COLORS = [
 const MistakeDashboard = ({ selectedMonthYear }) => {
   // Track if this is the first render
   const isFirstRender = useRef(true);
+  
+  // Local state for date validation error message
+  const [dateError, setDateError] = useState(null);
   
   // Get context values
   const { selectedMonth, updateSelectedMonth } = useDashboardContext();
@@ -55,11 +58,7 @@ const MistakeDashboard = ({ selectedMonthYear }) => {
     selectAllOptions,
     deselectAllOptions,
     isLoading: reportLoading,
-    generateReport,
-    open,
-          setOpen,
-          handleChange,
-          dayjsDateRange,
+    generateReport, // Original function from hook
   } = useReportSettings(currentMonth);
 
   const { 
@@ -72,6 +71,42 @@ const MistakeDashboard = ({ selectedMonthYear }) => {
   const handleRefresh = () => {
     // console.log(`[MistakeDashboard] Refreshing data for month: ${currentMonth}`);
     refreshData();
+  };
+
+  // Validate date range helper function
+  const isDateRangeValid = () => {
+    // Clear any previous error
+    setDateError(null);
+    
+    // Check if dateRange exists
+    if (!dateRange) {
+      setDateError("Date range should be set");
+      return false;
+    }
+    
+    // In the simplified version, dateRange is expected to be an array of dayjs objects
+    if (Array.isArray(dateRange)) {
+      // Check if both values exist and are valid dayjs objects
+      if (!dateRange[0] || !dateRange[1]) {
+        setDateError("Both start and end dates must be selected");
+        return false;
+      }
+      return true;
+    }
+    
+    // If we reach here, the format is unexpected
+    setDateError("Date range should be set");
+    return false;
+  };
+  
+  // Wrapper for generate report with validation
+  const handleGenerateReport = () => {
+    if (isDateRangeValid()) {
+      // Clear any previous error and call the original function
+      setDateError(null);
+      generateReport();
+    }
+    // Otherwise the error will be set by the validation function
   };
 
   const isLoading = reportLoading || viewLoading;
@@ -261,12 +296,14 @@ const MistakeDashboard = ({ selectedMonthYear }) => {
                 <SimplifiedDatePicker 
                   dateRange={dateRange} 
                   setDateRange={setDateRange} 
-                  disabled={reportLoading} 
-                  open={open}
-                  setOpen={setOpen}
-                  handleChange={handleChange}
-                  dayjsDateRange={dayjsDateRange}
+                  disabled={reportLoading}
                 />
+                {/* Display date error message if present */}
+                {dateError && (
+                  <div className="date-error-message">
+                    {dateError}
+                  </div>
+                )}
               </div>
             </div>
             
@@ -338,11 +375,11 @@ const MistakeDashboard = ({ selectedMonthYear }) => {
             )}
           </div>
           
-          {/* Generate Report Button with animation */}
+          {/* Generate Report Button with animation - NOW CALLS OUR WRAPPED FUNCTION */}
           <button 
             type="button" 
             className="generate-btn pulse-animation"
-            onClick={generateReport}
+            onClick={handleGenerateReport} 
             disabled={reportLoading}
           >
             <Download size={16} className="btn-icon" />
@@ -423,6 +460,17 @@ const MistakeDashboard = ({ selectedMonthYear }) => {
         .month-value {
           font-weight: 600;
           color: #333;
+        }
+        
+        /* New styles for date validation error */
+        .date-error-message {
+          color: #e53935;
+          font-size: 0.85rem;
+          margin-top: 6px;
+          padding: 4px 8px;
+          background-color: rgba(229, 57, 53, 0.08);
+          border-radius: 4px;
+          border-left: 3px solid #e53935;
         }
       `}</style>
     </div>

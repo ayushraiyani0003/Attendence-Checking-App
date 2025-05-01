@@ -1,325 +1,327 @@
+/* AdminNotificationPanel Styles */
+.AdminNotificationPanel-admin-panel {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f7f9fc;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+  margin-top: 80px;
+  height: 100%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
 
-    .admin-panel {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      max-width: 1000px;
-      margin: 0 auto;
-      padding: 20px;
-      background-color: #f7f9fc;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
-      margin-top: 80px;
-      height: 100%;
-      max-height: 90vh;
-      display: flex;
-      flex-direction: column;
-    }
-    
-    .panel-title {
-      color: #2c3e50;
-      text-align: center;
-      margin-bottom: 20px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid #e0e6ed;
-    }
-    
-    .error-message {
-      background-color: #ffdddd;
-      color: #e74c3c;
-      padding: 10px 15px;
-      border-radius: 4px;
-      margin-bottom: 15px;
-      border-left: 4px solid #e74c3c;
-    }
-    
-    .loading-message {
-      text-align: center;
-      color: #7f8c8d;
-      font-style: italic;
-      padding: 20px;
-      background-color: white;
-      border-radius: 6px;
-    }
-    
-    .tab-navigation {
-      display: flex;
-      margin-bottom: 20px;
-      border-bottom: 1px solid #e0e6ed;
-    }
-    
-    .tab-button {
-      padding: 10px 20px;
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 16px;
-      color: #7f8c8d;
-      position: relative;
-      transition: color 0.3s;
-    }
-    
-    .tab-button:hover {
-      color: #3498db;
-    }
-    
-    .tab-button.active {
-      color: #3498db;
-      font-weight: 600;
-    }
-    
-    .tab-button.active::after {
-      content: '';
-      position: absolute;
-      bottom: -1px;
-      left: 0;
-      width: 100%;
-      height: 3px;
-      background-color: #3498db;
-    }
-    
-    .tab-content {
-      flex: 1;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-    
-    .header-messages-tab,
-    .popup-messages-tab {
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      overflow: hidden;
-    }
-    
-    .message-form {
-      background-color: white;
-      padding: 20px;
-      border-radius: 6px;
-      box-shadow: 0 0 5px rgba(0, 0, 0, 0.03);
-      margin-bottom: 30px;
-    }
-    
-    .form-group {
-      margin-bottom: 15px;
-    }
-    
-    .form-group>label {
-      display: block;
-      margin-bottom: 5px;
-      color: #34495e;
-      font-weight: 500;
-    }
-    
-    .text-input {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #dce4ec;
-      border-radius: 4px;
-      font-size: 14px;
-      transition: border 0.3s;
-    }
-    
-    .text-input:focus {
-      border-color: #3498db;
-      outline: none;
-    }
-    
-    .text-input:disabled {
-      background-color: #f5f5f5;
-      cursor: not-allowed;
-    }
-    
-    .time-inputs {
-      display: flex;
-      gap: 15px;
-    }
-    
-    .time-inputs .form-group {
-      flex: 1;
-    }
-    
-    .time-input {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #dce4ec;
-      border-radius: 4px;
-      font-size: 14px;
-    }
-    
-    .time-input:disabled {
-      background-color: #f5f5f5;
-      cursor: not-allowed;
-    }
-    
-    .submit-button {
-      background-color: #3498db;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 16px;
-      transition: background-color 0.3s;
-    }
-    
-    .submit-button:hover:not(:disabled) {
-      background-color: #2980b9;
-    }
-    
-    .submit-button:disabled {
-      background-color: #95a5a6;
-      cursor: not-allowed;
-    }
-    
-    .message-list {
-      flex: 1;
-      overflow-y: auto;
-      padding-right: 5px;
-      margin-bottom: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-      max-height: 400px;
-    }
-    
-    /* Scrollbar styling */
-    .message-list::-webkit-scrollbar {
-      width: 8px;
-    }
-    
-    .message-list::-webkit-scrollbar-track {
-      background: #f1f1f1;
-      border-radius: 10px;
-    }
-    
-    .message-list::-webkit-scrollbar-thumb {
-      background: #c1c1c1;
-      border-radius: 10px;
-    }
-    
-    .message-list::-webkit-scrollbar-thumb:hover {
-      background: #a8a8a8;
-    }
-    
-    .message-item, .popup-item {
-      background-color: white;
-      padding: 15px;
-      border-radius: 6px;
-      box-shadow: 0 0 5px rgba(0, 0, 0, 0.05);
-      border-left: 4px solid #3498db;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    
-    .message-item:hover, .popup-item:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-    }
-    
-    .message-item.inactive, .popup-item.inactive {
-      border-left-color: #95a5a6;
-      opacity: 0.7;
-    }
-    
-    .message-text {
-      margin: 0 0 15px 0;
-      color: #2c3e50;
-    }
-    
-    .message-actions {
-      display: flex;
-      gap: 10px;
-      justify-content: flex-end;
-    }
-    
-    .toggle-button {
-      padding: 5px 12px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
-      transition: background-color 0.3s;
-    }
-    
-    .toggle-button:disabled {
-      opacity: 0.7;
-      cursor: not-allowed;
-    }
-    
-    .toggle-button.active {
-      background-color: #2ecc71;
-      color: white;
-    }
-    
-    .toggle-button.inactive {
-      background-color: #ecf0f1;
-      color: #7f8c8d;
-    }
-    
-    .delete-button {
-      padding: 5px 12px;
-      background-color: #e74c3c;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
-      transition: background-color 0.3s;
-    }
-    
-    .delete-button:hover:not(:disabled) {
-      background-color: #c0392b;
-    }
-    
-    .delete-button:disabled {
-      opacity: 0.7;
-      cursor: not-allowed;
-    }
-    
-    .popup-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-    
-    .popup-title {
-      margin: 0;
-      color: #2c3e50;
-      font-size: 18px;
-    }
-    
-    .popup-message {
-      margin: 0 0 15px 0;
-      color: #34495e;
-    }
-    
-    .popup-times {
-      display: flex;
-      justify-content: space-between;
-      font-size: 14px;
-      color: #7f8c8d;
-      border-top: 1px solid #ecf0f1;
-      padding-top: 10px;
-    }
-    
-    .no-messages {
-      text-align: center;
-      color: #7f8c8d;
-      font-style: italic;
-      padding: 20px;
-      background-color: white;
-      border-radius: 6px;
-    }
+.AdminNotificationPanel-panel-title {
+  color: #2c3e50;
+  text-align: center;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #e0e6ed;
+}
 
-    @media (max-height: 800px) {
-      .message-list {
-        max-height: 300px;
-      }
-    }
+.AdminNotificationPanel-error-message {
+  background-color: #ffdddd;
+  color: #e74c3c;
+  padding: 10px 15px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  border-left: 4px solid #e74c3c;
+}
 
-    @media (max-height: 700px) {
-      .message-list {
-        max-height: 200px;
-      }
-    }
-  
+.AdminNotificationPanel-loading-message {
+  text-align: center;
+  color: #7f8c8d;
+  font-style: italic;
+  padding: 20px;
+  background-color: white;
+  border-radius: 6px;
+}
+
+.AdminNotificationPanel-tab-navigation {
+  display: flex;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #e0e6ed;
+}
+
+.AdminNotificationPanel-tab-button {
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: #7f8c8d;
+  position: relative;
+  transition: color 0.3s;
+}
+
+.AdminNotificationPanel-tab-button:hover {
+  color: #3498db;
+}
+
+.AdminNotificationPanel-tab-button.active {
+  color: #3498db;
+  font-weight: 600;
+}
+
+.AdminNotificationPanel-tab-button.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: #3498db;
+}
+
+.AdminNotificationPanel-tab-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.AdminNotificationPanel-header-messages-tab,
+.AdminNotificationPanel-popup-messages-tab {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.AdminNotificationPanel-message-form {
+  background-color: white;
+  padding: 20px;
+  border-radius: 6px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.03);
+  margin-bottom: 30px;
+}
+
+.AdminNotificationPanel-form-group {
+  margin-bottom: 15px;
+}
+
+.AdminNotificationPanel-form-group > label {
+  display: block;
+  margin-bottom: 5px;
+  color: #34495e;
+  font-weight: 500;
+}
+
+.AdminNotificationPanel-text-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #dce4ec;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: border 0.3s;
+}
+
+.AdminNotificationPanel-text-input:focus {
+  border-color: #3498db;
+  outline: none;
+}
+
+.AdminNotificationPanel-text-input:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.AdminNotificationPanel-time-inputs {
+  display: flex;
+  gap: 15px;
+}
+
+.AdminNotificationPanel-time-inputs .AdminNotificationPanel-form-group {
+  flex: 1;
+}
+
+.AdminNotificationPanel-time-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #dce4ec;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.AdminNotificationPanel-time-input:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+.AdminNotificationPanel-submit-button {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s;
+}
+
+.AdminNotificationPanel-submit-button:hover:not(:disabled) {
+  background-color: #2980b9;
+}
+
+.AdminNotificationPanel-submit-button:disabled {
+  background-color: #95a5a6;
+  cursor: not-allowed;
+}
+
+.AdminNotificationPanel-message-list {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 5px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  max-height: 400px;
+}
+
+/* Scrollbar styling */
+.AdminNotificationPanel-message-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.AdminNotificationPanel-message-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.AdminNotificationPanel-message-list::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 10px;
+}
+
+.AdminNotificationPanel-message-list::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+.AdminNotificationPanel-message-item, 
+.AdminNotificationPanel-popup-item {
+  background-color: white;
+  padding: 15px;
+  border-radius: 6px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.05);
+  border-left: 4px solid #3498db;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.AdminNotificationPanel-message-item:hover, 
+.AdminNotificationPanel-popup-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+.AdminNotificationPanel-message-item.inactive, 
+.AdminNotificationPanel-popup-item.inactive {
+  border-left-color: #95a5a6;
+  opacity: 0.7;
+}
+
+.AdminNotificationPanel-message-text {
+  margin: 0 0 15px 0;
+  color: #2c3e50;
+}
+
+.AdminNotificationPanel-message-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.AdminNotificationPanel-toggle-button {
+  padding: 5px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.AdminNotificationPanel-toggle-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.AdminNotificationPanel-toggle-button.active {
+  background-color: #2ecc71;
+  color: white;
+}
+
+.AdminNotificationPanel-toggle-button.inactive {
+  background-color: #ecf0f1;
+  color: #7f8c8d;
+}
+
+.AdminNotificationPanel-delete-button {
+  padding: 5px 12px;
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+.AdminNotificationPanel-delete-button:hover:not(:disabled) {
+  background-color: #c0392b;
+}
+
+.AdminNotificationPanel-delete-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.AdminNotificationPanel-popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.AdminNotificationPanel-popup-title {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 18px;
+}
+
+.AdminNotificationPanel-popup-message {
+  margin: 0 0 15px 0;
+  color: #34495e;
+}
+
+.AdminNotificationPanel-popup-times {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #7f8c8d;
+  border-top: 1px solid #ecf0f1;
+  padding-top: 10px;
+}
+
+.AdminNotificationPanel-no-messages {
+  text-align: center;
+  color: #7f8c8d;
+  font-style: italic;
+  padding: 20px;
+  background-color: white;
+  border-radius: 6px;
+}
+
+@media (max-height: 800px) {
+  .AdminNotificationPanel-message-list {
+    max-height: 300px;
+  }
+}
+
+@media (max-height: 700px) {
+  .AdminNotificationPanel-message-list {
+    max-height: 200px;
+  }
+}

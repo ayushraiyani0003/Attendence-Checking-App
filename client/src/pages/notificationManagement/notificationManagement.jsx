@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNotificationAdmin } from '../../hooks/useNotification';
 import "./NotificationManagement.css";
+
 const AdminNotificationPanel = () => {
   const {
     // Tab state
@@ -35,36 +36,36 @@ const AdminNotificationPanel = () => {
   } = useNotificationAdmin();
 
   return (
-    <div className="admin-panel">
-      <h1 className="panel-title">Admin Notification Management</h1>
+    <div className="AdminNotificationPanel-admin-panel">
+      <h1 className="AdminNotificationPanel-panel-title">Admin Notification Management</h1>
       
       {error && (
-        <div className="error-message">
+        <div className="AdminNotificationPanel-error-message">
           {error}
         </div>
       )}
       
-      <div className="tab-navigation">
+      <div className="AdminNotificationPanel-tab-navigation">
         <button 
-          className={`tab-button ${activeTab === 'header' ? 'active' : ''}`}
+          className={`AdminNotificationPanel-tab-button ${activeTab === 'header' ? 'active' : ''}`}
           onClick={() => setActiveTab('header')}
         >
           Header Messages
         </button>
         <button 
-          className={`tab-button ${activeTab === 'popup' ? 'active' : ''}`}
+          className={`AdminNotificationPanel-tab-button ${activeTab === 'popup' ? 'active' : ''}`}
           onClick={() => setActiveTab('popup')}
         >
           Popup Notifications
         </button>
       </div>
       
-      <div className="tab-content">
+      <div className="AdminNotificationPanel-tab-content">
         {activeTab === 'header' ? (
-          <div className="header-messages-tab">
+          <div className="AdminNotificationPanel-header-messages-tab">
             <h2>Create Header Message</h2>
-            <form onSubmit={handleSubmitHeader} className="message-form">
-              <div className="form-group">
+            <form onSubmit={handleSubmitHeader} className="AdminNotificationPanel-message-form">
+              <div className="AdminNotificationPanel-form-group">
                 <label htmlFor="headerMessage">Message Text:</label>
                 <textarea
                   id="headerMessage"
@@ -72,13 +73,13 @@ const AdminNotificationPanel = () => {
                   onChange={(e) => setHeaderMessage(e.target.value)}
                   placeholder="Enter the message to display in header"
                   rows="3"
-                  className="text-input"
+                  className="AdminNotificationPanel-text-input"
                   disabled={loading}
                 />
               </div>
               <button 
                 type="submit" 
-                className="submit-button"
+                className="AdminNotificationPanel-submit-button"
                 disabled={loading || headerMessage.trim() === ''}
               >
                 {loading ? 'Creating...' : 'Create Message'}
@@ -86,25 +87,25 @@ const AdminNotificationPanel = () => {
             </form>
             
             <h2>Active Header Messages</h2>
-            <div className="message-list">
+            <div className="AdminNotificationPanel-message-list">
               {loading && headerMessages.length === 0 ? (
-                <p className="loading-message">Loading messages...</p>
+                <p className="AdminNotificationPanel-loading-message">Loading messages...</p>
               ) : headerMessages.length === 0 ? (
-                <p className="no-messages">No header messages created yet.</p>
+                <p className="AdminNotificationPanel-no-messages">No header messages created yet.</p>
               ) : (
                 headerMessages.map(msg => (
-                  <div key={msg.id} className={`message-item ${msg.active ? 'active' : 'inactive'}`}>
-                    <p className="message-text">{msg.message}</p>
-                    <div className="message-actions">
+                  <div key={msg.id} className={`AdminNotificationPanel-message-item ${msg.active ? 'active' : 'inactive'}`}>
+                    <p className="AdminNotificationPanel-message-text">{msg.message}</p>
+                    <div className="AdminNotificationPanel-message-actions">
                       <button 
-                        className={`toggle-button ${msg.active ? 'active' : 'inactive'}`}
+                        className={`AdminNotificationPanel-toggle-button ${msg.active ? 'active' : 'inactive'}`}
                         onClick={() => toggleHeaderActive(msg.id)}
                         disabled={loading}
                       >
                         {msg.active ? 'Active' : 'Inactive'}
                       </button>
                       <button 
-                        className="delete-button"
+                        className="AdminNotificationPanel-delete-button"
                         onClick={() => handleDeleteHeaderMessage(msg.id)}
                         disabled={loading}
                       >
@@ -117,10 +118,10 @@ const AdminNotificationPanel = () => {
             </div>
           </div>
         ) : (
-          <div className="popup-messages-tab">
+          <div className="AdminNotificationPanel-popup-messages-tab">
             <h2>Create Maintenance Popup</h2>
-            <form onSubmit={handleSubmitPopup} className="message-form">
-              <div className="form-group">
+            <form onSubmit={handleSubmitPopup} className="AdminNotificationPanel-message-form">
+              <div className="AdminNotificationPanel-form-group">
                 <label htmlFor="popupTitle">Popup Title:</label>
                 <input
                   type="text"
@@ -128,11 +129,11 @@ const AdminNotificationPanel = () => {
                   value={popupTitle}
                   onChange={(e) => setPopupTitle(e.target.value)}
                   placeholder="E.g., Scheduled Maintenance"
-                  className="text-input"
+                  className="AdminNotificationPanel-text-input"
                   disabled={loading}
                 />
               </div>
-              <div className="form-group">
+              <div className="AdminNotificationPanel-form-group">
                 <label htmlFor="popupMessage">Popup Message:</label>
                 <textarea
                   id="popupMessage"
@@ -140,37 +141,37 @@ const AdminNotificationPanel = () => {
                   onChange={(e) => setPopupMessage(e.target.value)}
                   placeholder="Enter details about the maintenance"
                   rows="4"
-                  className="text-input"
+                  className="AdminNotificationPanel-text-input"
                   disabled={loading}
                 />
               </div>
-              <div className="time-inputs">
-                <div className="form-group">
+              <div className="AdminNotificationPanel-time-inputs">
+                <div className="AdminNotificationPanel-form-group">
                   <label htmlFor="startTime">Start Time:</label>
                   <input
                     type="datetime-local"
                     id="startTime"
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
-                    className="time-input"
+                    className="AdminNotificationPanel-time-input"
                     disabled={loading}
                   />
                 </div>
-                <div className="form-group">
+                <div className="AdminNotificationPanel-form-group">
                   <label htmlFor="endTime">End Time:</label>
                   <input
                     type="datetime-local"
                     id="endTime"
                     value={endTime}
                     onChange={(e) => setEndTime(e.target.value)}
-                    className="time-input"
+                    className="AdminNotificationPanel-time-input"
                     disabled={loading}
                   />
                 </div>
               </div>
               <button 
                 type="submit" 
-                className="submit-button"
+                className="AdminNotificationPanel-submit-button"
                 disabled={loading || popupTitle.trim() === '' || popupMessage.trim() === '' || !startTime || !endTime}
               >
                 {loading ? 'Creating...' : 'Create Popup'}
@@ -178,26 +179,26 @@ const AdminNotificationPanel = () => {
             </form>
             
             <h2>Maintenance Popups</h2>
-            <div className="message-list">
+            <div className="AdminNotificationPanel-message-list">
               {loading && popupMessages.length === 0 ? (
-                <p className="loading-message">Loading popups...</p>
+                <p className="AdminNotificationPanel-loading-message">Loading popups...</p>
               ) : popupMessages.length === 0 ? (
-                <p className="no-messages">No popup messages created yet.</p>
+                <p className="AdminNotificationPanel-no-messages">No popup messages created yet.</p>
               ) : (
                 popupMessages.map(popup => (
-                  <div key={popup.id} className={`popup-item ${popup.active ? 'active' : 'inactive'}`}>
-                    <div className="popup-header">
-                      <h3 className="popup-title">{popup.title}</h3>
-                      <div className="message-actions">
+                  <div key={popup.id} className={`AdminNotificationPanel-popup-item ${popup.active ? 'active' : 'inactive'}`}>
+                    <div className="AdminNotificationPanel-popup-header">
+                      <h3 className="AdminNotificationPanel-popup-title">{popup.title}</h3>
+                      <div className="AdminNotificationPanel-message-actions">
                         <button 
-                          className={`toggle-button ${popup.active ? 'active' : 'inactive'}`}
+                          className={`AdminNotificationPanel-toggle-button ${popup.active ? 'active' : 'inactive'}`}
                           onClick={() => togglePopupActive(popup.id)}
                           disabled={loading}
                         >
                           {popup.active ? 'Active' : 'Inactive'}
                         </button>
                         <button 
-                          className="delete-button"
+                          className="AdminNotificationPanel-delete-button"
                           onClick={() => handleDeletePopupMessage(popup.id)}
                           disabled={loading}
                         >
@@ -205,8 +206,8 @@ const AdminNotificationPanel = () => {
                         </button>
                       </div>
                     </div>
-                    <p className="popup-message">{popup.message}</p>
-                    <div className="popup-times">
+                    <p className="AdminNotificationPanel-popup-message">{popup.message}</p>
+                    <div className="AdminNotificationPanel-popup-times">
                       <span>From: {new Date(popup.startTime).toLocaleString()}</span>
                       <span>To: {new Date(popup.endTime).toLocaleString()}</span>
                     </div>
@@ -217,8 +218,6 @@ const AdminNotificationPanel = () => {
           </div>
         )}
       </div>
-      
-      
     </div>
   );
 };
