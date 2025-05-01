@@ -112,7 +112,7 @@ class AttendanceUnlockRequestController {
         
         // Get the requested_by_id from the request
         const requestedById = requestDetails.requested_by_id;
-        console.log(requestedById);
+        // console.log(requestedById);
         
         // Get all users to find the matching user and their reporting groups
         const allUsers = await getAllUsers();
@@ -120,7 +120,7 @@ class AttendanceUnlockRequestController {
         
         // Find the user by ID and get their reporting groups
         const requestedUser = allUsers.find(u => u.id === requestedById);
-        console.log(requestedUser.reporting_group);
+        // console.log(requestedUser.reporting_group);
         
         if (!requestedUser || !requestedUser.reporting_group) {
           return res.status(404).json({
@@ -138,7 +138,7 @@ class AttendanceUnlockRequestController {
             message: 'No reporting groups found for this user'
           });
         }
-        console.log(groupList);
+        // console.log(groupList);
         
         // Get the dates to process
         let datesToProcess = [];

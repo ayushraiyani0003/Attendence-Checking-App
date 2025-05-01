@@ -1,7 +1,6 @@
 // getEmployeesByGroup.js
 const { Op } = require('sequelize');  // Import Op from sequelize
 const { Employee, Attendance, Audit, AttendanceDateLockStatus } = require('../models'); // Assuming Employee and Attendance models are defined
-
 // Function to get all employees for a selected group
 async function getEmployeesByGroup(groups) {
   try {
@@ -23,107 +22,60 @@ async function getEmployeesByGroup(groups) {
 }
 
 // New function to get all attendance for employees in the selected group and month
-async function getEmployeesAttendanceByMonthAndGroup(groups, year, month, employees = null) {
+async function getEmployeesAttendanceByMonthAndGroup(groups, year, month, employeesInput = null) {
   try {
-    // Fetch employees for the selected group
-    const employees = await getEmployeesByGroup(groups);
+    // Use provided employees if available, otherwise fetch them
+    const employees = employeesInput || await getEmployeesByGroup(groups);
 
-    // Extract employee IDs from the fetched employees
-    const employeeIds = employees.map(employee => employee.employee_id);
+    // Extract employee IDs and build group map in a single loop
+    const employeeIds = [];
+    const employeeGroupMap = {};
+    
+    for (const employee of employees) {
+      employeeIds.push(employee.employee_id);
+      employeeGroupMap[employee.employee_id] = employee.reporting_group;
+    }
 
-    // Create a map of employee IDs to their reporting groups
-    const employeeGroupMap = employees.reduce((map, employee) => {
-      map[employee.employee_id] = employee.reporting_group;
-      return map;
-    }, {});
+    // Calculate the start and end dates for the month
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0);
 
-    // Calculate the start and end of the selected month
-    const startDate = new Date(year, month - 1, 1); // First date of the month
-    const endDate = new Date(year, month, 0); // Last date of the month
-
-    // Fetch attendance data for the selected employees and month
+    console.log('Fetching attendance data from database...');
     const attendanceData = await Attendance.findAll({
       where: {
         employee_id: {
-          [Op.in]: employeeIds, // Match the employee IDs from the selected group
+          [Op.in]: employeeIds,
         },
         attendance_date: {
-          [Op.gte]: startDate, // Start date of the month
-          [Op.lte]: endDate, // End date of the month
+          [Op.gte]: startDate,
+          [Op.lte]: endDate,
         },
       },
+      indexHints: [{ type: 'USE', values: ['attendance_date_employee_id_idx'] }],
+      attributes: [
+        'attendance_id',
+        'employee_id',
+        'attendance_date',
+        'shift_type',
+        'network_hours',
+        'overtime_hours'
+      ]
     });
 
     // Add reporting_group to each attendance record
     const attendanceWithGroups = attendanceData.map(attendance => {
-      const attendanceObj = attendance.get({ plain: true }); // Using get({ plain: true }) instead of toJSON()
+      const attendanceObj = attendance.get({ plain: true });
       attendanceObj.reporting_group = employeeGroupMap[attendance.employee_id] || null;
       return attendanceObj;
     });
 
-    // Return the attendance data with reporting groups
     return attendanceWithGroups;
-
   } catch (error) {
     console.error("Error fetching attendance data:", error);
-    throw error; // Throw error to be handled by the caller
+    throw error;
   }
 }
 
-// New function to get all attendance for employees in the selected group and month
-async function getDashboardEmployeesAttendanceByMonthAndGroup(groups, year, month) {
-  try {
-    // Fetch employees for the selected group
-    const employees = await getEmployeesByGroup(groups);
-
-    // Extract employee IDs from the fetched employees
-    const employeeIds = employees.map(employee => employee.employee_id);
-
-    // Create a map of employee IDs to their reporting groups and punch codes
-    const employeeMap = employees.reduce((map, employee) => {
-      map[employee.employee_id] = {
-        reporting_group: employee.reporting_group,
-        punch_code: employee.punch_code
-      };
-      return map;
-    }, {});
-
-    // Calculate the start and end of the selected month
-    const startDate = new Date(year, month - 1, 1); // First date of the month
-    const endDate = new Date(year, month, 0); // Last date of the month
-
-    // Fetch attendance data for the selected employees and month
-    const attendanceData = await Attendance.findAll({
-      where: {
-        employee_id: {
-          [Op.in]: employeeIds, // Match the employee IDs from the selected group
-        },
-        attendance_date: {
-          [Op.gte]: startDate, // Start date of the month
-          [Op.lte]: endDate, // End date of the month
-        },
-      },
-    });
-
-    // Add reporting_group and punch_code to each attendance record
-    const attendanceWithGroups = attendanceData.map(attendance => {
-      const attendanceObj = attendance.get({ plain: true }); // Using get({ plain: true }) instead of toJSON()
-      const employeeInfo = employeeMap[attendance.employee_id] || { reporting_group: null, punch_code: null };
-
-      attendanceObj.reporting_group = employeeInfo.reporting_group;
-      attendanceObj.punch_code = employeeInfo.punch_code;
-
-      return attendanceObj;
-    });
-
-    // Return the attendance data with reporting groups and punch codes
-    return attendanceWithGroups;
-
-  } catch (error) {
-    console.error("Error fetching attendance data:", error);
-    throw error; // Throw error to be handled by the caller
-  }
-}
 
 // get all employee details for selected dates from redis for update the data.
 async function updateEmployeesDetailsFromRedis(redisAttendanceData, user) {
@@ -556,7 +508,6 @@ const addAttendanceToMySQL = async (attendanceData) => {
 module.exports = {
   getEmployeesByGroup,
   getEmployeesAttendanceByMonthAndGroup,
-  getDashboardEmployeesAttendanceByMonthAndGroup,
   updateEmployeesDetailsFromRedis,
   getAttendanceSelectedGroupDateMysql,
   updateAttendanceFromRedisBySystumn,
