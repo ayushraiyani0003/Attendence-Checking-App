@@ -1,0 +1,353 @@
+/* components/AttendancePage/QuickSearchModal.css */
+.quick-search-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end; /* Changed to bottom alignment */
+  z-index: 1050; /* Higher than most components */
+  padding-bottom: 8vh; /* Adds space from bottom of screen */
+  will-change: opacity; /* Performance optimization for animations */
+  animation: modalFadeIn 0.15s ease-out;
+  /* Remove pointer events from overlay - this prevents it from capturing clicks */
+  pointer-events: none;
+}
+
+/* Enable pointer events only for the modal container to allow interaction */
+.quick-search-modal-container {
+  width: 550px;
+  max-width: 90%;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 -5px 25px rgba(0, 0, 0, 0.2); /* Shadow adjusted for bottom positioning */
+  display: flex;
+  flex-direction: column;
+  max-height: 70vh;
+  transform: translateZ(0); /* Hardware acceleration */
+  overflow: hidden; /* Ensure nothing leaks out */
+  pointer-events: auto; /* Re-enable pointer events for the container */
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px); /* Modified to slide up from bottom */
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Reordered elements - search-mode-hints now at top */
+.search-mode-hints {
+  padding: 8px 16px;
+  font-size: 12px;
+  color: #666;
+  background-color: #f9f9f9;
+  border-bottom: 1px solid #eee;
+  order: 1; /* Explicit ordering */
+}
+
+/* Results container positioned at top */
+.search-results-container {
+  overflow-y: auto;
+  max-height: calc(50vh - 60px);
+  overscroll-behavior: contain; /* Prevent scrolling parent elements */
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  position: relative;
+  order: 2; /* Explicit ordering */
+}
+
+/* Make the close button more prominent */
+.input-close-button {
+  width: 24px;
+  height: 24px;
+  background-color: #fff0f0;
+  border: none;
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #555;
+  margin-left: 8px;
+  transition: background-color 0.2s, color 0.2s;
+  padding: 0;
+  z-index: 10; /* Ensure it's clickable above other elements */
+}
+
+.input-close-button:hover {
+  background-color: #ffdddd;
+  color: #ff3860;
+}
+
+.input-close-button:active {
+  background-color: #ffcccc;
+}
+
+/* Add a subtle pulse animation to the close button to draw attention */
+@keyframes subtle-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.input-close-button:focus {
+  outline: none;
+  animation: subtle-pulse 1s ease-in-out infinite;
+}
+
+/* Input field now at bottom */
+.quick-search-header {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  border-top: 1px solid #e0e0e0; /* Changed from bottom to top border */
+  border-bottom: none;
+  order: 3; /* Explicit ordering */
+}
+
+.search-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+  color: #666;
+}
+
+.quick-search-input {
+  flex: 1;
+  border: none;
+  font-size: 16px;
+  outline: none;
+  padding: 8px 0;
+  width: 100%;
+}
+
+.search-result-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.15s ease;
+  user-select: none; /* Prevent text selection for better UX */
+}
+
+.search-result-item:hover {
+  background-color: #f5f8ff;
+}
+
+.search-result-item[data-selected="true"] {
+  background-color: #eef3ff;
+  border-left: 3px solid #4a7bff;
+}
+
+.search-result-item[data-current="true"] {
+  background-color: #f0f9ff;
+}
+
+/* Department item styling */
+.department-item .result-name {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+}
+
+.result-icon {
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+.department-item .result-count {
+  font-size: 13px;
+  color: #4a7bff;
+  background-color: #eef3ff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+/* Group item styling */
+.group-item .result-name {
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+}
+
+.group-item .result-count {
+  font-size: 13px;
+  color: #4a7bff;
+  background-color: #eef3ff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+/* All Groups styling */
+.all-groups-option {
+  background-color: #f8f9ff;
+  border-bottom: 1px solid #e0e0e0;
+  margin-bottom: 5px;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.all-groups-option:hover {
+  background-color: #edf1ff;
+}
+
+.all-groups-option .result-name {
+  font-weight: 700;
+  color: #4a7bff;
+}
+
+.all-groups-option .result-group {
+  color: #666;
+  font-style: italic;
+}
+
+.result-main-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.result-name {
+  font-weight: 600;
+  color: #333;
+}
+
+.result-id {
+  color: #666;
+  font-size: 14px;
+}
+
+.result-secondary-info {
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: #666;
+}
+
+.result-department {
+  margin-right: 12px;
+}
+
+.result-designation {
+  margin-right: 12px;
+  color: #555;
+}
+
+.result-group {
+  color: #4a7bff;
+}
+
+.result-hint {
+  font-style: italic;
+  color: #888;
+  font-size: 12px;
+}
+
+.current-group-marker {
+  font-size: 12px;
+  color: #4caf50;
+  font-weight: 500;
+  margin-left: 5px;
+}
+
+.no-results-message {
+  padding: 20px 16px;
+  text-align: center;
+  color: #666;
+  font-size: 15px;
+}
+
+.search-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  flex-direction: column;
+  order: 2; /* Same order as results to replace them when loading */
+}
+
+.search-spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-top-color: #4a7bff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 12px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Footer with keyboard shortcuts - now at very bottom */
+.quick-search-footer {
+  padding: 10px 16px;
+  border-top: 1px solid #e0e0e0;
+  font-size: 12px;
+  color: #888;
+  order: 4; /* Explicit ordering */
+}
+
+.keyboard-shortcuts {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.shortcut-item {
+  display: flex;
+  align-items: center;
+}
+
+.key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  margin: 0 2px;
+  background-color: #f0f0f0;
+  border-radius: 3px;
+  border: 1px solid #ddd;
+  font-size: 11px;
+  color: #555;
+}
+
+.label {
+  margin-left: 2px;
+}
+
+.shortcut-label {
+  margin-right: 4px;
+}
+
+.search-tips {
+  text-align: center;
+  margin-top: 6px;
+  font-style: italic;
+}
+
+.search-prefix {
+  display: inline-block;
+  background-color: #f0f0f0;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: monospace;
+  margin: 0 4px;
+}

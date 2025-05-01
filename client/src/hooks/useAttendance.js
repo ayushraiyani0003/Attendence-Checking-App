@@ -8,7 +8,7 @@ const getStorageKey = () => {
   return `employee_order_default`;
 };
 
-export const useAttendance = (user, monthYear, ws, send) => {
+export const useAttendance = (user, monthYear, ws, send, selectedGroup) => {
   const [hoveredRow, setHoveredRow] = useState(null);
   const [filterText, setFilterText] = useState("");
   const [sortConfig, setSortConfig] = useState({
@@ -105,12 +105,12 @@ export const useAttendance = (user, monthYear, ws, send) => {
     if (ws && isWebSocketOpen) {
       send({
         action: "getAttendance",
-        group: user.userReportingGroup,
+        group: isAdmin && selectedGroup ? [selectedGroup] : user.userReportingGroup,
         month: monthYear,
         user: user
       });
     }
-  }, [user.userReportingGroup, monthYear, isWebSocketOpen, ws, send]);
+  }, [user.userReportingGroup, selectedGroup, user.role, monthYear, isWebSocketOpen, ws, send, user]);
 
   // Handle WebSocket events
   useEffect(() => {

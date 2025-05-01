@@ -47,8 +47,8 @@ module.exports = (sequelize, DataTypes) => {
         comment: "Date of resignation if applicable",
       },
       status: {
-        type: DataTypes.ENUM('active', 'inactive', 'resigned', 'on_leave'),
-        defaultValue: 'active',
+        type: DataTypes.ENUM("active", "inactive", "resigned", "on_leave"),
+        defaultValue: "active",
         allowNull: false,
         comment: "Current employment status",
       },
@@ -75,8 +75,18 @@ module.exports = (sequelize, DataTypes) => {
     },
     {
       tableName: "employees",
-      timestamps: true, // Sequelize will automatically manage createdAt and updatedAt columns
-      underscored: true, // Converts camelCase to snake_case (e.g., 'created_at')
+      timestamps: true,
+      underscored: true,
+      indexes: [
+        {
+          name: "idx_punch_code",
+          fields: ["punch_code"],
+        },
+        {
+          name: "idx_reporting_group",
+          fields: ["reporting_group"],
+        },
+      ],
     }
   );
 

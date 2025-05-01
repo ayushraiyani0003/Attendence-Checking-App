@@ -11,19 +11,14 @@ const { generateNetHrReport, generateOtHrReport, generateSiteExpenseReport, gene
 // Get graph data for the dashboard
 exports.getDashboardGraphs = [async (req, res) => {
   try {
-
     // Get month and year from the request query
     let { month, year } = req.query;
-    // console.log("this is a dashboard " + month + " and " + year);
-    // const month = 4;
-    // const year = 2025;
 
     // If month and year are not provided, use current month and year
     if (!month || !year) {
       const currentDate = new Date();
       month = month || (currentDate.getMonth() + 1).toString();
       year = year || currentDate.getFullYear().toString();
-      // console.log(`Using default month: ${month}, year: ${year}`);
     }
 
     // Convert to numbers to ensure proper handling
@@ -60,46 +55,59 @@ exports.getDashboardGraphs = [async (req, res) => {
 
 // Helper function to get dashboard data
 const getData = async (month, year) => {
-  // console.log(month + "-" + year);
+  // Check if requested date is in the future
+  const currentDate = new Date();
+  const requestedDate = new Date(year, month - 1, 1);
+  
+  if (requestedDate > currentDate) {
+    console.log(`Requested future date ${month}-${year}, returning empty data`);
+    return { warning: "Future date requested, no data available", mismatches: [] };
+  }
 
   try {
-    // 1. First, get all reporting groups from settings
+    // 1. Get all reporting groups from settings
     const reportingGroups = await db.ReportingGroup.findAll();
-
-    // Extract group IDs for service call
-    const reportingGroupIds = reportingGroups.map(group => group.id);
+    
+    // Get all employees
+    const employeeDetails = await getAllEmployeesService();
 
     // Extract group names for the desired array of strings
     const reportingGroupNames = reportingGroups.map(group => group.dataValues.groupname);
 
-    if (!reportingGroupIds || reportingGroupIds.length === 0) {
+    if (!reportingGroupNames || reportingGroupNames.length === 0) {
       console.warn("No reporting groups found. Using empty array.");
     }
+    
     // 2. Get employees attendance data for the month by reporting groups from mysql
-    const attendanceData = await attendanceService.getDashboardEmployeesAttendanceByMonthAndGroup(
+    const attendanceData = await attendanceService.getEmployeesAttendanceByMonthAndGroup(
       reportingGroupNames || [],
       year,
-      month
+      month,
+      employeeDetails
     );
-    // console.log(attendanceData);
     
-
-    // get teh attedence data from the redis db also
+    // get the attendance data from the redis db also
     const redisData = await getRedisAttendanceData(year, month, reportingGroupNames);
 
-    // combine and get the final attendence data for comparision.
-    const finalAttendanceData = combineAttendanceData(attendanceData, redisData);
+    // If both data sources are empty, return early
+    if (!attendanceData.length && (!redisData || !redisData.length)) {
+      console.log(`No attendance data available for ${month}-${year} from either source`);
+      return { warning: "No attendance data available", mismatches: [] };
+    }
+    
+    // Safely combine the attendance data
+    const finalAttendanceData = safelyCombineData(attendanceData, redisData);
+    
     // 3. Get metrics data for the month
     const metricsData = await metricsService.fetchMetricsForMonthYear(month, year);
-
+    
     // Initialize empty metrics if not returned
     if (!metricsData) {
       console.warn(`No metrics data returned for month ${month}, year ${year}`);
     }
-
+    
     // 4. calculate the diff between the finalAttendanceData and metricsData
     const mismatchBygroup = findMismatchesByGroup(finalAttendanceData, metricsData);
-    // console.log(mismatchBygroup);
 
     return mismatchBygroup;
   } catch (error) {
@@ -108,14 +116,28 @@ const getData = async (month, year) => {
   }
 };
 
+// Safe data combination function to prevent inconsistent results
+const safelyCombineData = (mysqlData, redisData) => {
+  // If Redis data is empty or null, use only MySQL data
+  if (!redisData || !redisData.length) {
+    return mysqlData;
+  }
+  
+  // If MySQL data is empty but Redis has data, use only Redis data
+  if (!mysqlData.length && redisData.length) {
+    // You may need to format Redis data to match MySQL format
+    // This depends on your combineAttendanceData implementation
+    return redisData;
+  }
+  
+  // Both have data, use the original combine function
+  return combineAttendanceData(mysqlData, redisData);
+};
+
 exports.getDashboardReports = [authenticateJWT, isAdmin, async (req, res) => {
   try {
-    // console.log("my report is called");
-
     // Get parameters from the request query
     let { month, year, reportType, options, dateRange, employeeType } = req.query;
-    // console.log("date range i  print " + options);
-    // month year is look like 4 and 2025 in numeric formated format
 
     // Convert to numbers to ensure proper handling
     const numericMonth = parseInt(month, 10);
@@ -130,48 +152,41 @@ exports.getDashboardReports = [authenticateJWT, isAdmin, async (req, res) => {
       });
     }
 
-
-    // 1. First, get all reporting groups from settings
-    const reportingGroups = await db.ReportingGroup.findAll();
-
-    // Extract group IDs for service call
-    const reportingGroupIds = reportingGroups.map(group => group.id);
-
-    // Extract group names for the desired array of strings
-    const reportingGroupNames = reportingGroups.map(group => group.dataValues.groupname);
-
-    if (!reportingGroupIds || reportingGroupIds.length === 0) {
-      console.warn("No reporting groups found. Using empty array.");
+    // Check if requested date is in the future
+    const currentDate = new Date();
+    const requestedDate = new Date(numericYear, numericMonth - 1, 1);
+    
+    if (requestedDate > currentDate) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot generate reports for future dates"
+      });
     }
+
+    // 1. Get all reporting groups and employee details
+    const reportingGroups = await db.ReportingGroup.findAll();
+    const reportingGroupNames = reportingGroups.map(group => group.dataValues.groupname);
     const employeeDetails = await getAllEmployeesService();
 
-
-    // 2. Get employees attendance data for the month by reporting groups from mysql
+    // 2. Get attendance data from both sources
     const attendanceData = await attendanceService.getEmployeesAttendanceByMonthAndGroup(
       reportingGroupNames || [],
       numericYear,
-      numericMonth
+      numericMonth,
+      employeeDetails
     );
 
-    // get teh attedence data from the redis db also
     const redisData = await getRedisAttendanceData(numericYear, numericMonth, reportingGroupNames);
 
-    // combine and get the final attendence data for comparision.
-    const finalAttendanceData = combineAttendanceData(attendanceData, redisData);
+    // Safely combine the data to prevent inconsistencies
+    const finalAttendanceData = safelyCombineData(attendanceData, redisData);
+
     // 3. Get metrics data for the month
     const metricsData = await metricsService.fetchMetricsForMonthYear(numericMonth, numericYear);
-
-    // Initialize empty metrics if not returned
-    if (!metricsData) {
-      console.warn(`No metrics data returned for month ${month}, year ${year}`);
-    }
-
 
     // Initialize result variable
     let reportData = null;
 
-    // console.log(dateRange);
-    // console.log(reportType);
     // Main switch case for report types
     switch (reportType) {
       case 'Net Hr':
@@ -224,6 +239,7 @@ exports.getDashboardReports = [authenticateJWT, isAdmin, async (req, res) => {
         message: reportData.message
       });
     }
+    
     // Send the file for download
     try {
       // Determine the content type based on the file extension
@@ -260,7 +276,6 @@ exports.getDashboardReports = [authenticateJWT, isAdmin, async (req, res) => {
       });
     }
     
-
   } catch (error) {
     console.error("Error generating dashboard reports:", error);
     return res.status(500).json({

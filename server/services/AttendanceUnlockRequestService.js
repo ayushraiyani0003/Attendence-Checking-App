@@ -140,13 +140,13 @@ class AttendanceUnlockRequestService {
    * @returns {Promise<Object>} - The request details or null if not found
    */
   async getRequestById(requestId) {
-    console.log("called");
+    // console.log("called");
     
     try {
       const request = await AttendanceUnlockRequest.findByPk(requestId);
       
       if (!request) {
-        console.log(`No request found with ID: ${requestId}`);
+        // console.log(`No request found with ID: ${requestId}`);
         return null;
       }
       

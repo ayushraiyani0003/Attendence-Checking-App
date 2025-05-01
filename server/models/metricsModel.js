@@ -5,9 +5,9 @@ const Metrics = sequelize.define(
   "metrics",
   {
     metric_id: {
-      type: DataTypes.STRING(50), // Increased length to accommodate "YYYY-MM_PUNCHCODE" format
+      type: DataTypes.STRING(50),
       primaryKey: true,
-      autoIncrement: false // Not using autoIncrement for string ids
+      autoIncrement: false,
     },
     punch_code: {
       type: DataTypes.STRING(30),
@@ -18,26 +18,26 @@ const Metrics = sequelize.define(
       allowNull: false,
     },
     network_hours: {
-      type: DataTypes.TEXT, // Changed to TEXT to handle JSON strings
+      type: DataTypes.TEXT,
       allowNull: true,
       get() {
-        const value = this.getDataValue('network_hours');
+        const value = this.getDataValue("network_hours");
         return value ? JSON.parse(value) : [];
       },
       set(value) {
-        this.setDataValue('network_hours', JSON.stringify(value));
-      }
+        this.setDataValue("network_hours", JSON.stringify(value));
+      },
     },
     overtime_hours: {
-      type: DataTypes.TEXT, // Changed to TEXT to handle JSON strings
+      type: DataTypes.TEXT,
       allowNull: true,
       get() {
-        const value = this.getDataValue('overtime_hours');
+        const value = this.getDataValue("overtime_hours");
         return value ? JSON.parse(value) : [];
       },
       set(value) {
-        this.setDataValue('overtime_hours', JSON.stringify(value));
-      }
+        this.setDataValue("overtime_hours", JSON.stringify(value));
+      },
     },
     created_at: {
       type: DataTypes.DATE,
@@ -54,6 +54,18 @@ const Metrics = sequelize.define(
     tableName: "metrics",
     timestamps: true,
     underscored: true,
+    indexes: [
+      {
+        name: "idx_punchcode_monthyear",
+        unique: true, // Make it false if duplicates are allowed
+        fields: ["punch_code", "month_year"],
+      },
+      {
+        name: "idx_punchcode",
+        unique: true, // Make it false if duplicates are allowed
+        fields: ["punch_code"],
+      },
+    ],
   }
 );
 

@@ -285,28 +285,33 @@ async function handleAttendanceDataRetrieval(ws, data) {
     const userRole = data.user.role || data.user.userRole;
     const userGroup = data.user.userReportingGroup;
 
-    // console.log(`Fetching attendance data for ${month}/${year}, User: ${data.user.name}, Role: ${userRole}, Group: ${userGroup}`);
-    // get the all groups for admin
+    console.time("Total time");
+
+    console.time("getAllGroupNames");
     const forAdminGroups = await getAllGroupNames();
-    // console.log(forAdminGroups);
+    console.timeEnd("getAllGroupNames");
 
-    // If user is not admin, only allow access to their own group
-    const group = userRole === 'admin' ? forAdminGroups : userGroup;
+    // Use data.group for admin (which contains the selected group from frontend)
+    // Use userGroup for normal users
+    const group = userRole === 'admin' ? data.group : userGroup;
 
-    // Fetch employees in the selected group
+    console.time("getEmployeesByGroup");
     const employees = await getEmployeesByGroup(group);
-    // console.log(`Found ${employees.length} employees in group ${group}`);
+    console.timeEnd("getEmployeesByGroup");
 
-    // Fetch attendance data from MySQL
+    console.time("getEmployeesAttendanceByMonthAndGroup");
     const mysqlAttendanceData = await getEmployeesAttendanceByMonthAndGroup(group, year, month);
+    console.timeEnd("getEmployeesAttendanceByMonthAndGroup");
 
-    // Fetch attendance data from Redis
+    console.time("getRedisAttendanceData");
     const redisAttendanceData = await getRedisAttendanceData(year, month, group);
+    console.timeEnd("getRedisAttendanceData");
 
-    // Get lock status
+    console.time("getLockStatusDataForMonthAndGroup");
     const lockStatusData = await getLockStatusDataForMonthAndGroup(group, month, year);
+    console.timeEnd("getLockStatusDataForMonthAndGroup");
 
-    // Compare Redis and MySQL data
+    console.time("redisMysqlAttendanceCompare");
     const finalAttendanceData = await redisMysqlAttendanceCompare(
       employees,
       redisAttendanceData,
@@ -314,12 +319,16 @@ async function handleAttendanceDataRetrieval(ws, data) {
       group,
       lockStatusData
     );
+    console.timeEnd("redisMysqlAttendanceCompare");
 
-    // Get the metrics attendance and send to the clients
+    console.time("fetchMetricsForMonthYear");
     const metricsAttendanceData = await fetchMetricsForMonthYear(month, year);
-    const metricsAttendanceDifference = await processAllMetricsData(metricsAttendanceData, finalAttendanceData);
+    console.timeEnd("fetchMetricsForMonthYear");
 
-    // Send the final attendance data back to the client
+    console.time("processAllMetricsData");
+    const metricsAttendanceDifference = await processAllMetricsData(metricsAttendanceData, finalAttendanceData);
+    console.timeEnd("processAllMetricsData");
+
     ws.send(JSON.stringify({
       action: 'attendanceData',
       userRole,
@@ -329,8 +338,8 @@ async function handleAttendanceDataRetrieval(ws, data) {
       lockStatus: lockStatusData,
       metricsAttendanceDifference: metricsAttendanceDifference
     }));
-    
-    // console.log(`Successfully sent attendance data for ${group}, ${month}/${year}`);
+
+    console.timeEnd("Total time");
   } catch (error) {
     console.error('Error retrieving attendance data:', error);
     ws.send(JSON.stringify({
@@ -340,18 +349,7 @@ async function handleAttendanceDataRetrieval(ws, data) {
     }));
   }
 }
-// Helper function to handle metrics fetching with caching
-async function fetchMetricsPromise(month, year) {
-  const cacheKey = `${month}-${year}`;
-  const now = Date.now();
-  
-  if (!cache.metricsData.data[cacheKey] || (now - (cache.metricsData.timestamp[cacheKey] || 0) > cache.metricsData.ttl)) {
-    cache.metricsData.data[cacheKey] = await fetchMetricsForMonthYear(month, year);
-    cache.metricsData.timestamp[cacheKey] = now;
-  }
-  
-  return cache.metricsData.data[cacheKey];
-}
+
 
 /**
  * Handles attendance update requests

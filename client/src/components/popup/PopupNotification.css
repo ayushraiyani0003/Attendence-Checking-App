@@ -12,14 +12,14 @@
     --color-gray-800: #1f2937;
     --color-gray-900: #111827;
     
-    /* Light blue colors */
-    --color-light-blue-50: #f0f9ff;
-    --color-light-blue-100: #e0f2fe;
-    --color-light-blue-200: #bae6fd;
-    --color-light-blue-300: #7dd3fc;
-    --color-light-blue-400: #38bdf8;
-    --color-light-blue-500: #0ea5e9;
-    --color-light-blue-600: #0284c7;
+    /* Red colors - renamed but keeping the light-blue class names for compatibility */
+    --color-light-blue-50: #fff5f5;
+    --color-light-blue-100: #fed7d7;
+    --color-light-blue-200: #fdbaba;
+    --color-light-blue-300: #fc7d7d;
+    --color-light-blue-400: #f83838;
+    --color-light-blue-500: #e90e0e;
+    --color-light-blue-600: #c70202;
     
     --spacing-1: 0.25rem;
     --spacing-2: 0.5rem;
@@ -304,11 +304,11 @@
     display: inline-block;
     transition: background-color var(--transition-normal);
     color: var(--color-light-blue-600);
-    background-color: rgba(56, 189, 248, 0.1);
+    background-color: rgba(233, 14, 14, 0.1);
 }
 
 .contact-highlight:hover {
-    background-color: rgba(56, 189, 248, 0.2);
+    background-color: rgba(233, 14, 14, 0.2);
 }
 
 /* Footer */
@@ -373,7 +373,7 @@
     font-size: 0.75rem;
     font-weight: 600;
     margin-top: var(--spacing-2);
-    background-color: rgba(56, 189, 248, 0.1);
+    background-color: rgba(233, 14, 14, 0.1);
     color: var(--color-light-blue-600);
 }
 
@@ -388,15 +388,15 @@
 @keyframes pulse {
     0% {
         transform: scale(0.95);
-        box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.4);
+        box-shadow: 0 0 0 0 rgba(233, 14, 14, 0.4);
     }
     70% {
         transform: scale(1);
-        box-shadow: 0 0 0 6px rgba(56, 189, 248, 0);
+        box-shadow: 0 0 0 6px rgba(233, 14, 14, 0);
     }
     100% {
         transform: scale(0.95);
-        box-shadow: 0 0 0 0 rgba(56, 189, 248, 0);
+        box-shadow: 0 0 0 0 rgba(233, 14, 14, 0);
     }
 }
 

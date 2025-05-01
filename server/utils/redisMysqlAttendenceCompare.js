@@ -1,76 +1,72 @@
 async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysqlAttendanceData, groups, lockStatusData) {
   try {
-    // Convert the Redis data into a lookup object for easier comparison
-    const redisAttendanceLookup = {};
-    
-    redisAttendanceData.forEach((item) => {
+    // Create a Map for faster employee lookups instead of using .find()
+    const employeesMap = new Map();
+    for (const emp of employees) {
+      employeesMap.set(emp.employee_id, emp);
+    }
+
+    // Create a Map for lock status lookups
+    const lockStatusMap = new Map();
+    if (lockStatusData && Array.isArray(lockStatusData)) {
+      for (const entry of lockStatusData) {
+        const key = `${entry.date}_${entry.reporting_group}`;
+        lockStatusMap.set(key, entry.status);
+      }
+    }
+
+    // Create a more efficient Redis data lookup structure with a single combined key
+    const redisDataMap = new Map();
+    for (const item of redisAttendanceData) {
       const { date, group, data } = item;
       
-      // Parse the data string into JSON if it's a string
+      // Parse data only once
       const parsedData = typeof data === 'string' ? JSON.parse(data) : data;
       
-      // Store data with multiple date formats to ensure matching
+      // Get both date formats at once
       const redisDate = new Date(date);
-      // Format 1: "DD/MM/YYYY"
       const formattedDate1 = `${redisDate.getDate()}/${redisDate.getMonth() + 1}/${redisDate.getFullYear()}`;
-      // Format 2: "YYYY-MM-DD" (ISO format)
-      const formattedDate2 = date;
       
-      [formattedDate1, formattedDate2].forEach(dateFormat => {
-        if (!redisAttendanceLookup[dateFormat]) {
-          redisAttendanceLookup[dateFormat] = {};
+      // Store data with employee_id as part of the key for direct lookup
+      if (Array.isArray(parsedData)) {
+        for (const empData of parsedData) {
+          // Use composite keys for both date formats
+          redisDataMap.set(`${formattedDate1}_${group}_${empData.employee_id}`, empData);
+          redisDataMap.set(`${date}_${group}_${empData.employee_id}`, empData);
         }
-        
-        if (!redisAttendanceLookup[dateFormat][group]) {
-          redisAttendanceLookup[dateFormat][group] = {};
-        }
-        
-        // Handle array of employee records by mapping them by employee_id
-        if (Array.isArray(parsedData)) {
-          parsedData.forEach(empData => {
-            redisAttendanceLookup[dateFormat][group][empData.employee_id] = empData;
-          });
-        } else {
-          // If it's a single record
-          redisAttendanceLookup[dateFormat][group][parsedData.employee_id] = parsedData;
-        }
-      });
-    });
+      } else if (parsedData && parsedData.employee_id) {
+        redisDataMap.set(`${formattedDate1}_${group}_${parsedData.employee_id}`, parsedData);
+        redisDataMap.set(`${date}_${group}_${parsedData.employee_id}`, parsedData);
+      }
+    }
 
-    // Prepare the final result to send
+    // Pre-calculate the day names for all attendance dates to avoid repetitive calculations
+    const dayNameCache = new Map();
+    
+    // Create a map of employee records to avoid searching the array repeatedly
+    const employeeRecordsMap = new Map();
     const finalAttendanceData = [];
 
-    // Loop through each employee's attendance data from MySQL
+    // Process MySQL attendance data in a single pass
     for (const employee of mysqlAttendanceData) {
       const { employee_id, attendance_date, shift_type, network_hours, overtime_hours, comment, reporting_group } = employee;
       
-      // Check if reporting_group is undefined and set a default if needed
-      const group = reporting_group || 'default';  // Use 'default' if group is not provided
+      // Fast lookup instead of find
+      const employeeDetails = employeesMap.get(employee_id);
+      if (!employeeDetails) continue;
 
-      // Find the employee details by matching employee_id
-      const employeeDetails = employees.find((emp) => emp.employee_id === employee_id);
-      if (!employeeDetails) {
-        continue; // Skip if employee details are not found
-      }
+      // Skip inactive employees
+      if (employeeDetails.status === "inactive") continue;
 
-      // NEW: Check for inactive status or if attendance is after resignation date
-      if (employeeDetails.status === "inactive") {
-        continue; // Skip inactive employees
-      }
-
-      // NEW: Check resignation date
-      if (employeeDetails.resign_date !== null && employeeDetails.resign_date !== undefined) {
+      // Check resignation date efficiently
+      if (employeeDetails.resign_date) {
         const resignDate = new Date(employeeDetails.resign_date);
         const attendanceDate = new Date(attendance_date);
-        
-        // Skip if attendance date is after resignation date
-        if (attendanceDate > resignDate) {
-          continue;
-        }
+        if (attendanceDate > resignDate) continue;
       }
 
-      // Initialize employee record if it doesn't exist
-      let employeeRecord = finalAttendanceData.find((record) => record.id === employee_id);
+      // Get or create employee record using map for faster lookups
+      let employeeRecord = employeeRecordsMap.get(employee_id);
       if (!employeeRecord) {
         employeeRecord = {
           id: employee_id,
@@ -81,26 +77,31 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
           department: employeeDetails.department,
           attendance: [],
         };
+        employeeRecordsMap.set(employee_id, employeeRecord);
         finalAttendanceData.push(employeeRecord);
       }
 
-      // For each attendance, check if Redis has data to replace MySQL data
       const attendanceDate = new Date(attendance_date);
-      // Format the date as "DD/M/YYYY"
       const formattedDate = `${attendanceDate.getDate()}/${attendanceDate.getMonth() + 1}/${attendanceDate.getFullYear()}`;
-      // Also try ISO format
-      const isoFormattedDate = attendance_date;
       
-      const dayOfWeek = attendanceDate.toLocaleString('en-us', { weekday: 'long' });
+      // Use the dayNameCache to avoid recalculating day names
+      let dayOfWeek = dayNameCache.get(attendance_date);
+      if (!dayOfWeek) {
+        dayOfWeek = attendanceDate.toLocaleString('en-us', { weekday: 'long' });
+        dayNameCache.set(attendance_date, dayOfWeek);
+      }
 
-      // Determine lock status dynamically
-      const lockStatus = determineLockStatus(
-        attendance_date, 
-        reporting_group || 'default', 
-        lockStatusData
-      );
+      // Determine lock status using the map - handle string or Date object
+      // Make sure we have a proper date string format for lookup
+      const dateStr = typeof attendance_date === 'string' ? 
+        attendance_date.split('T')[0] : // Handle ISO string format
+        new Date(attendance_date).toISOString().split('T')[0]; // Handle Date object or other formats
+      
+      const lockKey = `${dateStr}_${reporting_group || 'default'}`;
+      const lockStatus = lockStatusMap.get(lockKey) || 'unlocked';
 
-      let attendanceRecord = {
+      // Create the attendance record once
+      const attendanceRecord = {
         date: formattedDate,
         day: dayOfWeek,
         netHR: network_hours !== undefined && network_hours !== null ? network_hours : 0,
@@ -110,85 +111,65 @@ async function redisMysqlAttendanceCompare(employees, redisAttendanceData, mysql
         comment: comment || '',
       };
       
-      let redisDataFound = false;
+      // Check Redis data for all groups at once
+      let redisData = null;
+      const group = reporting_group || 'default';
       
-      // Try different date formats and check for all group names in the 'groups' array
-      const possibleDates = [formattedDate, isoFormattedDate];
+      // First try with the exact group
+      redisData = redisDataMap.get(`${formattedDate}_${group}_${employee_id}`) || 
+                 redisDataMap.get(`${attendance_date}_${group}_${employee_id}`);
       
-      for (const dateFormat of possibleDates) {
+      // If not found, try with other groups only if necessary
+      if (!redisData && groups.length > 1) {
         for (const groupName of groups) {
-          // Check if Redis data exists for this date, group, and employee_id
-          if (
-            redisAttendanceLookup[dateFormat] && 
-            redisAttendanceLookup[dateFormat][groupName] &&
-            redisAttendanceLookup[dateFormat][groupName][employee_id]
-          ) {
-            const redisData = redisAttendanceLookup[dateFormat][groupName][employee_id];
-            
-            // NEW: Skip this record if the employee is inactive in Redis data
-            if (redisData.status === "inactive") {
-              redisDataFound = true;
-              continue;
-            }
-            
-            // Replace MySQL data with Redis data if available
-            // FIX: Use nullish coalescing instead of logical OR to handle 0 values correctly
-            attendanceRecord = {
-              date: formattedDate,
-              day: dayOfWeek,
-              // Fix: Check if property exists and is not null, rather than relying on truthy/falsy
-              netHR: redisData.network_hours !== undefined && redisData.network_hours !== null ? 
-                     parseFloat(redisData.network_hours) : attendanceRecord.netHR,
-              otHR: redisData.overtime_hours !== undefined && redisData.overtime_hours !== null ? 
-                   parseFloat(redisData.overtime_hours) : attendanceRecord.otHR,
-              dnShift: redisData.shift_type || attendanceRecord.dnShift,
-              comment: redisData.comment || attendanceRecord.comment,
-              // Preserve the original lock status from MySQL/determination
-              lock_status: lockStatus,
-            };
-            
-            redisDataFound = true;
-            break;
-          }
+          if (groupName === group) continue; // Skip already checked group
+          
+          redisData = redisDataMap.get(`${formattedDate}_${groupName}_${employee_id}`) || 
+                     redisDataMap.get(`${attendance_date}_${groupName}_${employee_id}`);
+          
+          if (redisData) break;
         }
-        if (redisDataFound) break;
+      }
+      
+      // Update the attendance record with Redis data if found
+      if (redisData) {
+        // Skip if the employee is inactive in Redis
+        if (redisData.status === "inactive") continue;
+        
+        // Update only the fields that exist in Redis data
+        if (redisData.network_hours !== undefined && redisData.network_hours !== null) {
+          attendanceRecord.netHR = parseFloat(redisData.network_hours);
+        }
+        
+        if (redisData.overtime_hours !== undefined && redisData.overtime_hours !== null) {
+          attendanceRecord.otHR = parseFloat(redisData.overtime_hours);
+        }
+        
+        if (redisData.shift_type) {
+          attendanceRecord.dnShift = redisData.shift_type;
+        }
+        
+        if (redisData.comment) {
+          attendanceRecord.comment = redisData.comment;
+        }
       }
       
       // Add attendance record to the employee's attendance array
       employeeRecord.attendance.push(attendanceRecord);
     }
 
-    // NEW: Final check to remove any employee records with empty attendance arrays
-    // This handles cases where all attendance records were filtered out
-    const filteredAttendanceData = finalAttendanceData.filter(
-      (employee) => employee.attendance && employee.attendance.length > 0
-    );
+    // Filter out employees with no attendance in one pass (no need for separate filter)
+    const resultData = finalAttendanceData.filter(emp => emp.attendance.length > 0);
 
     // Return the final result
     return {
       action: 'attendanceData',
-      attendance: filteredAttendanceData,
+      attendance: resultData,
     };
   } catch (error) {
     console.error('Error comparing Redis and MySQL attendance:', error);
     throw error;
   }
-}
-
-// Helper function to determine lock status
-function determineLockStatus(date, group, lockStatusData) {
-  // Handle case where lockStatusData might be undefined or null
-  if (!lockStatusData || !Array.isArray(lockStatusData)) {
-    return 'unlocked';
-  }
-
-  const formattedInputDate = new Date(date).toISOString().split('T')[0];
-  const lockEntry = lockStatusData.find(entry => 
-    entry.date === formattedInputDate && 
-    entry.reporting_group === group
-  );
-
-  return lockEntry ? lockEntry.status : 'unlocked';
 }
 
 module.exports = { redisMysqlAttendanceCompare };
