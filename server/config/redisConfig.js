@@ -2,7 +2,7 @@ const { createClient } = require('@redis/client');
 
 // Create Redis client instance with options
 const redisClient = createClient({
-  url: 'redis://127.0.0.1:6379',
+  url: 'redis://127.0.0.1:6378',
 });
 
 // Event listeners for Redis client
