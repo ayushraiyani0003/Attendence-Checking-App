@@ -21,26 +21,44 @@ async function getEmployeesByGroup(groups) {
   }
 }
 
-// New function to get all attendance for employees in the selected group and month
+/**
+ * Get employee attendance data by month and group with employee details included
+ * @param {Array} groups - Array of reporting groups to filter by
+ * @param {number} year - Year to filter attendance
+ * @param {number} month - Month to filter attendance (1-12)
+ * @param {Array} employeesInput - Optional pre-loaded employee data
+ * @returns {Array} Attendance records with employee reporting group and punch code
+ */
 async function getEmployeesAttendanceByMonthAndGroup(groups, year, month, employeesInput = null) {
   try {
     // Use provided employees if available, otherwise fetch them
     const employees = employeesInput || await getEmployeesByGroup(groups);
+    // console.log(`Processing ${employees.length} employees`);
 
-    // Extract employee IDs and build group map in a single loop
+    // Extract employee IDs and build employee data maps in a single loop
     const employeeIds = [];
     const employeeGroupMap = {};
+    const employeePunchCodeMap = {};
     
     for (const employee of employees) {
+      if (!employee.employee_id) {
+        console.log(`Warning: Found employee without employee_id`, employee);
+        continue;
+      }
+      
       employeeIds.push(employee.employee_id);
-      employeeGroupMap[employee.employee_id] = employee.reporting_group;
+      employeeGroupMap[employee.employee_id] = employee.reporting_group || null;
+      employeePunchCodeMap[employee.employee_id] = employee.punch_code || null;
     }
+
+    // console.log(`Found ${employeeIds.length} valid employee IDs for attendance lookup`);
 
     // Calculate the start and end dates for the month
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);
-
-    console.log('Fetching attendance data from database...');
+    
+    // console.log(`Fetching attendance data from ${startDate.toISOString().split('T')[0]} to ${endDate.toISOString().split('T')[0]}`);
+    
     const attendanceData = await Attendance.findAll({
       where: {
         employee_id: {
@@ -52,6 +70,7 @@ async function getEmployeesAttendanceByMonthAndGroup(groups, year, month, employ
         },
       },
       indexHints: [{ type: 'USE', values: ['attendance_date_employee_id_idx'] }],
+      // Uncomment if you need to restrict columns
       attributes: [
         'attendance_id',
         'employee_id',
@@ -62,20 +81,24 @@ async function getEmployeesAttendanceByMonthAndGroup(groups, year, month, employ
       ]
     });
 
-    // Add reporting_group to each attendance record
-    const attendanceWithGroups = attendanceData.map(attendance => {
+
+    // Add reporting_group and punch_code to each attendance record
+    const attendanceWithDetails = attendanceData.map(attendance => {
+      const employeeId = attendance.employee_id;
       const attendanceObj = attendance.get({ plain: true });
-      attendanceObj.reporting_group = employeeGroupMap[attendance.employee_id] || null;
+      
+      // Add employee details to attendance record
+      attendanceObj.reporting_group = employeeGroupMap[employeeId] || null;
+      attendanceObj.punch_code = employeePunchCodeMap[employeeId] || null;
+      
       return attendanceObj;
     });
-
-    return attendanceWithGroups;
+    return attendanceWithDetails;
   } catch (error) {
     console.error("Error fetching attendance data:", error);
     throw error;
   }
 }
-
 
 // get all employee details for selected dates from redis for update the data.
 async function updateEmployeesDetailsFromRedis(redisAttendanceData, user) {

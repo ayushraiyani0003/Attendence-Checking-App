@@ -5,7 +5,7 @@
  * @param {Array} metricsData - Metrics data with punch codes and hours
  * @returns {Array} Array of objects with reporting groups and their mismatch counts
  */
-function findMismatchesByGroup(finalAttendanceData, metricsData) {
+function findMismatchesByGroup(finalAttendanceData, metricsData, propMonth, propYear) {
   // Initialize results object to track mismatches by group
   const mismatchesByGroup = {};
   
@@ -14,8 +14,6 @@ function findMismatchesByGroup(finalAttendanceData, metricsData) {
   currentDate.setHours(0, 0, 0, 0);
   
   // Current year and month for filtering
-  const currentYear = currentDate.getFullYear();
-  const currentMonth = currentDate.getMonth() + 1; // JavaScript months are 0-indexed
   
   // Create a map of valid punch codes and their metrics data
   // Group by punch_code and month_year for faster lookups
@@ -83,7 +81,7 @@ function findMismatchesByGroup(finalAttendanceData, metricsData) {
     const [year, month, day] = attendance.attendance_date.split('-').map(Number);
     
     // Skip if not in the current month and year
-    if (year !== currentYear || month !== currentMonth) {
+    if (propYear === year || propMonth === month) {
       continue;
     }
     
