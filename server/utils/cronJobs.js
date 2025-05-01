@@ -17,7 +17,7 @@ const redisClient = require("../config/redisConfig"); // Adjust path to your Red
 const Session = require("../models/session");
 
 // Cron job to generate attendance at 12:00 AM every day
-cron.schedule("0 25 4 * * *", () => {
+cron.schedule("0 30 0 * * *", () => {
     console.log("Generating daily attendance...");
     try {
         generateDailyAttendance();
