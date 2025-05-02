@@ -43,19 +43,22 @@ const AuthenticatedLayout = ({ user }) => {
     const { logout } = useContext(AuthContext);
 
     useEffect(() => {
-        const currentDate = new Date();
-        // Get the first day of the current month, then subtract 1 day to get last day of previous month
-        const previousMonthDate = new Date(
-            currentDate.getFullYear(),
-            currentDate.getMonth() - 1,
-            1
-        );
-
-        const options = { year: "numeric", month: "short" };
-        const formattedDate = previousMonthDate.toLocaleDateString(
-            "en-US",
-            options
-        );
+        // Get the current date
+        const now = new Date();
+        const dayOfMonth = now.getDate();
+        
+        // If we're on the 1st day of the month, select the previous month
+        // Otherwise, select the current month
+        const targetDate = dayOfMonth === 1 
+            ? new Date(now.getFullYear(), now.getMonth() - 1, 1) // Previous month if it's the 1st
+            : new Date(now.getFullYear(), now.getMonth(), 1);     // Current month otherwise
+        
+        const months = [
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+        ];
+        
+        const formattedDate = `${months[targetDate.getMonth()]} ${targetDate.getFullYear()}`;
         setSelectedMonthYear(formattedDate);
 
         // Initialize selected group with the first available group from user

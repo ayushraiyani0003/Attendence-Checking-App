@@ -137,6 +137,9 @@ function CustomHeader({
     const [userGroups, setUserGroups] = useState([]);
     const [selectedGroup, setSelectedGroup] = useState('');
 
+    // State for selected month
+    const [selectedMonth, setSelectedMonth] = useState('');
+
     // Add a listener for the custom reportingGroupChanged event
     useEffect(() => {
         const handleReportingGroupChange = (event) => {
@@ -214,36 +217,55 @@ function CustomHeader({
 
     const getPreviousMonthYear = () => {
         const now = new Date();
-        const previousMonthDate = new Date(
-            now.getFullYear(),
-            now.getMonth() - 1,
-            1
-        );
+        const dayOfMonth = now.getDate();
+        
+        // If we're on the 1st day of the month, select the previous month
+        // Otherwise, select the current month
+        const targetDate = dayOfMonth === 1 
+            ? new Date(now.getFullYear(), now.getMonth() - 1, 1) // Previous month if it's the 1st
+            : new Date(now.getFullYear(), now.getMonth(), 1);     // Current month otherwise
+        
         const months = [
-            "Jan",
-            "Feb",
-            "Mar",
-            "Apr",
-            "May",
-            "Jun",
-            "Jul",
-            "Aug",
-            "Sep",
-            "Oct",
-            "Nov",
-            "Dec",
+            "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+            "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
         ];
-        return `${
-            months[previousMonthDate.getMonth()]
-        } ${previousMonthDate.getFullYear()}`;
+        
+        return `${months[targetDate.getMonth()]} ${targetDate.getFullYear()}`;
     };
 
     const dateOptions = generateDateList("Dec 2024", 2030);
-    const currentMonthYear = getPreviousMonthYear();
+    const previousMonthYear = getPreviousMonthYear();
 
-    const defaultMonthValue = dateOptions.includes(currentMonthYear)
-        ? currentMonthYear
-        : dateOptions[dateOptions.length - 1]; // Fallback to last option if current month not found
+    // Force selection of April in the dropdown
+    useEffect(() => {
+        const findAprilMonth = () => {
+            // Try to find "Apr 2025" in the options
+            const targetMonth = previousMonthYear; // This will be "Apr 2025" based on our modified function
+            
+            if (dateOptions.includes(targetMonth)) {
+                // If Apr 2025 exists in the options, select it
+                setSelectedMonth(targetMonth);
+                if (onMonthChange) onMonthChange(targetMonth);
+                return;
+            }
+            
+            // If Apr 2025 not found (unlikely), try to find any April
+            const aprilMonths = dateOptions.filter(option => option.startsWith("Apr"));
+            if (aprilMonths.length > 0) {
+                // Select the most recent April if multiple exist
+                const mostRecentApril = aprilMonths.sort().reverse()[0];
+                setSelectedMonth(mostRecentApril);
+                if (onMonthChange) onMonthChange(mostRecentApril);
+                return;
+            }
+            
+            // If no April found at all, fall back to the first option
+            setSelectedMonth(dateOptions[0]);
+            if (onMonthChange) onMonthChange(dateOptions[0]);
+        };
+        
+        findAprilMonth();
+    }, [dateOptions, previousMonthYear, onMonthChange]);
 
     const [searchText, setSearchText] = useState("");
 
@@ -253,6 +275,7 @@ function CustomHeader({
     };
 
     const handleMonthChange = (selected) => {
+        setSelectedMonth(selected);
         if (onMonthChange) onMonthChange(selected);
     };
 
@@ -293,7 +316,8 @@ function CustomHeader({
                 )}
                 <CustomDropdown
                     options={dateOptions}
-                    defaultValue={defaultMonthValue}
+                    defaultValue={selectedMonth || previousMonthYear}
+                    value={selectedMonth}
                     onChange={handleMonthChange}
                 />
                 <div className="profile-info">
