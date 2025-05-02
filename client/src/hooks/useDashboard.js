@@ -140,7 +140,7 @@ export const useReportSettings = (currentMonth) => {
         const newEndDate = new Date(dateRange.endDate);
         newEndDate.setDate(newEndDate.getDate() + 1); // Add one day (not hour)
         adjustedDateRange.endDate = newEndDate;
-      }
+      }  
 
       // Call the getReports service with the adjusted date range
       const result = await getReports(
