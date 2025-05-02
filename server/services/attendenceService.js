@@ -77,7 +77,8 @@ async function getEmployeesAttendanceByMonthAndGroup(groups, year, month, employ
         'attendance_date',
         'shift_type',
         'network_hours',
-        'overtime_hours'
+        'overtime_hours',
+        'comment'
       ]
     });
 
