@@ -60,6 +60,7 @@ const AuthenticatedLayout = ({ user }) => {
         
         const formattedDate = `${months[targetDate.getMonth()]} ${targetDate.getFullYear()}`;
         setSelectedMonthYear(formattedDate);
+        console.log("AuthenticatedLayout: Initial month set to", formattedDate);
 
         // Initialize selected group with the first available group from user
         if (user && user.userReportingGroup) {
@@ -83,7 +84,14 @@ const AuthenticatedLayout = ({ user }) => {
     };
 
     const handleMonthChange = (monthYear) => {
+        console.log("AuthenticatedLayout: Month changed to", monthYear);
         setSelectedMonthYear(monthYear);
+        
+        // Dispatch a custom event to ensure all components are aware of the change
+        const event = new CustomEvent('monthYearChanged', { 
+            detail: { monthYear } 
+        });
+        window.dispatchEvent(event);
     };
 
     const handleGroupChange = (group) => {
@@ -96,6 +104,7 @@ const AuthenticatedLayout = ({ user }) => {
         logout();
         navigate("/login");
     };
+
 
     return (
         <NotificationProvider>

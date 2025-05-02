@@ -5,6 +5,7 @@ import logo from "../../assets/sunchaser.png";
 import "./CustomHeader.css";
 import { useHeaderNotificationClient } from "../../hooks/useNotification";
 
+// Modified CustomDropdown component
 const CustomDropdown = ({ options, defaultValue, onChange, value }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [selectedOption, setSelectedOption] = useState(
@@ -21,12 +22,14 @@ const CustomDropdown = ({ options, defaultValue, onChange, value }) => {
         }
     }, [value, options]);
 
+    // Update when defaultValue changes
     useEffect(() => {
         if (defaultValue && options.includes(defaultValue) && !value) {
             setSelectedOption(defaultValue);
         }
     }, [defaultValue, options, value]);
 
+    // Handle clicks outside the dropdown
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (
@@ -41,6 +44,7 @@ const CustomDropdown = ({ options, defaultValue, onChange, value }) => {
             document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    // Scroll to selected option when dropdown opens
     useEffect(() => {
         if (
             isOpen &&
@@ -59,6 +63,7 @@ const CustomDropdown = ({ options, defaultValue, onChange, value }) => {
     }, [isOpen]);
 
     const handleSelect = (option) => {
+        console.log("Selected option:", option); // For debugging
         setSelectedOption(option);
         setIsOpen(false);
         if (onChange) onChange(option);
@@ -114,7 +119,6 @@ const CustomDropdown = ({ options, defaultValue, onChange, value }) => {
         </div>
     );
 };
-
 function CustomHeader({
     toggleSidebar,
     user,
@@ -139,6 +143,11 @@ function CustomHeader({
 
     // State for selected month
     const [selectedMonth, setSelectedMonth] = useState('');
+    
+    // Debug log to track state changes
+    useEffect(() => {
+        console.log("selectedMonth changed:", selectedMonth);
+    }, [selectedMonth]);
 
     // Add a listener for the custom reportingGroupChanged event
     useEffect(() => {
@@ -236,36 +245,16 @@ function CustomHeader({
     const dateOptions = generateDateList("Dec 2024", 2030);
     const previousMonthYear = getPreviousMonthYear();
 
-    // Force selection of April in the dropdown
+    // Set default month only once when component mounts
     useEffect(() => {
-        const findAprilMonth = () => {
-            // Try to find "Apr 2025" in the options
-            const targetMonth = previousMonthYear; // This will be "Apr 2025" based on our modified function
-            
-            if (dateOptions.includes(targetMonth)) {
-                // If Apr 2025 exists in the options, select it
-                setSelectedMonth(targetMonth);
-                if (onMonthChange) onMonthChange(targetMonth);
-                return;
-            }
-            
-            // If Apr 2025 not found (unlikely), try to find any April
-            const aprilMonths = dateOptions.filter(option => option.startsWith("Apr"));
-            if (aprilMonths.length > 0) {
-                // Select the most recent April if multiple exist
-                const mostRecentApril = aprilMonths.sort().reverse()[0];
-                setSelectedMonth(mostRecentApril);
-                if (onMonthChange) onMonthChange(mostRecentApril);
-                return;
-            }
-            
-            // If no April found at all, fall back to the first option
-            setSelectedMonth(dateOptions[0]);
-            if (onMonthChange) onMonthChange(dateOptions[0]);
-        };
+        const initialMonth = previousMonthYear;
+        console.log("Setting initial month:", initialMonth);
         
-        findAprilMonth();
-    }, [dateOptions, previousMonthYear, onMonthChange]);
+        if (!selectedMonth && dateOptions.includes(initialMonth)) {
+            setSelectedMonth(initialMonth);
+            if (onMonthChange) onMonthChange(initialMonth);
+        }
+    }, []); // Empty dependency array to run only once
 
     const [searchText, setSearchText] = useState("");
 
@@ -275,6 +264,7 @@ function CustomHeader({
     };
 
     const handleMonthChange = (selected) => {
+        console.log("Month change handler called with:", selected);
         setSelectedMonth(selected);
         if (onMonthChange) onMonthChange(selected);
     };
@@ -308,15 +298,15 @@ function CustomHeader({
                     <div className="group-dropdown-container">
                         <CustomDropdown
                             options={userGroups}
-                            defaultValue={userGroups.length > 1 ? userGroups[1] : userGroups[0]} // Default to first actual group, not "All Groups"
-                            value={selectedGroup} // Pass the controlled value
+                            defaultValue={userGroups.length > 1 ? userGroups[1] : userGroups[0]} 
+                            value={selectedGroup}
                             onChange={handleGroupChange}
                         />
                     </div>
                 )}
                 <CustomDropdown
                     options={dateOptions}
-                    defaultValue={selectedMonth || previousMonthYear}
+                    defaultValue={previousMonthYear}
                     value={selectedMonth}
                     onChange={handleMonthChange}
                 />
