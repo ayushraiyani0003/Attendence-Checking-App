@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import eyeShow from "../../assets/eyeshow.svg";
 import eyeHide from "../../assets/eyehide.svg";
+import sunchaserLogo from "../../assets/sunchaser original.png";
 import './LoginForm.css';
 
 // Updated InputField component with show/hide password functionality
@@ -85,7 +86,7 @@ const LoginForm = ({ onLogin }) => {
     <div className="login-form-container">
       <div className="login-form">
         <div className="login-logo">
-          <img src="https://sunchaser.in/wp-content/uploads/2021/09/Sunchaser-Structure-Logo-2.png" alt="Logo" className="logo" />
+          <img src={sunchaserLogo} alt="Logo" className="logo" />
         </div>
         <h2>Login</h2>
         <form onSubmit={handleSubmit}>
