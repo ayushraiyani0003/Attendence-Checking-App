@@ -104,7 +104,6 @@ export const useReportSettings = (currentMonth) => {
   }, [availableReportOptions]);
 
   // Generate report function
-  // Updated generateReport function in useReportSettings hook
   const generateReport = useCallback(async () => {
     setIsLoading(true);
 
@@ -126,41 +125,32 @@ export const useReportSettings = (currentMonth) => {
         return;
       }
 
-      // Call the getReports service
-      // This will handle the file download without opening a new tab
-      setDateRange(currentRange => {
-        // If start date is null, just return the current range
-        if (!currentRange.startDate) {
-          return currentRange;
-        }
+      // Create a copy of the date range with adjusted dates for the download
+      let adjustedDateRange = { ...dateRange };
+      
+      // If startDate exists, add 1 day to it properly
+      if (dateRange.startDate) {
+        const newStartDate = new Date(dateRange.startDate);
+        newStartDate.setDate(newStartDate.getDate() + 1); // Add one day (not hour)
+        adjustedDateRange.startDate = newStartDate;
+      }
+      
+      // If endDate exists, add 1 day to it properly
+      if (dateRange.endDate) {
+        const newEndDate = new Date(dateRange.endDate);
+        newEndDate.setDate(newEndDate.getDate() + 1); // Add one day (not hour)
+        adjustedDateRange.endDate = newEndDate;
+      }
 
-        // Create a new date object to avoid mutating the original
-        const newStartDate = new Date(currentRange.startDate);
-
-        // Add 1 hour
-        newStartDate.setHours(newStartDate.getHours() + 1);
-
-        // Return the updated range
-        return {
-          ...currentRange,
-          startDate: newStartDate
-        };
-      });
-
+      // Call the getReports service with the adjusted date range
       const result = await getReports(
         selectedReportType,
         options,
         month,
         year,
-        dateRange,
+        adjustedDateRange, // Use the adjusted date range with +1 day
         employeeType
       );
-
-      // The getReports function now returns an object with success status
-      // console.log(`[useReportSettings] Report download result:`, result);
-
-      // No need to open in new tab anymore
-      // The getReports function handles the file download directly
 
     } catch (error) {
       console.error('[useReportSettings] Error generating report:', error);
