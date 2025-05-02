@@ -1,4 +1,3 @@
-// AttendanceChangeLogService.js
 const db = require('../models'); // Adjust path to your models directory
 const { Op } = require('sequelize');
 const redisClient = require('../config/redisConfig'); // Adjust path to your Redis client
@@ -42,63 +41,175 @@ class AttendanceChangeLogService {
    */
   async createLogFromRedis(changeData) {
     try {
+      // Debug the input data
+      console.log('Processing log with ID:', changeData.log_id);
+      
+      // Extract all fields with proper defaults
       const {
-        log_id,
-        employee_id,
-        attendance_date, 
-        update_datetime,
-        field,
-        new_value,
-        old_value,
-        changed_by_id,
-        changed_by,
-        employee_punch_code
+        log_id = '',
+        employee_id = null,
+        attendance_date = null, 
+        update_datetime = null,
+        field = '',
+        new_value = '',
+        old_value = '',
+        changed_by_id = null,
+        changed_by = '',
+        employee_punch_code = ''
       } = changeData;
   
-      // Ensure log_id is not too long (max 20 chars for our DB schema)
-      const truncatedLogId = log_id.substring(0, 19);
-  
-      // Format date properly (ensure it's YYYY-MM-DD)
-      let formattedDate = attendance_date;
-      if (typeof attendance_date === 'string') {
-        const dateParts = attendance_date.split('-');
-        if (dateParts.length === 3) {
-          const [year, month, day] = dateParts;
-          formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      // Validate required fields
+      if (!log_id) {
+        throw new Error('Missing log_id');
+      }
+      
+      if (!employee_id) {
+        throw new Error('Missing employee_id');
+      }
+      
+      if (!attendance_date) {
+        throw new Error('Missing attendance_date');
+      }
+      
+      if (!update_datetime) {
+        throw new Error('Missing update_datetime');
+      }
+      
+      if (!field) {
+        throw new Error('Missing field');
+      }
+      
+      if (!changed_by_id) {
+        throw new Error('Missing changed_by_id');
+      }
+      
+      if (!changed_by) {
+        throw new Error('Missing changed_by');
+      }
+      
+      // Convert and validate employee_id (must be integer)
+      let parsedEmployeeId;
+      try {
+        parsedEmployeeId = parseInt(employee_id, 10);
+        if (isNaN(parsedEmployeeId)) {
+          throw new Error(`Invalid employee_id: ${employee_id}`);
         }
+      } catch (err) {
+        throw new Error(`Invalid employee_id format: ${err.message}`);
+      }
+      
+      // Convert and validate changed_by_id (must be integer)
+      let parsedChangedById;
+      try {
+        parsedChangedById = parseInt(changed_by_id, 10);
+        if (isNaN(parsedChangedById)) {
+          throw new Error(`Invalid changed_by_id: ${changed_by_id}`);
+        }
+      } catch (err) {
+        throw new Error(`Invalid changed_by_id format: ${err.message}`);
+      }
+      
+      // Format date properly (ensure it's YYYY-MM-DD)
+      let formattedDate;
+      
+      if (attendance_date instanceof Date) {
+        formattedDate = attendance_date.toISOString().split('T')[0];
+      } else if (typeof attendance_date === 'string') {
+        // Try parsing as ISO date first
+        const dateObj = new Date(attendance_date);
+        if (!isNaN(dateObj.getTime())) {
+          formattedDate = dateObj.toISOString().split('T')[0];
+        } else {
+          // Try manual parsing for format YYYY-M-D
+          const dateParts = attendance_date.split('-');
+          if (dateParts.length === 3) {
+            const [year, month, day] = dateParts;
+            if (!isNaN(parseInt(year)) && !isNaN(parseInt(month)) && !isNaN(parseInt(day))) {
+              formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+            } else {
+              throw new Error(`Cannot parse date parts: ${attendance_date}`);
+            }
+          } else {
+            throw new Error(`Invalid date format: ${attendance_date}`);
+          }
+        }
+      } else {
+        throw new Error(`Unsupported date type: ${typeof attendance_date}`);
+      }
+      
+      // Validate formatted date
+      if (!formattedDate || !/^\d{4}-\d{2}-\d{2}$/.test(formattedDate)) {
+        throw new Error(`Invalid formatted date: ${formattedDate}`);
+      }
+      
+      // Ensure update_datetime is a valid Date
+      let formattedDateTime;
+      
+      if (update_datetime instanceof Date) {
+        formattedDateTime = update_datetime;
+      } else if (typeof update_datetime === 'string') {
+        const dateTimeObj = new Date(update_datetime);
+        if (isNaN(dateTimeObj.getTime())) {
+          throw new Error(`Invalid datetime string: ${update_datetime}`);
+        }
+        formattedDateTime = dateTimeObj;
+      } else if (typeof update_datetime === 'number') {
+        // Handle timestamp
+        const dateTimeObj = new Date(update_datetime);
+        if (isNaN(dateTimeObj.getTime())) {
+          throw new Error(`Invalid timestamp: ${update_datetime}`);
+        }
+        formattedDateTime = dateTimeObj;
+      } else {
+        throw new Error(`Unsupported datetime type: ${typeof update_datetime}`);
       }
   
       // Get employee name, department, and reporting group from Employee model
-      let employeeName = null;
-      let employeeDepartment = null;
-      let employeeReportingGroup = null;
+      let employeeName = '';
+      let employeeDepartment = '';
+      let employeeReportingGroup = '';
+      
       try {
-        const employee = await this.Employee.findByPk(employee_id);
+        const employee = await this.Employee.findByPk(parsedEmployeeId);
         if (employee) {
-          employeeName = employee.name || null;
-          employeeDepartment = employee.department || null;
-          employeeReportingGroup = employee.reporting_group || null;
+          employeeName = employee.name || '';
+          employeeDepartment = employee.department || '';
+          employeeReportingGroup = employee.reporting_group || '';
+        } else {
+          console.warn(`Employee with ID ${parsedEmployeeId} not found`);
         }
       } catch (err) {
         console.warn(`Couldn't fetch employee data: ${err.message}`);
       }
   
-      // Create the log in database
-      return await this.AttendanceChangeLog.create({
-        log_id: truncatedLogId,
-        employee_id,
+      // Prepare the record with proper type handling and ensure all fields meet DB constraints
+      const record = {
+        log_id: String(log_id).substring(0, 254), // Ensure it fits in VARCHAR(255)
+        employee_id: parsedEmployeeId,
         attendance_date: formattedDate,
-        update_datetime,
-        field,
-        new_value: new_value || '',
-        old_value: old_value || '',
-        changed_by_id,
-        changed_by,
-        employee_punch_code: employee_punch_code || '',
-        employee_name: employeeName || '',
-        employee_department: employeeDepartment || '',
-        employee_reporting_group: employeeReportingGroup || ''
-      });
+        update_datetime: formattedDateTime,
+        field: String(field).substring(0, 49), // Ensure it fits in VARCHAR(50)
+        new_value: new_value !== null && new_value !== undefined ? String(new_value) : '',
+        old_value: old_value !== null && old_value !== undefined ? String(old_value) : '',
+        changed_by_id: parsedChangedById,
+        changed_by: String(changed_by).substring(0, 99), // Ensure it fits in VARCHAR(100)
+        employee_punch_code: employee_punch_code !== null && employee_punch_code !== undefined ? 
+                            String(employee_punch_code).substring(0, 49) : '',
+        employee_name: String(employeeName || '').substring(0, 99), // Ensure it fits in VARCHAR(100)
+        employee_department: String(employeeDepartment || ''),
+        employee_reporting_group: String(employeeReportingGroup || '')
+      };
+      
+      console.log('Creating log with data:', JSON.stringify({
+        log_id: record.log_id,
+        employee_id: record.employee_id,
+        attendance_date: record.attendance_date,
+        field: record.field,
+        changed_by_id: record.changed_by_id
+      }));
+      
+      // Create the log in database
+      return await this.AttendanceChangeLog.create(record);
     } catch (error) {
       throw new Error(`Error creating attendance change log: ${error.message}`);
     }
@@ -110,51 +221,107 @@ class AttendanceChangeLogService {
    */
   async syncLogsFromRedis() {
     try {
+      console.log('Starting Redis to MySQL log sync...');
+      
       // Get all logs from Redis
       const logsJson = await this.client.get(this.logsKey);
       if (!logsJson) {
+        console.log('No logs found in Redis');
         return 0; // No logs to sync
       }
 
-      const logs = JSON.parse(logsJson);
-      if (!logs.length) {
+      let logs;
+      try {
+        logs = JSON.parse(logsJson);
+        if (!Array.isArray(logs)) {
+          console.warn(`Redis data is not an array, got ${typeof logs}`);
+          return 0;
+        }
+        
+        if (!logs.length) {
+          console.log('Redis logs array is empty');
+          return 0;
+        }
+        
+        console.log(`Found ${logs.length} logs in Redis`);
+      } catch (err) {
+        console.error('Error parsing Redis logs JSON:', err.message);
         return 0;
       }
 
+      // Debug the first log to understand structure
+      if (logs.length > 0) {
+        console.log('Sample log structure:', JSON.stringify(logs[0], null, 2));
+      }
+
       // Process logs in batches to prevent memory issues
-      const batchSize = 50;
+      const batchSize = 10; // Reduced batch size for debugging
       let syncedCount = 0;
+      let failedCount = 0;
       
       for (let i = 0; i < logs.length; i += batchSize) {
         const batch = logs.slice(i, i + batchSize);
+        console.log(`Processing batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(logs.length/batchSize)}`);
         
-        // Get existing log IDs to avoid duplicates
-        const logIds = batch.map(log => log.log_id.substring(0, 19));
-        const existingLogIds = await this.AttendanceChangeLog.findAll({
-          attributes: ['log_id'],
-          where: {
-            log_id: {
-              [Op.in]: logIds
+        // Ensure all logs have log_id
+        const validLogs = batch.filter(log => log && log.log_id);
+        
+        if (validLogs.length === 0) {
+          console.log('No valid logs in this batch');
+          continue;
+        }
+        
+        try {
+          // Get existing log IDs to avoid duplicates
+          const logIds = validLogs.map(log => String(log.log_id).substring(0, 254));
+          
+          const existingLogIds = await this.AttendanceChangeLog.findAll({
+            attributes: ['log_id'],
+            where: {
+              log_id: {
+                [Op.in]: logIds
+              }
+            }
+          }).then(records => records.map(record => record.log_id));
+          
+          console.log(`Found ${existingLogIds.length} existing logs in database`);
+  
+          // Filter out logs that already exist in the database
+          const newLogs = validLogs.filter(log => !existingLogIds.includes(String(log.log_id).substring(0, 254)));
+          
+          console.log(`Found ${newLogs.length} new logs to sync`);
+          
+          // Insert new logs
+          for (const log of newLogs) {
+            try {
+              await this.createLogFromRedis(log);
+              syncedCount++;
+              console.log(`Successfully synced log: ${log.log_id}`);
+            } catch (err) {
+              failedCount++;
+              console.error(`Failed to sync log ${log.log_id}: ${err.message}`);
+              // Optionally log more details about the failed log
+              console.error('Failed log data:', JSON.stringify({
+                log_id: log.log_id,
+                employee_id: log.employee_id,
+                attendance_date: log.attendance_date,
+                update_datetime: log.update_datetime,
+                field: log.field,
+                changed_by_id: log.changed_by_id,
+                changed_by: log.changed_by
+              }));
             }
           }
-        }).then(records => records.map(record => record.log_id));
-
-        // Filter out logs that already exist in the database
-        const newLogs = batch.filter(log => !existingLogIds.includes(log.log_id.substring(0, 19)));
-        
-        // Insert new logs
-        for (const log of newLogs) {
-          try {
-            await this.createLogFromRedis(log);
-            syncedCount++;
-          } catch (err) {
-            console.error(`Failed to sync log ${log.log_id}: ${err.message}`);
-          }
+        } catch (batchError) {
+          console.error(`Error processing batch: ${batchError.message}`);
+          // Continue with next batch instead of failing completely
         }
       }
 
+      console.log(`Redis to MySQL log sync completed. Synced ${syncedCount} logs, failed ${failedCount} logs.`);
       return syncedCount;
     } catch (error) {
+      console.error(`Error in syncLogsFromRedis: ${error.message}`);
       throw new Error(`Error syncing logs from Redis: ${error.message}`);
     }
   }
@@ -213,7 +380,6 @@ class AttendanceChangeLogService {
    */
   async getLogsByDateRange(startDate, endDate) {
     try {
-      
       const rows = await this.AttendanceChangeLog.findAndCountAll({
         where: {
           attendance_date: {
@@ -223,7 +389,7 @@ class AttendanceChangeLogService {
         order: [['attendance_date', 'DESC'], ['update_datetime', 'DESC']]
       });
       
-      return rows
+      return rows;
     } catch (error) {
       throw new Error(`Error fetching logs for date range: ${error.message}`);
     }

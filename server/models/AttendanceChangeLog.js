@@ -5,7 +5,7 @@ module.exports = (sequelize, DataTypes) => {
     "AttendanceChangeLog",
     {
       log_id: {
-        type: DataTypes.STRING(20),
+        type: DataTypes.STRING(255),
         primaryKey: true,
         allowNull: false,
       },
