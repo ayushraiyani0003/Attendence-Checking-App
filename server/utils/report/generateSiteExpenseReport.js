@@ -588,7 +588,6 @@ function populateDataRows(worksheet, employees, attendanceMap, metricsMap, dateH
   let totalOTCount = 0;
 
   employees.forEach((employee, index) => {
-    console.log(index);
     
     // Handle both Sequelize objects and plain objects
     const employeeData = employee.dataValues || employee;
