@@ -39,13 +39,24 @@ async function generateSiteExpenseReport(finalAttendanceData, metricsData, month
   }
 
   // Create date headers based on date range
-  const dateHeaders = generateDateHeaders(startDate, endDate);
+  const { dateHeaders, dateToWeekdayMap } = generateDateHeaders(startDate, endDate);
 
   // Continue with report generation...
   setupWorksheetHeaders(worksheet, dateHeaders, option);
 
-  // Aggregate data
-  const { totals, siteCountTotal, netHrCountTotal, otHrCountTotal } = populateDataRows(worksheet, filteredEmployees, attendanceMap, metricsMap, dateHeaders, option);
+  // Aggregate data - now passing dateToWeekdayMap
+  const { totals, siteCountTotal, netHrCountTotal, otHrCountTotal } = populateDataRows(
+    worksheet, 
+    filteredEmployees, 
+    attendanceMap, 
+    metricsMap, 
+    dateHeaders, 
+    dateToWeekdayMap, 
+    option
+  );
+
+  // Highlight header cells for Wednesday dates
+  highlightWednesdayHeaders(worksheet, dateHeaders, dateToWeekdayMap, option);
 
   // Add totals row with the aggregated data
   addTotalsRow(worksheet, filteredEmployees.length, dateHeaders.length, option, totals, siteCountTotal, netHrCountTotal, otHrCountTotal);
@@ -77,6 +88,146 @@ async function generateSiteExpenseReport(finalAttendanceData, metricsData, month
     message: `Site expense report generated successfully for employees.`,
     type: 'file'
   };
+}
+
+function highlightWednesdayHeaders(worksheet, dateHeaders, dateToWeekdayMap, option) {
+  const headerRow = option === "count" ? 1 : 2;
+  let colIndex = 5; // Start after employee details columns
+
+  for (const dateHeader of dateHeaders) {
+    if (dateToWeekdayMap[dateHeader] === 3) { // 3 is Wednesday
+      if (option === "count") {
+        worksheet.getCell(headerRow, colIndex).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+        };
+        colIndex += 1;
+      } else if (option === "hours") {
+        worksheet.getCell(headerRow, colIndex).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+        };
+        worksheet.getCell(headerRow, colIndex + 1).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+        };
+        colIndex += 2;
+      } else if (option === "remarks") {
+        worksheet.getCell(headerRow, colIndex).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+        };
+        worksheet.getCell(headerRow, colIndex + 1).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+        };
+        worksheet.getCell(headerRow, colIndex + 2).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+        };
+        colIndex += 3;
+      } else if (option === "count,remarks") {
+        worksheet.getCell(headerRow, colIndex).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+        };
+        worksheet.getCell(headerRow, colIndex + 1).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+        };
+        colIndex += 2;
+      } else {
+        // Default to hours and remarks
+        worksheet.getCell(headerRow, colIndex).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+        };
+        worksheet.getCell(headerRow, colIndex + 1).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+        };
+        worksheet.getCell(headerRow, colIndex + 2).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+        };
+        colIndex += 3;
+      }
+    } else {
+      // Skip non-Wednesday columns
+      if (option === "count") {
+        colIndex += 1;
+      } else if (option === "hours") {
+        colIndex += 2;
+      } else if (option === "remarks") {
+        colIndex += 3;
+      } else if (option === "count,remarks") {
+        colIndex += 2;
+      } else {
+        colIndex += 3;
+      }
+    }
+  }
+  
+  // If there are merged header cells in row 1, also color those for Wednesdays
+  if (option !== "count") {
+    colIndex = 5; // Reset to start after employee details columns
+    for (const dateHeader of dateHeaders) {
+      if (dateToWeekdayMap[dateHeader] === 3) { // 3 is Wednesday
+        if (option === "hours") {
+          worksheet.getCell(1, colIndex).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+          };
+          colIndex += 2;
+        } else if (option === "remarks") {
+          worksheet.getCell(1, colIndex).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+          };
+          colIndex += 3;
+        } else if (option === "count,remarks") {
+          worksheet.getCell(1, colIndex).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+          };
+          colIndex += 2;
+        } else {
+          // Default to hours and remarks
+          worksheet.getCell(1, colIndex).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+          };
+          colIndex += 3;
+        }
+      } else {
+        // Skip non-Wednesday columns
+        if (option === "hours") {
+          colIndex += 2;
+        } else if (option === "remarks") {
+          colIndex += 3;
+        } else if (option === "count,remarks") {
+          colIndex += 2;
+        } else {
+          colIndex += 3;
+        }
+      }
+    }
+  }
 }
 
 /**
@@ -216,9 +367,13 @@ function getHoursFromMetricsJson(hoursJson, date) {
  * @param {string} comment - Comment text
  * @returns {boolean} - True if comment starts with "Site"
  */
-function isSiteComment(comment) {
+function isSiteComment(comment, networkHours, overtimeHours) {
   if (!comment) return false;
-  return comment.toLowerCase().trim().startsWith("site");
+  return (
+    comment && 
+    comment.startsWith('Site') && 
+    (networkHours > 0 || overtimeHours > 0)
+  );
 }
 
 /**
@@ -228,11 +383,16 @@ function isSiteComment(comment) {
  * @returns {Array} - Filtered employees
  */
 function filterEmployeesWithSiteVisits(employees, attendanceData) {
-  // Create a map of employeeIds with site visits for faster lookup
+  // Create a map of employeeIds with valid site visits for faster lookup
   const employeesSiteMap = {};
 
   for (const attendance of attendanceData) {
-    if (isSiteComment(attendance.comment)) {
+    // Check if comment starts with "Site" and has valid hours
+    if (
+      attendance.comment && 
+      attendance.comment.startsWith('Site') && 
+      (attendance.network_hours > 0 || attendance.overtime_hours > 0)
+    ) {
       employeesSiteMap[attendance.employee_id] = true;
     }
   }
@@ -283,14 +443,20 @@ async function createEmptyReport(option, startDate, endDate, employeeType, workb
  */
 function generateDateHeaders(startDate, endDate) {
   const dateHeaders = [];
+  const dateToWeekdayMap = {}; // Add this map to track which dates are Wednesdays
   const currentDate = startDate.clone();
 
   while (currentDate.isSameOrBefore(endDate)) {
-    dateHeaders.push(currentDate.format('DD-MM'));
+    const dateStr = currentDate.format('DD-MM');
+    dateHeaders.push(dateStr);
+    
+    // Store day of week (0-6, where 0 is Sunday and 3 is Wednesday)
+    dateToWeekdayMap[dateStr] = currentDate.day();
+    
     currentDate.add(1, 'day');
   }
 
-  return dateHeaders;
+  return { dateHeaders, dateToWeekdayMap };
 }
 
 /**
@@ -314,7 +480,7 @@ function setupWorksheetHeaders(worksheet, dateHeaders, option) {
       headerRow.push(`${date} Net Hr`);
       headerRow.push(`${date} OT Hr`);
       headerRow.push(`${date} Remarks`);
-    } else if (option === "count and remarks") {
+    } else if (option === "count,remarks") {
       headerRow.push(`${date} Count`);
       headerRow.push(`${date} Remarks`);
     } else {
@@ -349,7 +515,7 @@ function setupWorksheetHeaders(worksheet, dateHeaders, option) {
     } else if (option === "remarks") {
       worksheet.mergeCells(1, colIndex, 1, colIndex + 2);
       colIndex += 3;
-    } else if (option === "count and remarks") {
+    } else if (option === "count,remarks") {
       worksheet.mergeCells(1, colIndex, 1, colIndex + 1);
       colIndex += 2;
     } else {
@@ -371,7 +537,7 @@ function setupWorksheetHeaders(worksheet, dateHeaders, option) {
         subHeaderRow.push('Net Hr');
         subHeaderRow.push('OT Hr');
         subHeaderRow.push('Remarks');
-      } else if (option === "count and remarks") {
+      } else if (option === "count,remarks") {
         subHeaderRow.push('Count');
         subHeaderRow.push('Remarks');
       } else {
@@ -402,9 +568,9 @@ function setupWorksheetHeaders(worksheet, dateHeaders, option) {
  * @param {string} option - Report option
  * @returns {Object} - Object with totals for each date and overall
  */
-function populateDataRows(worksheet, employees, attendanceMap, metricsMap, dateHeaders, option) {
+function populateDataRows(worksheet, employees, attendanceMap, metricsMap, dateHeaders, dateToWeekdayMap, option) {
   // Determine starting row based on option (accounting for headers)
-  const startRow = option === "count" ? 2 : 3;
+  const startRow = option === "count" ? 1 : 2;
 
   // Initialize totals for each date
   const dateTotals = {
@@ -422,6 +588,8 @@ function populateDataRows(worksheet, employees, attendanceMap, metricsMap, dateH
   let totalOTCount = 0;
 
   employees.forEach((employee, index) => {
+    console.log(index);
+    
     // Handle both Sequelize objects and plain objects
     const employeeData = employee.dataValues || employee;
     const employeeId = employeeData.employee_id;
@@ -444,10 +612,11 @@ function populateDataRows(worksheet, employees, attendanceMap, metricsMap, dateH
     const employeeMetrics = metricsMap[punchCode];
 
     // Process each date
+    let colIndex = 5; // Start after employee details columns
     for (const dateHeader of dateHeaders) {
       // Get attendance for this employee on this date
       const attendance = attendanceMap[employeeId] ? attendanceMap[employeeId][dateHeader] : null;
-      const hasSiteVisit = attendance && isSiteComment(attendance.comment);
+      const hasSiteVisit = attendance && isSiteComment(attendance.comment, attendance.network_hours, attendance.overtime_hours);
 
       // Initialize date totals if not exists
       if (!dateTotals.netHours[dateHeader]) dateTotals.netHours[dateHeader] = 0;
@@ -483,6 +652,16 @@ function populateDataRows(worksheet, employees, attendanceMap, metricsMap, dateH
           employeeOTCountTotal += 1;
           dateTotals.otCount[dateHeader] += 1;
         }
+        
+        // Apply Wednesday highlighting
+        if (dateToWeekdayMap[dateHeader] === 3) { // 3 is Wednesday in moment.js
+          worksheet.getCell(startRow + index, colIndex).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+          };
+        }
+        colIndex += 1;
       } else if (option === "hours") {
         if (hasSiteVisit) {
           employeeNetHoursTotal += netHours;
@@ -507,6 +686,21 @@ function populateDataRows(worksheet, employees, attendanceMap, metricsMap, dateH
         // Only show hours when there's a site comment
         rowData.push(hasSiteVisit ? netHours : 0);
         rowData.push(hasSiteVisit ? otHours : 0);
+        
+        // Apply Wednesday highlighting
+        if (dateToWeekdayMap[dateHeader] === 3) { // 3 is Wednesday
+          worksheet.getCell(startRow + index, colIndex).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+          };
+          worksheet.getCell(startRow + index, colIndex + 1).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+          };
+        }
+        colIndex += 2;
       } else if (option === "remarks") {
         if (hasSiteVisit) {
           employeeNetHoursTotal += netHours;
@@ -532,7 +726,27 @@ function populateDataRows(worksheet, employees, attendanceMap, metricsMap, dateH
         rowData.push(hasSiteVisit ? netHours : 0);
         rowData.push(hasSiteVisit ? otHours : 0);
         rowData.push(remark);
-      } else if (option === "count and remarks") {
+        
+        // Apply Wednesday highlighting
+        if (dateToWeekdayMap[dateHeader] === 3) { // 3 is Wednesday
+          worksheet.getCell(startRow + index, colIndex).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+          };
+          worksheet.getCell(startRow + index, colIndex + 1).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+          };
+          worksheet.getCell(startRow + index, colIndex + 2).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+          };
+        }
+        colIndex += 3;
+      } else if (option === "count,remarks") {
         if (hasSiteVisit) {
           employeeSiteCountTotal += 1;
           dateTotals.siteCount[dateHeader] += 1;
@@ -550,6 +764,21 @@ function populateDataRows(worksheet, employees, attendanceMap, metricsMap, dateH
 
         rowData.push(hasSiteVisit ? 1 : 0);
         rowData.push(remark);
+        
+        // Apply Wednesday highlighting
+        if (dateToWeekdayMap[dateHeader] === 3) { // 3 is Wednesday
+          worksheet.getCell(startRow + index, colIndex).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+          };
+          worksheet.getCell(startRow + index, colIndex + 1).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+          };
+        }
+        colIndex += 2;
       } else {
         // Default to hours and remarks
         if (hasSiteVisit) {
@@ -573,9 +802,30 @@ function populateDataRows(worksheet, employees, attendanceMap, metricsMap, dateH
         }
 
         // Only show hours and remarks when there's a site comment
-        rowData.push(hasSiteVisit ? netHours : 0);
-        rowData.push(hasSiteVisit ? otHours : 0);
+        rowData.push(hasSiteVisit ? netHours : null);
+        rowData.push(hasSiteVisit ? otHours : null);
         rowData.push(remark);
+        
+        // Apply Wednesday highlighting
+        if (dateToWeekdayMap[dateHeader] === 3) { // 3 is Wednesday
+
+          worksheet.getCell(startRow + index, colIndex).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+          };
+          worksheet.getCell(startRow + index, colIndex + 1).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+          };
+          worksheet.getCell(startRow + index, colIndex + 2).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+          };
+        }
+        colIndex += 3;
       }
     }
 
@@ -604,7 +854,7 @@ function populateDataRows(worksheet, employees, attendanceMap, metricsMap, dateH
 
     // Apply conditional formatting for discrepancies if metrics data exists
     if ((option === "hours" || option === "remarks" || option === "hours and remarks") && employeeMetrics) {
-      applyConditionalFormatting(worksheet, rowIndex, employeeId, employeeMetrics, attendanceMap, dateHeaders, option);
+      applyConditionalFormatting(worksheet, rowIndex, employeeId, employeeMetrics, attendanceMap, dateHeaders, dateToWeekdayMap, option);
     }
   });
 
@@ -632,9 +882,10 @@ function populateDataRows(worksheet, employees, attendanceMap, metricsMap, dateH
  * @param {Object} employeeMetrics - Employee metrics data
  * @param {Object} attendanceMap - Map of attendance data
  * @param {Array} dateHeaders - Date headers
+ * @param {Object} dateToWeekdayMap - Map of dates to weekdays
  * @param {string} option - Report option
  */
-function applyConditionalFormatting(worksheet, rowIndex, employeeId, employeeMetrics, attendanceMap, dateHeaders, option) {
+function applyConditionalFormatting(worksheet, rowIndex, employeeId, employeeMetrics, attendanceMap, dateHeaders, dateToWeekdayMap, option) {
   let colIndex = 5; // Start after employee details columns
 
   for (const dateHeader of dateHeaders) {
@@ -642,21 +893,29 @@ function applyConditionalFormatting(worksheet, rowIndex, employeeId, employeeMet
 
     // Get attendance for this employee on this date
     const attendance = attendanceMap[employeeId] ? attendanceMap[employeeId][dateHeader] : null;
-    const hasSiteVisit = attendance && isSiteComment(attendance.comment);
+    const hasSiteVisit = attendance && isSiteComment(attendance.comment, attendance.network_hours, attendance.overtime_hours);
 
     if (attendance && hasSiteVisit) {
       const expectedNetHours = getHoursFromMetricsJson(employeeMetrics.network_hours, day);
       const expectedOTHours = getHoursFromMetricsJson(employeeMetrics.overtime_hours, day);
 
-      const netHours = attendance.network_hours || 0;
-      const otHours = attendance.overtime_hours || 0;
+      const netHours = attendance.network_hours;
+      const otHours = attendance.overtime_hours;
 
       // Check for net hours discrepancy
       if (Math.abs(netHours - expectedNetHours) > 0.25) {
         worksheet.getCell(rowIndex, colIndex).fill = {
           type: 'pattern',
           pattern: 'solid',
-          fgColor: { argb: 'FFFFC0CB' } // Light red/pink
+          fgColor: { argb: 'ffffc0cb' } // Light red/pink
+        };
+      } 
+      // Apply Wednesday highlighting (prioritize discrepancy highlighting)
+      else if (dateToWeekdayMap[dateHeader] === 3) {
+        worksheet.getCell(rowIndex, colIndex).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFFFCF' } // Light red/pink
         };
       }
 
@@ -668,6 +927,71 @@ function applyConditionalFormatting(worksheet, rowIndex, employeeId, employeeMet
           fgColor: { argb: 'FFFFC0CB' } // Light red/pink
         };
       }
+      // Apply Wednesday highlighting (prioritize discrepancy highlighting)
+      else if (dateToWeekdayMap[dateHeader] === 3) {
+        worksheet.getCell(rowIndex, colIndex + 1).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+        };
+      }
+      
+      // For remarks column, only apply Wednesday highlighting (no discrepancy check)
+      if ((option === "remarks" || option === "hours and remarks" || option === "") && dateToWeekdayMap[dateHeader] === 3) {
+        worksheet.getCell(rowIndex, colIndex + 2).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+        };
+      }
+    } 
+    // If no site visit, still apply Wednesday highlighting
+    else if (dateToWeekdayMap[dateHeader] === 3) {
+      if (option === "count") {
+        worksheet.getCell(rowIndex, colIndex).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+        };
+      } else if (option === "hours") {
+        worksheet.getCell(rowIndex, colIndex).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+        };
+        worksheet.getCell(rowIndex, colIndex + 1).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+        };
+      } else if (option === "remarks" || option === "") {
+        worksheet.getCell(rowIndex, colIndex).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+        };
+        worksheet.getCell(rowIndex, colIndex + 1).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+        };
+        worksheet.getCell(rowIndex, colIndex + 2).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+        };
+      } else if (option === "count,remarks") {
+        worksheet.getCell(rowIndex, colIndex).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+        };
+        worksheet.getCell(rowIndex, colIndex + 1).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFFFFCF' } // Light red/pink
+        };
+      }
     }
 
     // Advance column index based on option
@@ -675,6 +999,10 @@ function applyConditionalFormatting(worksheet, rowIndex, employeeId, employeeMet
       colIndex += 2; // Net Hr + OT Hr
     } else if (option === "remarks") {
       colIndex += 3; // Net Hr + OT Hr + Remarks
+    } else if (option === "count") {
+      colIndex += 1; // Just count
+    } else if (option === "count,remarks") {
+      colIndex += 2; // Count + Remarks
     } else {
       colIndex += 3; // Default: Net Hr + OT Hr + Remarks
     }
@@ -706,7 +1034,7 @@ function addTotalsRow(worksheet, employeeCount, dateCount, option, totals, siteC
       totalsRow.push(totals.dailyNetHours[dateHeader] || 0);
       totalsRow.push(totals.dailyOTHours[dateHeader] || 0);
       totalsRow.push(''); // No total for remarks
-    } else if (option === "count and remarks") {
+    } else if (option === "count,remarks") {
       totalsRow.push(totals.dailySiteCount[dateHeader] || 0);
       totalsRow.push(''); // No total for remarks
     } else {
@@ -822,7 +1150,7 @@ function styleWorksheet(worksheet, option, dateCount) {
       worksheet.getColumn(colIndex + 1).width = 10;
       worksheet.getColumn(colIndex + 2).width = 30;
       colIndex += 3;
-    } else if (option === "count and remarks") {
+    } else if (option === "count,remarks") {
       worksheet.getColumn(colIndex).width = 10;
       worksheet.getColumn(colIndex + 1).width = 30;
       colIndex += 2;
