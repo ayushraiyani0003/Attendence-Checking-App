@@ -142,6 +142,8 @@ export const useReportSettings = (currentMonth) => {
         adjustedDateRange.endDate = newEndDate;
       }  
 
+      console.log(dateRange);
+      
       // Call the getReports service with the adjusted date range
       const result = await getReports(
         selectedReportType,

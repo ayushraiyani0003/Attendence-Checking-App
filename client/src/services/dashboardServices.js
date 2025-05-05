@@ -36,6 +36,8 @@ export const getReports = async (reportType, options, month, year, dateRange, em
       dateRange,
       employeeType
     };
+
+    console.log(dateRange);
         
     // Make the API request with the correct response type for file downloads
     const response = await axios.get(`${API_URL}/dashboard/reports`, {
