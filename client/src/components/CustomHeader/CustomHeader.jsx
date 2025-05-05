@@ -146,7 +146,7 @@ function CustomHeader({
     
     // Debug log to track state changes
     useEffect(() => {
-        console.log("selectedMonth changed:", selectedMonth);
+        // console.log("selectedMonth changed:", selectedMonth);
     }, [selectedMonth]);
 
     // Add a listener for the custom reportingGroupChanged event
@@ -155,7 +155,7 @@ function CustomHeader({
             const newGroup = event.detail.group;
             if (newGroup && (userGroups.includes(newGroup) || newGroup === ALL_GROUPS)) {
                 setSelectedGroup(newGroup);
-                console.log("Header updated with new group:", newGroup);
+                // console.log("Header updated with new group:", newGroup);
             }
         };
         
@@ -248,7 +248,7 @@ function CustomHeader({
     // Set default month only once when component mounts
     useEffect(() => {
         const initialMonth = previousMonthYear;
-        console.log("Setting initial month:", initialMonth);
+        // console.log("Setting initial month:", initialMonth);
         
         if (!selectedMonth && dateOptions.includes(initialMonth)) {
             setSelectedMonth(initialMonth);
