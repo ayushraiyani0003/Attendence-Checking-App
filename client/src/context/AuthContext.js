@@ -170,6 +170,49 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // make it for continue on this device for fource login
+  // make a try catch request to the server for the fource login with the body pass the fourceLogin True
+  const forceLogin = async (username, password) => {
+    try {
+      const response = await axios.post(
+        `${API_URL}/auth/login`,
+        { username, password, forceLogin: true },
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+  
+      const { token, user, sessionId } = response.data;
+  
+      // Store token, user, and session ID in localStorage
+      localStorage.setItem('authToken', token);
+      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('sessionId', sessionId);
+  
+      // Store session ID in ref for later use
+      sessionIdRef.current = sessionId;
+  
+      // Set token for all future requests
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  
+      setUser(user);
+      setUserRole(user.role);
+  
+      // Ensure groupName is always an array
+      if (user.userReportingGroup && Array.isArray(user.userReportingGroup)) {
+        setGroupName(user.userReportingGroup);
+      } else {
+        setGroupName([]);
+      }
+  
+      setIsAuthenticated(true);
+  
+      return true;
+    } catch (error) {
+      console.error('Force login failed:', error.response?.data || error.message);
+      throw new Error(error.response?.data?.message || 'Force login failed');
+    }
+  };
+  
+
   const logout = async () => {
     try {
       // Notify server about logout
@@ -209,6 +252,7 @@ export const AuthProvider = ({ children }) => {
       groupName, 
       isAuthenticated, 
       login,
+      forceLogin,
       logout 
     }}>
       {children}

@@ -5,7 +5,7 @@ import sunchaserLogo from "../../assets/sunchaser original.png";
 import './LoginForm.css';
 
 // Updated InputField component with show/hide password functionality
-const InputField = ({ label, type, value, onChange, showPasswordToggle = false }) => {
+const InputField = ({ label, type, value, onChange, showPasswordToggle = false, }) => {
   const [showPassword, setShowPassword] = useState(false);
   
   const togglePasswordVisibility = () => {
@@ -40,7 +40,7 @@ const InputField = ({ label, type, value, onChange, showPasswordToggle = false }
   );
 };
 
-const LoginForm = ({ onLogin }) => {
+const LoginForm = ({ onLogin, onForceLogin }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -69,7 +69,7 @@ const LoginForm = ({ onLogin }) => {
   };
 
   const handleForceLogin = () => {
-    onLogin(username, password, true) // Force login
+    onForceLogin(username, password, true) // Force login
       .then(() => {
         setUsername('');
         setPassword('');

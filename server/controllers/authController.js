@@ -25,7 +25,7 @@ const generateDeviceId = (req) => {
 
 // User login handler
 const userLogin = async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, forceLogin } = req.body;
 
   if (!username || !password) {
     return res.status(400).json({ message: 'Username and password are required.' });
@@ -45,30 +45,36 @@ const userLogin = async (req, res) => {
     // Update last login timestamp
     await User.update({ last_login: new Date() }, { where: { id: user.id } });
 
-    // Generate device ID from request
     const deviceId = generateDeviceId(req);
-    
-    // Check if user is already logged in on another device
+
     const existingSession = await Session.findOne({
       where: {
         userId: user.id,
         isActive: true,
-        deviceId: { [Op.ne]: deviceId } // not equal to current device
+        deviceId: { [Op.ne]: deviceId } // Not this device
       }
     });
 
     if (existingSession) {
-      // Return an error message but don't force logout on other device
-      return res.status(409).json({
-        message: 'You are already logged in on another device',
-        alreadyLoggedIn: true
-      });
+      if (!forceLogin) {
+        // Don't allow login from this device if already logged in elsewhere
+        return res.status(409).json({
+          message: 'You are already logged in on another device',
+          alreadyLoggedIn: true
+        });
+      } else {
+        // Force login: deactivate all other sessions
+        await Session.update(
+          { isActive: false },
+          { where: { userId: user.id } }
+        );
+      }
     }
 
-    // Generate a new session ID
+    // Generate new session ID
     const sessionId = generateSessionId();
-    
-    // Create a new session
+
+    // Create new session
     await Session.create({
       userId: user.id,
       sessionId,
@@ -77,7 +83,7 @@ const userLogin = async (req, res) => {
       isActive: true
     });
 
-    // Generate JWT token with session info
+    // Generate JWT token
     const token = jwt.sign(
       { 
         userId: user.id, 
@@ -91,7 +97,7 @@ const userLogin = async (req, res) => {
       { expiresIn: '1d' }
     );
 
-    // Set cookie
+    // Set auth cookie
     res.cookie('authToken', token, {
       httpOnly: true,
       secure: false,
@@ -99,8 +105,8 @@ const userLogin = async (req, res) => {
       sameSite: 'None',
       path: '/'
     });
-    
-    // Return response with token and session ID
+
+    // Send success response
     return res.status(200).json({
       message: 'Login successful',
       token: token,
@@ -118,6 +124,7 @@ const userLogin = async (req, res) => {
     return res.status(500).json({ message: 'Something went wrong', error: error.message });
   }
 };
+
 
 const userLogout = async (req, res) => {
   try {

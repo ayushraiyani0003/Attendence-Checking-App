@@ -264,7 +264,7 @@ const App = () => {
 
 // Content component that uses AuthContext
 const AppContent = () => {
-    const { isAuthenticated, user, login } = useContext(AuthContext);
+    const { isAuthenticated, user, login, forceLogin } = useContext(AuthContext);
 
     return (
         <>
@@ -274,7 +274,7 @@ const AppContent = () => {
                 <Routes>
                     <Route
                         path="/login"
-                        element={<LogInPage onLogin={login} />}
+                        element={<LogInPage onLogin={login} onForceLogin={forceLogin} />}
                     />
                     <Route
                         path="*"

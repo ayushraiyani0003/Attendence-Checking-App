@@ -4,7 +4,8 @@ import { AuthContext } from '../context/AuthContext';
 const useAuth = () => {
   const { 
     isAuthenticated, 
-    login, 
+    login,
+    forceLogin,
     logout, 
     user,
     userRole,
@@ -14,6 +15,7 @@ const useAuth = () => {
   return {
     isAuthenticated,
     login,
+    forceLogin,
     logout,
     user,
     userRole,
