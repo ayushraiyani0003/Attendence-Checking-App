@@ -2,6 +2,7 @@ const ExcelJS = require('exceljs');
 const fs = require('fs');
 const path = require('path');
 const moment = require('moment');
+const dayjs = require('dayjs');
 
 /**
  * Generate site expense report based on various parameters
@@ -21,8 +22,8 @@ async function generateSiteExpenseReport(finalAttendanceData, metricsData, month
   const worksheet = workbook.addWorksheet('Site Expense Report');
 
   // Parse date range
-  const startDate = moment(dateRange[0]);
-  const endDate = moment(dateRange[1]);
+  const startDate = dayjs(dateRange[0]);
+  const endDate = dayjs(dateRange[1]);
 
   // Map for faster lookups
   const attendanceMap = createAttendanceMap(finalAttendanceData);
@@ -443,21 +444,22 @@ async function createEmptyReport(option, startDate, endDate, employeeType, workb
  */
 function generateDateHeaders(startDate, endDate) {
   const dateHeaders = [];
-  const dateToWeekdayMap = {}; // Add this map to track which dates are Wednesdays
-  const currentDate = startDate.clone();
+  const dateToWeekdayMap = {};
+  let currentDate = dayjs(startDate);
 
-  while (currentDate.isSameOrBefore(endDate)) {
+  while (currentDate.isSame(endDate) || currentDate.isBefore(endDate)) {
     const dateStr = currentDate.format('DD-MM');
     dateHeaders.push(dateStr);
-    
-    // Store day of week (0-6, where 0 is Sunday and 3 is Wednesday)
+
+    // 0 = Sunday, 3 = Wednesday
     dateToWeekdayMap[dateStr] = currentDate.day();
-    
-    currentDate.add(1, 'day');
+
+    currentDate = currentDate.add(1, 'day');
   }
 
   return { dateHeaders, dateToWeekdayMap };
 }
+
 
 /**
  * Setup worksheet headers based on options

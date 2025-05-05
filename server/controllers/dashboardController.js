@@ -187,13 +187,6 @@ exports.getDashboardReports = [
             const numericMonth = parseInt(month, 10);
             const numericYear = parseInt(year, 10);
 
-            dateRange[0] = moment(dateRange[0])
-                .add(1, "days")
-                .format("YYYY-MM-DD");
-            dateRange[1] = moment(dateRange[1])
-                .add(1, "days")
-                .format("YYYY-MM-DD");
-
             // Basic validation
             if (
                 isNaN(numericMonth) ||
