@@ -105,7 +105,7 @@ const processNewEmployeeAttendance = async (employeeId, reportingGroup) => {
       const redisAvailability = await checkDataAvailableInRedis(date, reportingGroup);
 
       // If data is available in Redis, add attendance to Redis as well
-      if (redisAvailability.available) {
+      if (redisAvailability.groups[reportingGroup]?.available) {
         const redisResult = await addAttendanceToRedis(
           employeeId,
           date,
