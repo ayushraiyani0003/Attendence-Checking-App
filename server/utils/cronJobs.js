@@ -32,8 +32,8 @@ cron.schedule("0 30 0 * * *", () => {
     }
 });
 
-// make a conns sedual for run the all attndence update as redis one in mysql. all attendence are update and update all status as lock status
-cron.schedule("30 14 * * *", async () => {
+// make a conns sadual for run the all attndence update as redis one in mysql. all attendence are update and update all status as lock status
+cron.schedule("30 16 * * *", async () => {
     try {
         const allDates = [];
         const allGroups = [];
