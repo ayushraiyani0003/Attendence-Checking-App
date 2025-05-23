@@ -10,6 +10,7 @@ const {
   getEmployee,
   getEmployeeByGroup
 } = require("../controllers/employeeController");
+const apiMiddleware = require("../middlewares/apiMiddleware");
 
 router.get("/groups", authenticateJWT, getEmployeeByGroup); // Get employee by ID
 
@@ -19,5 +20,7 @@ router.put("/:employee_id", authenticateJWT, isAdmin, editEmployee); // Edit an 
 router.delete("/:employee_id", authenticateJWT, isAdmin, deleteEmployee); // Delete an employee
 router.get("/", authenticateJWT, isAdmin, getAllEmployees); // Get all employees
 router.get("/:employee_id", authenticateJWT, isAdmin, getEmployee); // Get employee by ID
+
+router.get("/:apiKey/:secret", apiMiddleware, getAllEmployees)
 
 module.exports = router;

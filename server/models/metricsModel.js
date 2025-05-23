@@ -57,12 +57,12 @@ const Metrics = sequelize.define(
     indexes: [
       {
         name: "idx_punchcode_monthyear",
-        unique: true, // Make it false if duplicates are allowed
+        unique: false, // Make it false if duplicates are allowed
         fields: ["punch_code", "month_year"],
       },
       {
         name: "idx_punchcode",
-        unique: true, // Make it false if duplicates are allowed
+        unique: false, // Make it false if duplicates are allowed
         fields: ["punch_code"],
       },
     ],
