@@ -39,8 +39,10 @@ export const useReportSettings = (currentMonth) => {
         { name: "Net Hr", options: ["count", "hours", "remarks"] },
         { name: "OT Hr", options: ["count", "hours", "remarks"] },
         { name: "Site expence", options: ["count", "hours", "remarks"] },
-        { name: "Evening shift", options: ["count", "hours", "remarks"] },
-        { name: "Night shift", options: ["count", "hours", "remarks"] },
+        { name: "General Shift", options: ["count", "hours", "remarks"] },
+        { name: "First Shift", options: ["count", "hours", "remarks"] },
+        { name: "Second Shift", options: ["count", "hours", "remarks"] },
+        { name: "Third Shift", options: ["count", "hours", "remarks"] },
         { name: "Absent", options: ["count"] },
         {
             name: "Detailed Group Report",
@@ -133,6 +135,8 @@ export const useReportSettings = (currentMonth) => {
 
             // Format options as comma-separated string
             const options = selectedOptionsArray.join(",");
+            console.log("options " + options);
+            console.log(selectedOptionsArray);
 
             // Parse month and year
             const { month, year } = parseMonthYear();
@@ -142,51 +146,51 @@ export const useReportSettings = (currentMonth) => {
                 setIsLoading(false);
                 return;
             }
-// Create a copy of the date range with adjusted dates for the download
-// Create a copy of the date range array
-let adjustedDateRange = [...dateRange];
+            // Create a copy of the date range with adjusted dates for the download
+            // Create a copy of the date range array
+            let adjustedDateRange = [...dateRange];
 
-// Adjust the start date (first element in array)
-if (adjustedDateRange[0]) {
-    // Parse the date string and create a date object in UTC
-    const parsedDate = new Date(adjustedDateRange[0]);
-    // Create a new UTC date at 00:00:00 but add 1 day to fix the offset
-    const utcDate = new Date(
-        Date.UTC(
-            parsedDate.getUTCFullYear(),
-            parsedDate.getUTCMonth(),
-            parsedDate.getUTCDate() + 1, // Add 1 day to fix the date shift
-            0,
-            0,
-            0
-        )
-    );
-    adjustedDateRange[0] = utcDate.toISOString(); // Convert to ISO string format
-}
+            // Adjust the start date (first element in array)
+            if (adjustedDateRange[0]) {
+                // Parse the date string and create a date object in UTC
+                const parsedDate = new Date(adjustedDateRange[0]);
+                // Create a new UTC date at 00:00:00 but add 1 day to fix the offset
+                const utcDate = new Date(
+                    Date.UTC(
+                        parsedDate.getUTCFullYear(),
+                        parsedDate.getUTCMonth(),
+                        parsedDate.getUTCDate(), // Add 1 day to fix the date shift
+                        0,
+                        0,
+                        0
+                    )
+                );
+                adjustedDateRange[0] = utcDate.toISOString(); // Convert to ISO string format
+            }
 
-// Adjust the end date (second element in array)
-if (adjustedDateRange[1]) {
-    // Parse the date string and create a date object in UTC
-    const parsedDate = new Date(adjustedDateRange[1]);
-    // Create a new UTC date at 23:59:59 but add 1 day to fix the offset
-    const utcDate = new Date(
-        Date.UTC(
-            parsedDate.getUTCFullYear(),
-            parsedDate.getUTCMonth(),
-            parsedDate.getUTCDate() + 1, // Add 1 day to fix the date shift
-            23,
-            59,
-            59
-        )
-    );
-    adjustedDateRange[1] = utcDate.toISOString(); // Convert to ISO string format
-}
+            // Adjust the end date (second element in array)
+            if (adjustedDateRange[1]) {
+                // Parse the date string and create a date object in UTC
+                const parsedDate = new Date(adjustedDateRange[1]);
+                // Create a new UTC date at 23:59:59 but add 1 day to fix the offset
+                const utcDate = new Date(
+                    Date.UTC(
+                        parsedDate.getUTCFullYear(),
+                        parsedDate.getUTCMonth(),
+                        parsedDate.getUTCDate(), // Add 1 day to fix the date shift
+                        23,
+                        59,
+                        59
+                    )
+                );
+                adjustedDateRange[1] = utcDate.toISOString(); // Convert to ISO string format
+            }
 
-console.log("Original date range:", dateRange);
-console.log("Adjusted date range:", adjustedDateRange);
+            console.log("Original date range:", dateRange);
+            console.log("Adjusted date range:", adjustedDateRange);
 
-// Use adjustedDateRange for your API call to the server
-// Use adjustedDateRange for your API call to the server
+            // Use adjustedDateRange for your API call to the server
+            // Use adjustedDateRange for your API call to the server
 
             // Call the getReports service with the adjusted date range
             const result = await getReports(

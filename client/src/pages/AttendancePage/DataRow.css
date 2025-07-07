@@ -1,355 +1,369 @@
 /* Add these CSS styles to your stylesheet */
 /* Data Row Styling */
 .data-row {
-  min-width: max-content;
-  width: max-content;
-  display: flex;
-  flex: 0 0 auto;
-  transition: var(--transition);
-  border-radius: var(--border-radius);
-  background-color: white;
-  min-height: 50px;
-  box-sizing: border-box;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  border: 1px solid var(--gray-200);
-  border-left: 5px solid transparent;
+    min-width: max-content;
+    width: max-content;
+    display: flex;
+    flex: 0 0 auto;
+    transition: var(--transition);
+    border-radius: var(--border-radius);
+    background-color: white;
+    min-height: 50px;
+    box-sizing: border-box;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--gray-200);
+    border-left: 5px solid transparent;
 }
 
 .data-row.hovered,
 .data-row.hovered > .fixed-data-cells > div,
 .data-row.hovered > .scrollable-data-cells > div,
 .data-row.hovered > .total-data-cell {
-  background-color: #ecf8fff1 !important;
-  box-shadow: 0 2px 4px rgba(58, 134, 255, 0.15);
-  transform: translateY(-2px);
+    background-color: #ecf8fff1 !important;
+    box-shadow: 0 2px 4px rgba(58, 134, 255, 0.15);
+    transform: translateY(-2px);
 }
 
 /* Fixed data cells */
 .fixed-data-cells {
-  position: sticky;
-  display: flex;
-  min-width: 600px;
-  flex-shrink: 0;
-  position: s;
-  left: 0;
-  z-index: 1;
-  background: white;
-  border-radius: var(--border-radius) 0 0 var(--border-radius);
+    position: sticky;
+    display: flex;
+    min-width: 600px;
+    flex-shrink: 0;
+    position: s;
+    left: 0;
+    z-index: 1;
+    background: white;
+    border-radius: var(--border-radius) 0 0 var(--border-radius);
 }
 
 /* Scrollable data cells */
 .scrollable-data-cells {
-  display: flex;
-  flex: 1;
+    display: flex;
+    flex: 1;
 }
 
 .data-cell {
-  padding: 8px 15px;
-  text-align: center;
-  border-right: 1px solid var(--gray-300);
-  font-size: 14px;
-  white-space: nowrap;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--gray-800);
-  z-index: 0;
+    padding: 8px 15px;
+    text-align: center;
+    border-right: 1px solid var(--gray-300);
+    font-size: 14px;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gray-800);
+    z-index: 0;
 }
 
 .data-cell:hover {
-  background-color: var(--gray-100);
+    background-color: var(--gray-100);
 }
 
 .fixed-data-cells .data-cell {
-  left: 0;
-  z-index: 1;
-  background-color: white;
+    left: 0;
+    z-index: 1;
+    background-color: white;
 }
 
 /* Fixed data cell widths */
 .data-cell.punch-code {
-  min-width: 120px;
-  width: 120px;
+    min-width: 120px;
+    width: 120px;
 }
 
 .data-cell.name {
-  min-width: 240px;
-  width: 240px;
-  text-align: left;
-  justify-content: start;
+    min-width: 240px;
+    width: 240px;
+    text-align: left;
+    justify-content: start;
 }
 
 .data-cell.designation {
-  min-width: 140px;
-  width: 140px;
+    min-width: 140px;
+    width: 140px;
 }
 
 .data-cell.department {
-  min-width: 170px;
-  width: 170px;
+    min-width: 170px;
+    width: 170px;
 }
 
 .data-cell:last-child {
-  border-right: none;
+    border-right: none;
 }
 
 /* Date-cell Styling */
 .date-cell {
-  display: flex;
-  gap: 8px;
-  min-width: 232px;
-  width: 232px;
-  padding: 6px;
-  border-right: 1px solid var(--gray-300);
-  background-color: rgba(248, 249, 250, 0.5);
-  align-items: center;
-  justify-content: center;
-  transition: var(--transition);
-  border-radius: 4px;
+    display: flex;
+    gap: 8px;
+    min-width: 232px;
+    width: 232px;
+    padding: 6px;
+    border-right: 1px solid var(--gray-300);
+    background-color: rgba(248, 249, 250, 0.5);
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+    border-radius: 4px;
 }
 
 .total-date-cell {
-  display: flex;
+    display: flex;
 }
 
 .date-cell:last-child {
-  border-right: none;
+    border-right: none;
 }
 
 /* Sub-date-cell Styling (For Inputs) */
 .sub-date-cell {
-  flex: 1;
-  padding: 6px;
-  margin: 0;
-  text-align: center;
-  font-size: 14px;
-  background-color: white;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  border: 1px solid transparent;
-  transition: var(--transition);
+    flex: 1;
+    padding: 6px;
+    margin: 0;
+    text-align: center;
+    font-size: 14px;
+    background-color: white;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: var(--transition);
 }
 
 .Disply-total-sub-data-cell {
-  flex: 1;
-  gap: 5px;
-  text-align: center;
-  font-size: 14px;
-  background-color: white;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  border: 1px solid transparent;
-  transition: var(--transition);
+    flex: 1;
+    gap: 5px;
+    text-align: center;
+    font-size: 14px;
+    background-color: white;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: var(--transition);
 }
 
 .sub-date-cell input {
-  width: 100%;
-  height: 100%;
-  border: none;
-  background-color: transparent;
-  font-size: 14px;
-  text-align: center;
-  padding: 0;
-  margin: 0;
-  outline: none;
-  box-sizing: border-box;
-  color: var(--primary-color);
-  font-weight: 500;
+    width: 100%;
+    height: 100%;
+    border: none;
+    background-color: transparent;
+    font-size: 14px;
+    text-align: center;
+    padding: 0;
+    margin: 0;
+    outline: none;
+    box-sizing: border-box;
+    color: var(--primary-color);
+    font-weight: 500;
 }
 
 .total-data-cell {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  height: 100%;
-  border: none;
-  background-color: transparent;
-  font-size: 14px;
-  text-align: center;
-  padding: 0px 14px;
-  margin: 0;
-  outline: none;
-  box-sizing: border-box;
-  color: var(--primary-color);
-  font-weight: 500;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    border: none;
+    background-color: transparent;
+    font-size: 14px;
+    text-align: center;
+    padding: 0px 14px;
+    margin: 0;
+    outline: none;
+    box-sizing: border-box;
+    color: var(--primary-color);
+    font-weight: 500;
 }
 
 .sub-disply-total {
-  padding: 5px;
+    padding: 5px;
 }
 
 .total.sub-disply-total {
-  width: 70px;
+    width: 70px;
 }
 
 /* Hover effects */
 .date-cell:hover {
-  background-color: rgba(233, 236, 239, 0.8);
+    background-color: rgba(233, 236, 239, 0.8);
 }
 
 .sub-date-cell:hover {
-  background-color: #f0f7ff;
-  border-color: var(--primary-color);
+    background-color: #f0f7ff;
+    border-color: var(--primary-color);
 }
 
 /* Editable cell highlight */
 .sub-date-cell.editable,
 .sub-date-cell:has(input:focus) {
-  background-color: #f0f7ff;
-  border: 1px solid var(--primary-color);
-  box-shadow: 0 0 0 2px rgba(58, 134, 255, 0.2);
+    background-color: #f0f7ff;
+    border: 1px solid var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(58, 134, 255, 0.2);
 }
 
 /* Status indicators for attendance */
 .dnShift-Day {
-  background-color: rgba(6, 214, 160, 0.1);
-  color: var(--success-color);
-  font-weight: 500;
+    background-color: rgba(35, 138, 211, 0.1); /* muted blue-gray background */
+    color: #285a7e; /* solid muted blue-gray text */
+    font-weight: 500;
 }
 
 .dnShift-Night {
-  background-color: rgba(131, 56, 236, 0.1);
-  color: var(--secondary-color);
-  font-weight: 500;
+    background-color: rgba(89, 56, 236, 0.1);
+    color: var(--secondary-color);
+    font-weight: 500;
 }
 
-.dnShift-AfterNoon {
+/* .dnShift-AfterNoon {
   background-color: #ffcc9977;
   color: var(--after-noon);
   font-weight: 500;
+} */
+
+/*this is added by dhaval*/
+.dnShift-Evening {
+    background-color: #ffcc9977;
+    color: var(--after-noon);
+    font-weight: 500;
 }
 
+.dnShift-General {
+    background-color: rgba(6, 214, 16, 0.1);
+    color: var(--success-color);
+    font-weight: 500;
+}
+/*this is added by dhaval*/
+
 .exceeds-threshold {
-  background-color: rgba(255, 200, 200, 0.7) !important;
+    background-color: rgba(255, 200, 200, 0.7) !important;
 }
 
 .exceeds-threshold input {
-  background-color: rgba(255, 200, 200, 0.7) !important;
+    background-color: rgba(255, 200, 200, 0.7) !important;
 }
 
 /* Additional styles for comments */
 .gray-comment {
-  /* Add styling for cells with comments */
+    /* Add styling for cells with comments */
 }
 
 .site-comment {
-  /* Add styling for cells with site comments */
+    /* Add styling for cells with site comments */
 }
 
 .editable-cell {
-  /* Add styling for editable cells */
+    /* Add styling for editable cells */
 }
 
 /* Responsive styles for data rows */
 @media screen and (max-width: 1024px) {
-  .data-row {
-    min-height: 45px;
-  }
+    .data-row {
+        min-height: 45px;
+    }
 
-  .data-cell {
-    padding: 6px 12px;
-    font-size: 13px;
-  }
+    .data-cell {
+        padding: 6px 12px;
+        font-size: 13px;
+    }
 }
 
 @media screen and (max-width: 768px) {
-  .data-cell.punch-code {
-    min-width: 120px;
-    width: 120px;
-  }
+    .data-cell.punch-code {
+        min-width: 120px;
+        width: 120px;
+    }
 
-  .data-cell.name {
-    min-width: 140px;
-    width: 140px;
-  }
+    .data-cell.name {
+        min-width: 140px;
+        width: 140px;
+    }
 
-  .data-cell.designation,
-  .data-cell.department {
-    min-width: 120px;
-    width: 120px;
-  }
+    .data-cell.designation,
+    .data-cell.department {
+        min-width: 120px;
+        width: 120px;
+    }
 
-  .fixed-data-cells {
-    min-width: 380px;
-  }
+    .fixed-data-cells {
+        min-width: 380px;
+    }
 
-  .date-cell {
-    min-width: 200px;
-    width: 200px;
-    padding: 4px;
-    gap: 6px;
-  }
+    .date-cell {
+        min-width: 200px;
+        width: 200px;
+        padding: 4px;
+        gap: 6px;
+    }
 
-  .sub-date-cell {
-    padding: 4px;
-    font-size: 13px;
-  }
+    .sub-date-cell {
+        padding: 4px;
+        font-size: 13px;
+    }
 
-  .sub-date-cell input {
-    font-size: 13px;
-  }
+    .sub-date-cell input {
+        font-size: 13px;
+    }
 }
 
 @media screen and (max-width: 480px) {
-  .data-row {
-    min-height: 40px;
-  }
+    .data-row {
+        min-height: 40px;
+    }
 
-  .data-cell {
-    padding: 6px 8px;
-    font-size: 12px;
-  }
+    .data-cell {
+        padding: 6px 8px;
+        font-size: 12px;
+    }
 }
 
 @media (hover: none) {
-  /* Better touch targets for mobile */
-  .sub-date-cell {
-    min-height: 30px;
-  }
+    /* Better touch targets for mobile */
+    .sub-date-cell {
+        min-height: 30px;
+    }
 
-  .sub-date-cell:active {
-    background-color: #f0f7ff;
-    border-color: var(--primary-color);
-  }
+    .sub-date-cell:active {
+        background-color: #f0f7ff;
+        border-color: var(--primary-color);
+    }
 
-  .date-cell:active {
-    background-color: rgba(233, 236, 239, 0.8);
-  }
+    .date-cell:active {
+        background-color: rgba(233, 236, 239, 0.8);
+    }
 }
 
 @media screen and (max-width: 768px) and (orientation: landscape) {
-  .data-cell.name {
-    min-width: 130px;
-    width: 130px;
-  }
+    .data-cell.name {
+        min-width: 130px;
+        width: 130px;
+    }
 }
 
 @media screen and (min-width: 1600px) {
-  .data-cell {
-    font-size: 15px;
-  }
+    .data-cell {
+        font-size: 15px;
+    }
 }
 
 @media print {
-  .data-row {
-    page-break-inside: avoid;
-    break-inside: avoid;
-  }
+    .data-row {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
 
-  .fixed-data-cells {
-    position: static;
-    background: none;
-  }
+    .fixed-data-cells {
+        position: static;
+        background: none;
+    }
 
-  .data-cell {
-    border: 1px solid #ddd;
-  }
+    .data-cell {
+        border: 1px solid #ddd;
+    }
 }
 /* Style for the focused cell with border - only applied to current active cell */
 .focused-cell {
@@ -357,31 +371,31 @@
     box-shadow: 0 0 5px rgba(66, 153, 225, 0.5);
     z-index: 10;
     background-color: rgba(237, 242, 247, 0.7);
-  }
-  
-  /* Style for editable cells that are not currently focused */
-  .editable-cell {
+}
+
+/* Style for editable cells that are not currently focused */
+.editable-cell {
     cursor: pointer;
-  }
-  
-  /* Ensure cells have a minimum height and width */
-  .sub-date-cell {
+}
+
+/* Ensure cells have a minimum height and width */
+.sub-date-cell {
     min-height: 24px;
     min-width: 40px;
     position: relative;
-  }
-  
-  /* Style for input fields */
-  .sub-date-cell input {
+}
+
+/* Style for input fields */
+.sub-date-cell input {
     width: 100%;
     height: 100%;
     padding: 2px 4px;
     border: none;
     outline: none;
     background: #fff;
-  }
+}
 
-  /* Add these styles to your CSS file */
+/* Add these styles to your CSS file */
 
 /* Comment Modal Styles */
 .modal-overlay {
@@ -398,125 +412,125 @@
     /* These additional properties will help */
     pointer-events: auto; /* Ensures the overlay captures all pointer events */
 }
-  
-  /* Style for body when modal is open */
-  body.modal-open {
+
+/* Style for body when modal is open */
+body.modal-open {
     overflow: hidden; /* Prevents scrolling of background content */
-  }
-  
-  /* Comment modal container */
-  .comment-modal-container {
-      width: 500px;
+}
+
+/* Comment modal container */
+.comment-modal-container {
+    width: 500px;
 
     position: relative;
     z-index: 9999;
-  }
-  
-  /* Comment modal styles */
-  .comment-modal {
+}
+
+/* Comment modal styles */
+.comment-modal {
     background-color: white;
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     width: 800px;
     width: 90%;
-  }
-  
-  .comment-modal-header {
+}
+
+.comment-modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 12px 16px;
     border-bottom: 1px solid #eee;
-  }
-  
-  .comment-modal-header h3 {
+}
+
+.comment-modal-header h3 {
     margin: 0;
-  }
-  
-  .close-button {
+}
+
+.close-button {
     background: none;
     border: none;
     font-size: 24px;
     cursor: pointer;
     color: #666;
-  }
-  
-  .comment-modal-body {
+}
+
+.comment-modal-body {
     padding: 16px;
-  }
-  
-  .comment-info p {
+}
+
+.comment-info p {
     margin: 8px 0;
-  }
-  
-  .comment-input {
+}
+
+.comment-input {
     margin-top: 16px;
-  }
-  
-  .comment-input label {
+}
+
+.comment-input label {
     display: block;
     margin-bottom: 8px;
     font-weight: bold;
-  }
-  
-  .comment-input textarea {
+}
+
+.comment-input textarea {
     width: 100%;
     min-height: 100px;
     padding: 8px;
     border: 1px solid #ddd;
     border-radius: 4px;
     resize: vertical;
-  }
-  
-  .comment-modal-footer {
+}
+
+.comment-modal-footer {
     padding: 12px 16px;
     border-top: 1px solid #eee;
     text-align: right;
-  }
-  
-  .submit-button {
+}
+
+.submit-button {
     padding: 8px 16px;
     background-color: #4a90e2;
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-  }
-  
-  .submit-button:hover {
-    background-color: #357abD;
-  }
+}
 
-  .gray-comment {
+.submit-button:hover {
+    background-color: #357abd;
+}
+
+.gray-comment {
     background-color: #d2ebbcc0;
-  }
-  .site-comment {
+}
+.site-comment {
     background-color: #814c2869;
-  }
-  
-  .has-comments {
+}
+
+.has-comments {
     border-left: 5px solid #1890ff;
-  }
-  .bg-red-100{
+}
+.bg-red-100 {
     background-color: #f9d3d4;
     border-radius: 6px;
     font-size: 14px;
     color: #353535;
-  }
-  .total.sub-disply-total{
+}
+.total.sub-disply-total {
     padding: 7px 8px;
-  }
-.hoveredhas-comments, .data-row.hoveredhas-comments>.fixed-data-cells>div{
-  background-color: #f0f7ff;
+}
+.hoveredhas-comments,
+.data-row.hoveredhas-comments > .fixed-data-cells > div {
+    background-color: #f0f7ff;
 }
 
 .even-row {
-  background-color: rgba(240, 240, 240, 0.87) !important;
-  transition: background-color 0.2s ease;
+    background-color: rgba(240, 240, 240, 0.87) !important;
+    transition: background-color 0.2s ease;
 }
 
 .odd-row {
-  background-color: rgb(253, 253, 253) !important;
-  transition: background-color 0.2s ease;
+    background-color: rgb(253, 253, 253) !important;
+    transition: background-color 0.2s ease;
 }
-

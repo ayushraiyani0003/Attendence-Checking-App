@@ -134,8 +134,12 @@ const DataRow = memo(function DataRow(props) {
                             let formattedValue = currentValue;
                             if (field === "dnShift") {
                                 formattedValue = currentValue.toUpperCase();
-                                if (!["D", "N", "E"].includes(formattedValue)) {
-                                    formattedValue = "D";
+                                if (
+                                    !["1S", "2S", "3S", "GS"].includes(
+                                        formattedValue
+                                    )
+                                ) {
+                                    formattedValue = "GS";
                                 }
                             } else {
                                 if (isNaN(parseFloat(currentValue))) {
@@ -437,10 +441,12 @@ const DataRow = memo(function DataRow(props) {
                                 if (
                                     field === "dnShift" &&
                                     (!displayValue ||
-                                        !["E", "D", "N"].includes(displayValue))
+                                        !["1S", "2S", "3S", "GS"].includes(
+                                            displayValue
+                                        ))
                                 ) {
                                     handleChange(
-                                        { target: { value: "D" } },
+                                        { target: { value: "GS" } },
                                         field,
                                         originalIndex
                                     );
@@ -451,8 +457,10 @@ const DataRow = memo(function DataRow(props) {
                     ) : (
                         <div className={canEditThisCell ? "editable-cell" : ""}>
                             {field === "dnShift" &&
-                            ["D", "N", "E"].includes(cellValue?.toUpperCase())
-                                ? cellValue.charAt(0).toUpperCase()
+                            ["1S", "2S", "3S", "GS"].includes(
+                                cellValue?.toUpperCase()
+                            )
+                                ? cellValue.toUpperCase()
                                 : field === "dnShift"
                                 ? ""
                                 : cellValue}

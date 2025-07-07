@@ -3,7 +3,7 @@ const path = require("path");
 const fs = require("fs");
 const dayjs = require("dayjs");
 
-async function generateEveningShiftReport(
+async function generateGeneralShiftReport(
     finalAttendanceData,
     metricsData,
     numericMonth,
@@ -15,7 +15,7 @@ async function generateEveningShiftReport(
 ) {
     // Create new workbook and worksheet
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet("Second Shift Report");
+    const worksheet = workbook.addWorksheet("General Shift Report");
 
     // Parse date range
     const startDate = new Date(dateRange[0]);
@@ -41,14 +41,14 @@ async function generateEveningShiftReport(
         currentDate.setDate(currentDate.getDate() + 1);
     }
 
-    // Filter employees who have at least one Second shift in the date range
-    let eveningShiftEmployees = [];
+    // Filter employees who have at least one General shift in the date range
+    let generalShiftEmployees = [];
 
     // Filter attendance data based on employeeType and date range
     let filteredAttendanceData = finalAttendanceData.filter((record) => {
         const recordDate = new Date(record.attendance_date);
         return (
-            record.shift_type === "2S" &&
+            record.shift_type === "GS" &&
             recordDate >= startDate &&
             recordDate <= endDate
         );
@@ -71,6 +71,7 @@ async function generateEveningShiftReport(
                 );
                 return (
                     employeeDetail &&
+                    employeeDetail.dataValues?.status === "active" &&
                     metric.dataValues.punch_code ===
                         employeeDetail.dataValues.punch_code
                 );
@@ -128,8 +129,8 @@ async function generateEveningShiftReport(
         ...new Set(filteredAttendanceData.map((record) => record.employee_id)),
     ];
 
-    // Get employee details for these IDs
-    eveningShiftEmployees = employeeDetails.filter(
+    // Get employee details for these IDs (only active employees)
+    generalShiftEmployees = employeeDetails.filter(
         (emp) =>
             uniqueEmployeeIds.includes(emp.dataValues.employee_id) &&
             emp.dataValues.status === "active" // or whatever your active status value is
@@ -160,11 +161,11 @@ async function generateEveningShiftReport(
 
         if (options.includes("count") && !options.includes("remarks")) {
             headerRow.push(dateStr);
-            headerRow2.push("Second Shift Count");
+            headerRow2.push("General Shift Count");
         } else if (options.includes("count") && options.includes("remarks")) {
             headerRow.push(dateStr);
             headerRow.push("");
-            headerRow2.push("Second Shift Count");
+            headerRow2.push("General Shift Count");
             headerRow2.push("Comment");
         } else if (options.includes("hours") && !options.includes("remarks")) {
             headerRow.push(dateStr);
@@ -200,7 +201,7 @@ async function generateEveningShiftReport(
     }
 
     // Add main title row at the top
-    const reportTitle = `Second Shift Report (${headerStartDate} to ${headerEndDate})`;
+    const reportTitle = `General Shift Report (${headerStartDate} to ${headerEndDate})`;
     worksheet.addRow([reportTitle]);
 
     // Merge cells for the main title
@@ -265,7 +266,7 @@ async function generateEveningShiftReport(
     let grandTotalOtHr = 0;
 
     // Add employee rows
-    eveningShiftEmployees.forEach((employee, index) => {
+    generalShiftEmployees.forEach((employee, index) => {
         const employeeId = employee.dataValues.employee_id;
         const employeePunchCode = employee.dataValues.punch_code || "";
         const employeeName = employee.dataValues.name || "";
@@ -307,21 +308,21 @@ async function generateEveningShiftReport(
             let netHr = 0;
             let otHr = 0;
             let comment = "";
-            let hasEvening = 0;
+            let hasGeneralShift = 0;
             let isFaulty = false;
 
             if (attendanceRecord) {
                 netHr = attendanceRecord.network_hours || 0;
                 otHr = attendanceRecord.overtime_hours || 0;
                 comment = attendanceRecord.comment || "";
-                hasEvening = attendanceRecord.shift_type === "2S" ? 1 : 0;
+                hasGeneralShift = attendanceRecord.shift_type === "GS" ? 1 : 0;
 
                 // Calculate totals
                 employeeTotalNetHr += netHr;
                 employeeTotalOtHr += otHr;
                 totalsByDate[formattedDate].netHr += netHr;
                 totalsByDate[formattedDate].otHr += otHr;
-                totalsByDate[formattedDate].count += hasEvening;
+                totalsByDate[formattedDate].count += hasGeneralShift;
 
                 // Check if data is faulty
                 if (employeeMetrics) {
@@ -359,12 +360,12 @@ async function generateEveningShiftReport(
 
             // Add data based on options
             if (options.includes("count") && !options.includes("remarks")) {
-                rowData.push(hasEvening);
+                rowData.push(hasGeneralShift);
             } else if (
                 options.includes("count") &&
                 options.includes("remarks")
             ) {
-                rowData.push(hasEvening);
+                rowData.push(hasGeneralShift);
                 rowData.push(comment);
             } else if (
                 options.includes("hours") &&
@@ -384,18 +385,18 @@ async function generateEveningShiftReport(
 
         // Add employee totals
         if (options.includes("count") && !options.includes("hours")) {
-            // For count option, calculate the total number of second shifts
-            const totalEveningCount = dateArray.reduce((total, date) => {
+            // For count option, calculate the total number of general shifts
+            const totalGeneralShiftCount = dateArray.reduce((total, date) => {
                 const formattedDate = dayjs(date).format("YYYY-MM-DD");
                 const attendanceRecord = filteredAttendanceData.find(
                     (record) =>
                         record.employee_id === employeeId &&
                         record.attendance_date === formattedDate &&
-                        record.shift_type === "2S"
+                        record.shift_type === "GS"
                 );
                 return total + (attendanceRecord ? 1 : 0);
             }, 0);
-            rowData.push(totalEveningCount);
+            rowData.push(totalGeneralShiftCount);
         } else {
             rowData.push(employeeTotalNetHr);
             if (options.includes("hours")) {
@@ -417,18 +418,18 @@ async function generateEveningShiftReport(
     // Add Total row
     const totalRow = ["Total", "", "", "", "", ""];
 
-    // Calculate grand total of Second Shift counts
-    let grandTotalEveningCount = 0;
+    // Calculate grand total of general shift counts
+    let grandTotalGeneralShiftCount = 0;
 
     dateArray.forEach((date) => {
         const formattedDate = dayjs(date).format("YYYY-MM-DD");
 
         if (options.includes("count") && !options.includes("remarks")) {
             totalRow.push(totalsByDate[formattedDate].count);
-            grandTotalEveningCount += totalsByDate[formattedDate].count;
+            grandTotalGeneralShiftCount += totalsByDate[formattedDate].count;
         } else if (options.includes("count") && options.includes("remarks")) {
             totalRow.push(totalsByDate[formattedDate].count);
-            grandTotalEveningCount += totalsByDate[formattedDate].count;
+            grandTotalGeneralShiftCount += totalsByDate[formattedDate].count;
             totalRow.push("");
         } else if (options.includes("hours") && !options.includes("remarks")) {
             totalRow.push(totalsByDate[formattedDate].netHr);
@@ -445,7 +446,7 @@ async function generateEveningShiftReport(
 
     // Add grand totals
     if (options.includes("count") && !options.includes("hours")) {
-        totalRow.push(grandTotalEveningCount);
+        totalRow.push(grandTotalGeneralShiftCount);
     } else {
         totalRow.push(grandTotalNetHr);
         if (options.includes("hours")) {
@@ -640,9 +641,9 @@ async function generateEveningShiftReport(
     if (options.includes("hours")) {
         for (let i = 4; i < totalRowsCount; i++) {
             const employeeIdx = i - 4;
-            if (employeeIdx < eveningShiftEmployees.length) {
+            if (employeeIdx < generalShiftEmployees.length) {
                 const employeeId =
-                    eveningShiftEmployees[employeeIdx].dataValues.employee_id;
+                    generalShiftEmployees[employeeIdx].dataValues.employee_id;
 
                 for (let dateIdx = 0; dateIdx < dateArray.length; dateIdx++) {
                     const date = dateArray[dateIdx];
@@ -659,7 +660,7 @@ async function generateEveningShiftReport(
                     if (attendanceRecord) {
                         // Find metrics data for this employee
                         const employeeMetrics = metricsData.find((metric) => {
-                            const empDetail = eveningShiftEmployees.find(
+                            const empDetail = generalShiftEmployees.find(
                                 (emp) =>
                                     emp.dataValues.employee_id === employeeId
                             );
@@ -754,8 +755,8 @@ async function generateEveningShiftReport(
 
     const optionsStr = Array.isArray(options) ? options.join("_") : options;
 
-    // Generate filename in the format similar to "absent_report_All Employees_20250401_to_20250407.xlsx"
-    const reportType = "Second_shift_report";
+    // Generate filename in the format similar to "general_report_All Employees_20250401_to_20250407.xlsx"
+    const reportType = "general_report";
     const fileName = `${reportType}_${employeeType.replace(
         /\s+/g,
         "_"
@@ -769,9 +770,9 @@ async function generateEveningShiftReport(
         success: true,
         filepath: filePath,
         filename: fileName,
-        message: `Second Shift report generated successfully for employees.`,
+        message: `General shift report generated successfully for employees.`,
         type: "file", // Add this to indicate it's a file response
     };
 }
 
-module.exports = generateEveningShiftReport;
+module.exports = generateGeneralShiftReport;

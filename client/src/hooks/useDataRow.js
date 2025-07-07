@@ -525,16 +525,37 @@ const useDataRow = ({
                 }
             }
         } else if (column === "dnShift") {
-            // Handle day/night shift values - accept only E, D, N and convert to uppercase
-            value = value.toUpperCase();
-            if (value.length > 0) {
-                const lastChar = value.charAt(value.length - 1);
-                if (["E", "D", "N"].includes(lastChar)) {
-                    value = lastChar;
-                } else {
-                    value = "D"; // Default to D if invalid input
-                }
+            // Handle First/Third shift values - accept only 1S, 2S, 3S, GS and convert to uppercase
+            value = String(value).toUpperCase().trim();
+            console.log("Input value:", value);
+
+            // Convert legacy shift codes to new format
+            const shiftConversion = {
+                D: "1S", // First Shift
+                E: "2S", // Second Shift
+                N: "3S", // Third Shift
+                G: "GS", // General Shift
+            };
+
+            // Extract only the last typed character to determine the shift
+            const lastChar = value.slice(-1);
+            console.log("Last character:", lastChar);
+
+            if (["1", "2", "3"].includes(lastChar)) {
+                // User typed a number - convert to corresponding shift
+                value = lastChar + "S";
+            } else if (shiftConversion[lastChar]) {
+                // User typed a legacy shift code - convert it
+                value = shiftConversion[lastChar];
+            } else if (["1S", "2S", "3S", "GS"].includes(value)) {
+                // User typed complete valid shift code - keep as is
+                value = value;
+            } else {
+                // Invalid input - default to GS
+                value = "GS";
             }
+
+            console.log("Final value:", value);
         }
 
         // Update edit value
@@ -1019,8 +1040,12 @@ const useDataRow = ({
                         let formattedValue = currentValue;
                         if (field === "dnShift") {
                             formattedValue = currentValue.toUpperCase();
-                            if (!["D", "N", "E"].includes(formattedValue)) {
-                                formattedValue = "D"; // Default
+                            if (
+                                !["1S", "2S", "3S", "GS"].includes(
+                                    formattedValue
+                                )
+                            ) {
+                                formattedValue = "GS"; // Default
                             }
                         } else {
                             // For numeric fields

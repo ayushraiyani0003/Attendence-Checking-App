@@ -14,6 +14,8 @@ const {
     generateNightShiftReport,
     generateDetailedGroupReport,
     generateAbsentReport,
+    generateDayShiftReport,
+    generateGeneralShiftReport,
 } = require("../utils/report");
 
 // Get graph data for the dashboard
@@ -89,7 +91,37 @@ const getData = async (month, year) => {
         const reportingGroups = await db.ReportingGroup.findAll();
 
         // Get all employees
-        const employeeDetails = await getAllEmployeesService();
+        var employeeDetails = await getAllEmployeesService();
+
+        // Filter for active employees with exactly 6 characters
+        employeeDetails = employeeDetails.filter((employee) => {
+            console.log(
+                `Status: "${employee.status}", Length: ${employee.status?.length}
+                Name: ${employee.punch_code}
+                `
+                // employee
+                //Status: "resigned", Length: 8
+                // Name: 500
+                // this employee still display
+                // i need only active employee not other
+            );
+            return employee.status === "active" && employee.status.length === 6;
+        });
+
+        // Check what's left after filtering
+        console.log("Filtered employees:", employeeDetails.length);
+        console.log(
+            "Final statuses:",
+            employeeDetails.map((emp) => emp.status)
+        );
+
+        // disply in console.log
+        // ineed only details of the who have punch_code === 500
+        employeeDetails500 = employeeDetails.filter(
+            (employee) => employee.punch_code === "500"
+        );
+
+        console.log(employeeDetails500);
 
         // Extract group names for the desired array of strings
         const reportingGroupNames = reportingGroups.map(
@@ -182,6 +214,7 @@ exports.getDashboardReports = [
             // Get parameters from the request query
             let { month, year, reportType, options, dateRange, employeeType } =
                 req.query;
+            // console.log(req.query);
 
             // Convert to numbers to ensure proper handling
             const numericMonth = parseInt(month, 10);
@@ -291,7 +324,32 @@ exports.getDashboardReports = [
                     );
                     break;
 
-                case "Evening shift":
+                case "General Shift":
+                    reportData = await generateGeneralShiftReport(
+                        finalAttendanceData,
+                        metricsData,
+                        numericMonth,
+                        numericYear,
+                        options,
+                        dateRange,
+                        employeeType,
+                        employeeDetails
+                    );
+                    break;
+                case "First Shift":
+                    reportData = await generateDayShiftReport(
+                        finalAttendanceData,
+                        metricsData,
+                        numericMonth,
+                        numericYear,
+                        options,
+                        dateRange,
+                        employeeType,
+                        employeeDetails
+                    );
+                    break;
+
+                case "Second Shift":
                     reportData = await generateEveningShiftReport(
                         finalAttendanceData,
                         metricsData,
@@ -304,7 +362,7 @@ exports.getDashboardReports = [
                     );
                     break;
 
-                case "Night shift":
+                case "Third Shift":
                     reportData = await generateNightShiftReport(
                         finalAttendanceData,
                         metricsData,
@@ -349,12 +407,15 @@ exports.getDashboardReports = [
                         message: "Invalid report type",
                     });
             }
+            // console.log(reportData);
 
             // Check if the report generation was successful
             if (!reportData.success) {
                 return res.status(400).json({
                     success: false,
-                    message: reportData.message || "Error generating report",
+                    message:
+                        reportData.message ||
+                        "Error generating report my message",
                 });
             }
 
