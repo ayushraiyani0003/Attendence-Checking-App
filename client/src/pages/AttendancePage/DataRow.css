@@ -205,39 +205,56 @@
     border: 1px solid var(--primary-color);
     box-shadow: 0 0 0 2px rgba(58, 134, 255, 0.2);
 }
-
 /* Status indicators for attendance */
+
+/* Day Shift (DS) - Blue theme */
 .dnShift-Day {
-    background-color: rgba(35, 138, 211, 0.1); /* muted blue-gray background */
-    color: #285a7e; /* solid muted blue-gray text */
+    background-color: rgba(35, 138, 211, 0.1); /* light blue background */
+    color: #285a7e; /* dark blue text */
     font-weight: 500;
 }
 
+/* Night Shift (NS) - Purple theme */
 .dnShift-Night {
-    background-color: rgba(89, 56, 236, 0.1);
-    color: var(--secondary-color);
+    background-color: rgba(89, 56, 236, 0.1); /* light purple background */
+    color: #593ecc; /* dark purple text */
     font-weight: 500;
 }
 
-/* .dnShift-AfterNoon {
-  background-color: #ffcc9977;
-  color: var(--after-noon);
-  font-weight: 500;
-} */
-
-/*this is added by dhaval*/
+/* Evening Shift (ES) - Orange theme */
 .dnShift-Evening {
-    background-color: #ffcc9977;
-    color: var(--after-noon);
+    background-color: rgba(255, 165, 0, 0.1); /* light orange background */
+    color: #cc8400; /* dark orange text */
     font-weight: 500;
 }
 
+/* General Shift (GS) - Green theme */
 .dnShift-General {
-    background-color: rgba(6, 214, 16, 0.1);
-    color: var(--success-color);
+    background-color: rgba(6, 214, 16, 0.1); /* light green background */
+    color: #059212; /* dark green text */
     font-weight: 500;
 }
-/*this is added by dhaval*/
+
+/* First Shift (1S) - Teal theme */
+.dnShift-1S {
+    background-color: rgba(20, 184, 166, 0.1); /* light teal background */
+    color: #0d7377; /* dark teal text */
+    font-weight: 500;
+}
+
+/* Second Shift (2S) - Indigo theme */
+.dnShift-2S {
+    background-color: rgba(99, 102, 241, 0.1); /* light indigo background */
+    color: #4338ca; /* dark indigo text */
+    font-weight: 500;
+}
+
+/* Third Shift (3S) - Pink theme */
+.dnShift-3S {
+    background-color: rgba(236, 72, 153, 0.1); /* light pink background */
+    color: #be185d; /* dark pink text */
+    font-weight: 500;
+}
 
 .exceeds-threshold {
     background-color: rgba(255, 200, 200, 0.7) !important;

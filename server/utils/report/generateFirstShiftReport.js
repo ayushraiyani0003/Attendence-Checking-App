@@ -3,7 +3,7 @@ const path = require("path");
 const fs = require("fs");
 const dayjs = require("dayjs");
 
-async function generateDayShiftReport(
+async function generateFirstShiftReport(
     finalAttendanceData,
     metricsData,
     numericMonth,
@@ -15,7 +15,7 @@ async function generateDayShiftReport(
 ) {
     // Create new workbook and worksheet
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet("Day Shift Report");
+    const worksheet = workbook.addWorksheet("First Shift Report");
 
     // Parse date range
     const startDate = new Date(dateRange[0]);
@@ -41,14 +41,14 @@ async function generateDayShiftReport(
         currentDate.setDate(currentDate.getDate() + 1);
     }
 
-    // Filter employees who have at least one Day shift in the date range
-    let dayShiftEmployees = [];
+    // Filter employees who have at least one first shift in the date range
+    let firstShiftEmployees = [];
 
     // Filter attendance data based on employeeType and date range
     let filteredAttendanceData = finalAttendanceData.filter((record) => {
         const recordDate = new Date(record.attendance_date);
         return (
-            record.shift_type === "DS" &&
+            record.shift_type === "1S" &&
             recordDate >= startDate &&
             recordDate <= endDate
         );
@@ -129,7 +129,7 @@ async function generateDayShiftReport(
     ];
 
     // Get employee details for these IDs
-    dayShiftEmployees = employeeDetails.filter(
+    firstShiftEmployees = employeeDetails.filter(
         (emp) =>
             uniqueEmployeeIds.includes(emp.dataValues.employee_id) &&
             emp.dataValues.status === "active" // or whatever your active status value is
@@ -160,11 +160,11 @@ async function generateDayShiftReport(
 
         if (options.includes("count") && !options.includes("remarks")) {
             headerRow.push(dateStr);
-            headerRow2.push("Day Shift Count");
+            headerRow2.push("First Shift Count");
         } else if (options.includes("count") && options.includes("remarks")) {
             headerRow.push(dateStr);
             headerRow.push("");
-            headerRow2.push("Day Shift Count");
+            headerRow2.push("First Shift Count");
             headerRow2.push("Comment");
         } else if (options.includes("hours") && !options.includes("remarks")) {
             headerRow.push(dateStr);
@@ -200,7 +200,7 @@ async function generateDayShiftReport(
     }
 
     // Add main title row at the top
-    const reportTitle = `Day Shift Report (${headerStartDate} to ${headerEndDate})`;
+    const reportTitle = `First Shift Report (${headerStartDate} to ${headerEndDate})`;
     worksheet.addRow([reportTitle]);
 
     // Merge cells for the main title
@@ -265,7 +265,7 @@ async function generateDayShiftReport(
     let grandTotalOtHr = 0;
 
     // Add employee rows
-    dayShiftEmployees.forEach((employee, index) => {
+    firstShiftEmployees.forEach((employee, index) => {
         const employeeId = employee.dataValues.employee_id;
         const employeePunchCode = employee.dataValues.punch_code || "";
         const employeeName = employee.dataValues.name || "";
@@ -314,7 +314,7 @@ async function generateDayShiftReport(
                 netHr = attendanceRecord.network_hours || 0;
                 otHr = attendanceRecord.overtime_hours || 0;
                 comment = attendanceRecord.comment || "";
-                hasDay = attendanceRecord.shift_type === "DS" ? 1 : 0;
+                hasDay = attendanceRecord.shift_type === "1S" ? 1 : 0;
 
                 // Calculate totals
                 employeeTotalNetHr += netHr;
@@ -384,14 +384,14 @@ async function generateDayShiftReport(
 
         // Add employee totals
         if (options.includes("count") && !options.includes("hours")) {
-            // For count option, calculate the total number of day shifts
+            // For count option, calculate the total number of first shifts
             const totalDayCount = dateArray.reduce((total, date) => {
                 const formattedDate = dayjs(date).format("YYYY-MM-DD");
                 const attendanceRecord = filteredAttendanceData.find(
                     (record) =>
                         record.employee_id === employeeId &&
                         record.attendance_date === formattedDate &&
-                        record.shift_type === "DS"
+                        record.shift_type === "1S"
                 );
                 return total + (attendanceRecord ? 1 : 0);
             }, 0);
@@ -417,7 +417,7 @@ async function generateDayShiftReport(
     // Add Total row
     const totalRow = ["Total", "", "", "", "", ""];
 
-    // Calculate grand total of Day shift counts
+    // Calculate grand total of first shift counts
     let grandTotalDayCount = 0;
 
     dateArray.forEach((date) => {
@@ -640,9 +640,9 @@ async function generateDayShiftReport(
     if (options.includes("hours")) {
         for (let i = 4; i < totalRowsCount; i++) {
             const employeeIdx = i - 4;
-            if (employeeIdx < dayShiftEmployees.length) {
+            if (employeeIdx < firstShiftEmployees.length) {
                 const employeeId =
-                    dayShiftEmployees[employeeIdx].dataValues.employee_id;
+                    firstShiftEmployees[employeeIdx].dataValues.employee_id;
 
                 for (let dateIdx = 0; dateIdx < dateArray.length; dateIdx++) {
                     const date = dateArray[dateIdx];
@@ -659,7 +659,7 @@ async function generateDayShiftReport(
                     if (attendanceRecord) {
                         // Find metrics data for this employee
                         const employeeMetrics = metricsData.find((metric) => {
-                            const empDetail = dayShiftEmployees.find(
+                            const empDetail = firstShiftEmployees.find(
                                 (emp) =>
                                     emp.dataValues.employee_id === employeeId
                             );
@@ -754,8 +754,8 @@ async function generateDayShiftReport(
 
     const optionsStr = Array.isArray(options) ? options.join("_") : options;
 
-    // Generate filename in the format similar to "day_report_All Employees_20250401_to_20250407.xlsx"
-    const reportType = "day_report";
+    // Generate filename in the format similar to "first_report_All Employees_20250401_to_20250407.xlsx"
+    const reportType = "First_report";
     const fileName = `${reportType}_${employeeType.replace(
         /\s+/g,
         "_"
@@ -769,9 +769,9 @@ async function generateDayShiftReport(
         success: true,
         filepath: filePath,
         filename: fileName,
-        message: `Day shift report generated successfully for employees.`,
+        message: `First shift report generated successfully for employees.`,
         type: "file", // Add this to indicate it's a file response
     };
 }
 
-module.exports = generateDayShiftReport;
+module.exports = generateFirstShiftReport;

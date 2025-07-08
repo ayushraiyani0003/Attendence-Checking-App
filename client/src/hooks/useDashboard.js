@@ -38,7 +38,10 @@ export const useReportSettings = (currentMonth) => {
     const reportTypes = [
         { name: "Net Hr", options: ["count", "hours", "remarks"] },
         { name: "OT Hr", options: ["count", "hours", "remarks"] },
-        { name: "Site expence", options: ["count", "hours", "remarks"] },
+        { name: "Site expense", options: ["count", "hours", "remarks"] },
+        { name: "Day Shift", options: ["count", "hours", "remarks"] },
+        { name: "Evening Shift", options: ["count", "hours", "remarks"] },
+        { name: "Night Shift", options: ["count", "hours", "remarks"] },
         { name: "General Shift", options: ["count", "hours", "remarks"] },
         { name: "First Shift", options: ["count", "hours", "remarks"] },
         { name: "Second Shift", options: ["count", "hours", "remarks"] },
@@ -135,8 +138,6 @@ export const useReportSettings = (currentMonth) => {
 
             // Format options as comma-separated string
             const options = selectedOptionsArray.join(",");
-            console.log("options " + options);
-            console.log(selectedOptionsArray);
 
             // Parse month and year
             const { month, year } = parseMonthYear();
@@ -186,8 +187,8 @@ export const useReportSettings = (currentMonth) => {
                 adjustedDateRange[1] = utcDate.toISOString(); // Convert to ISO string format
             }
 
-            console.log("Original date range:", dateRange);
-            console.log("Adjusted date range:", adjustedDateRange);
+            // console.log("Original date range:", dateRange);
+            // console.log("Adjusted date range:", adjustedDateRange);
 
             // Use adjustedDateRange for your API call to the server
             // Use adjustedDateRange for your API call to the server

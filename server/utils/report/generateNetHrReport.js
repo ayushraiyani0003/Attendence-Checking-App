@@ -15,8 +15,8 @@ async function generateNetHrReport(
 ) {
     // Parse start and end dates with dayjs
     let startDate, endDate;
-    console.log(startDate);
-    console.log(endDate);
+    // console.log(startDate);
+    // console.log(endDate);
 
     try {
         // Check if dateRange contains date objects or strings

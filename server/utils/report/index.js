@@ -7,6 +7,9 @@ const generateAbsentReport = require("./generateAbsentReport");
 const generateDetailedGroupReport = require("./generateDetailedGroupReport");
 const generateDayShiftReport = require("./generateDayShiftReport");
 const generateGeneralShiftReport = require("./generateGeneralShiftReport");
+const generateFirstShiftReport = require("./generateFirstShiftReport");
+const generateSecondShiftReport = require("./generateSecondShiftReport");
+const generateThirdShiftReport = require("./generateThirdShiftReport");
 
 module.exports = {
     generateNetHrReport,
@@ -18,4 +21,7 @@ module.exports = {
     generateDetailedGroupReport,
     generateDayShiftReport,
     generateGeneralShiftReport,
+    generateFirstShiftReport,
+    generateSecondShiftReport,
+    generateThirdShiftReport,
 };

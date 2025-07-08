@@ -15,7 +15,7 @@ async function generateEveningShiftReport(
 ) {
     // Create new workbook and worksheet
     const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet("Second Shift Report");
+    const worksheet = workbook.addWorksheet("Evening Shift Report");
 
     // Parse date range
     const startDate = new Date(dateRange[0]);
@@ -41,14 +41,14 @@ async function generateEveningShiftReport(
         currentDate.setDate(currentDate.getDate() + 1);
     }
 
-    // Filter employees who have at least one Second shift in the date range
+    // Filter employees who have at least one evening shift in the date range
     let eveningShiftEmployees = [];
 
     // Filter attendance data based on employeeType and date range
     let filteredAttendanceData = finalAttendanceData.filter((record) => {
         const recordDate = new Date(record.attendance_date);
         return (
-            record.shift_type === "2S" &&
+            record.shift_type === "ES" &&
             recordDate >= startDate &&
             recordDate <= endDate
         );
@@ -160,11 +160,11 @@ async function generateEveningShiftReport(
 
         if (options.includes("count") && !options.includes("remarks")) {
             headerRow.push(dateStr);
-            headerRow2.push("Second Shift Count");
+            headerRow2.push("Evening Shift Count");
         } else if (options.includes("count") && options.includes("remarks")) {
             headerRow.push(dateStr);
             headerRow.push("");
-            headerRow2.push("Second Shift Count");
+            headerRow2.push("Evening Shift Count");
             headerRow2.push("Comment");
         } else if (options.includes("hours") && !options.includes("remarks")) {
             headerRow.push(dateStr);
@@ -200,7 +200,7 @@ async function generateEveningShiftReport(
     }
 
     // Add main title row at the top
-    const reportTitle = `Second Shift Report (${headerStartDate} to ${headerEndDate})`;
+    const reportTitle = `Evening Shift Report (${headerStartDate} to ${headerEndDate})`;
     worksheet.addRow([reportTitle]);
 
     // Merge cells for the main title
@@ -314,7 +314,7 @@ async function generateEveningShiftReport(
                 netHr = attendanceRecord.network_hours || 0;
                 otHr = attendanceRecord.overtime_hours || 0;
                 comment = attendanceRecord.comment || "";
-                hasEvening = attendanceRecord.shift_type === "2S" ? 1 : 0;
+                hasEvening = attendanceRecord.shift_type === "ES" ? 1 : 0;
 
                 // Calculate totals
                 employeeTotalNetHr += netHr;
@@ -384,14 +384,14 @@ async function generateEveningShiftReport(
 
         // Add employee totals
         if (options.includes("count") && !options.includes("hours")) {
-            // For count option, calculate the total number of second shifts
+            // For count option, calculate the total number of evening shifts
             const totalEveningCount = dateArray.reduce((total, date) => {
                 const formattedDate = dayjs(date).format("YYYY-MM-DD");
                 const attendanceRecord = filteredAttendanceData.find(
                     (record) =>
                         record.employee_id === employeeId &&
                         record.attendance_date === formattedDate &&
-                        record.shift_type === "2S"
+                        record.shift_type === "ES"
                 );
                 return total + (attendanceRecord ? 1 : 0);
             }, 0);
@@ -417,7 +417,7 @@ async function generateEveningShiftReport(
     // Add Total row
     const totalRow = ["Total", "", "", "", "", ""];
 
-    // Calculate grand total of Second Shift counts
+    // Calculate grand total of evening Shift counts
     let grandTotalEveningCount = 0;
 
     dateArray.forEach((date) => {
@@ -754,8 +754,8 @@ async function generateEveningShiftReport(
 
     const optionsStr = Array.isArray(options) ? options.join("_") : options;
 
-    // Generate filename in the format similar to "absent_report_All Employees_20250401_to_20250407.xlsx"
-    const reportType = "Second_shift_report";
+    // Generate filename in the format similar to "evening_shift_report_All Employees_20250401_to_20250407.xlsx"
+    const reportType = "Evening_shift_report";
     const fileName = `${reportType}_${employeeType.replace(
         /\s+/g,
         "_"
@@ -769,7 +769,7 @@ async function generateEveningShiftReport(
         success: true,
         filepath: filePath,
         filename: fileName,
-        message: `Second Shift report generated successfully for employees.`,
+        message: `Evening Shift report generated successfully for employees.`,
         type: "file", // Add this to indicate it's a file response
     };
 }

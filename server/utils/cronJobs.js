@@ -18,7 +18,7 @@ const Session = require("../models/session");
 
 // Cron job to generate attendance at 12:00 AM every day
 cron.schedule("0 30 0 * * *", () => {
-    console.log("Generating daily attendance...");
+    // console.log("Generating daily attendance...");
     try {
         generateDailyAttendance();
     } catch (error) {
@@ -47,9 +47,9 @@ cron.schedule("30 16 * * *", async () => {
 
         // Handle success
         if (result.success) {
-            console.log(
-                `${result.updatedRecords} records updated successfully.`
-            );
+            // console.log(
+            //     `${result.updatedRecords} records updated successfully.`
+            // );
 
             // Extract unique dates and groups
             redisAttData.forEach((item) => {
@@ -66,8 +66,8 @@ cron.schedule("30 16 * * *", async () => {
                 }
             });
 
-            console.log("All Dates:", allDates);
-            console.log("All Groups:", allGroups);
+            // console.log("All Dates:", allDates);
+            // console.log("All Groups:", allGroups);
 
             // Delete Redis keys for each date and group combination
             for (const date of allDates) {
@@ -85,7 +85,7 @@ cron.schedule("0 0 * * *", async () => {
     try {
         // console.log('Running daily session cleanup...');
         await Session.cleanupOldSessions();
-        console.log("Daily session cleanup completed");
+        // console.log("Daily session cleanup completed");
     } catch (error) {
         console.error("Error in daily session cleanup:", error);
     }
@@ -95,7 +95,7 @@ cron.schedule("0 0 * * *", async () => {
     try {
         // console.log('Running weekly session cleanup...');
         await Session.cleanupWeekOldSessions();
-        console.log("Weekly session cleanup completed");
+        // console.log("Weekly session cleanup completed");
     } catch (error) {
         console.error("Error in weekly session cleanup:", error);
     }
@@ -107,14 +107,14 @@ const logService = new AttendanceChangeLogService();
 // Format: '*/2 * * * *' means "every 2 minutes"
 cron.schedule("*/5 * * * *", async () => {
     try {
-        console.log("Running Redis to MySQL log sync...");
+        // console.log("Running Redis to MySQL log sync...");
 
         // Sync logs from Redis to MySQL (the service already handles duplicate prevention)
         const syncedCount = await logService.syncLogsFromRedis();
 
-        console.log(
-            `Redis to MySQL log sync completed. Synced ${syncedCount} new logs.`
-        );
+        // console.log(
+        //     `Redis to MySQL log sync completed. Synced ${syncedCount} new logs.`
+        // );
     } catch (error) {
         console.error("Error in Redis to MySQL log sync:", error);
     }
@@ -123,7 +123,7 @@ cron.schedule("*/5 * * * *", async () => {
 // Cron job to clean up Redis logs at midnight (0 0 * * *)
 cron.schedule("30 0 0 * * *", async () => {
     try {
-        console.log("Running Redis logs cleanup...");
+        // console.log("Running Redis logs cleanup...");
 
         // Get all logs from Redis
         const logsKey = logService.logsKey;
@@ -133,9 +133,9 @@ cron.schedule("30 0 0 * * *", async () => {
             const logs = JSON.parse(logsJson);
 
             if (logs.length > 0) {
-                console.log(
-                    `Found ${logs.length} logs in Redis before cleanup`
-                );
+                // console.log(
+                //     `Found ${logs.length} logs in Redis before cleanup`
+                // );
 
                 // Before deleting, ensure all logs are synced to MySQL
                 await logService.syncLogsFromRedis();
@@ -143,12 +143,12 @@ cron.schedule("30 0 0 * * *", async () => {
                 // Reset logs to empty array
                 await redisClient.set(logsKey, JSON.stringify([]));
 
-                console.log("Redis logs cleanup completed - All logs cleared");
+                // console.log("Redis logs cleanup completed - All logs cleared");
             } else {
-                console.log("No logs found in Redis to clean up");
+                // console.log("No logs found in Redis to clean up");
             }
         } else {
-            console.log("No logs key found in Redis");
+            // console.log("No logs key found in Redis");
         }
     } catch (error) {
         console.error("Error in Redis logs cleanup:", error);

@@ -16,6 +16,9 @@ const {
     generateAbsentReport,
     generateDayShiftReport,
     generateGeneralShiftReport,
+    generateFirstShiftReport,
+    generateSecondShiftReport,
+    generateThirdShiftReport,
 } = require("../utils/report");
 
 // Get graph data for the dashboard
@@ -77,9 +80,9 @@ const getData = async (month, year) => {
     const requestedDate = new Date(year, month - 1, 1);
 
     if (requestedDate > currentDate) {
-        console.log(
-            `Requested future date ${month}-${year}, returning empty data`
-        );
+        // //console.log(
+        //     `Requested future date ${month}-${year}, returning empty data`
+        // );
         return {
             warning: "Future date requested, no data available",
             mismatches: [],
@@ -95,25 +98,25 @@ const getData = async (month, year) => {
 
         // Filter for active employees with exactly 6 characters
         employeeDetails = employeeDetails.filter((employee) => {
-            console.log(
-                `Status: "${employee.status}", Length: ${employee.status?.length}
-                Name: ${employee.punch_code}
-                `
-                // employee
-                //Status: "resigned", Length: 8
-                // Name: 500
-                // this employee still display
-                // i need only active employee not other
-            );
+            // console.log(
+            //     `Status: "${employee.status}", Length: ${employee.status?.length}
+            //     Name: ${employee.punch_code}
+            //     `
+            //     // employee
+            //     //Status: "resigned", Length: 8
+            //     // Name: 500
+            //     // this employee still display
+            //     // i need only active employee not other
+            // );
             return employee.status === "active" && employee.status.length === 6;
         });
 
         // Check what's left after filtering
-        console.log("Filtered employees:", employeeDetails.length);
-        console.log(
-            "Final statuses:",
-            employeeDetails.map((emp) => emp.status)
-        );
+        // console.log("Filtered employees:", employeeDetails.length);
+        // console.log(
+        //     "Final statuses:",
+        //     employeeDetails.map((emp) => emp.status)
+        // );
 
         // disply in console.log
         // ineed only details of the who have punch_code === 500
@@ -121,7 +124,7 @@ const getData = async (month, year) => {
             (employee) => employee.punch_code === "500"
         );
 
-        console.log(employeeDetails500);
+        // console.log(employeeDetails500);
 
         // Extract group names for the desired array of strings
         const reportingGroupNames = reportingGroups.map(
@@ -150,9 +153,9 @@ const getData = async (month, year) => {
 
         // If both data sources are empty, return early
         if (!attendanceData.length && (!redisData || !redisData.length)) {
-            console.log(
-                `No attendance data available for ${month}-${year} from either source`
-            );
+            // // console.log(
+            //     `No attendance data available for ${month}-${year} from either source`
+            // );
             return { warning: "No attendance data available", mismatches: [] };
         }
 
@@ -311,7 +314,7 @@ exports.getDashboardReports = [
                     );
                     break;
 
-                case "Site expence":
+                case "Site expense":
                     reportData = await generateSiteExpenseReport(
                         finalAttendanceData,
                         metricsData,
@@ -337,7 +340,7 @@ exports.getDashboardReports = [
                     );
                     break;
                 case "First Shift":
-                    reportData = await generateDayShiftReport(
+                    reportData = await generateFirstShiftReport(
                         finalAttendanceData,
                         metricsData,
                         numericMonth,
@@ -350,7 +353,7 @@ exports.getDashboardReports = [
                     break;
 
                 case "Second Shift":
-                    reportData = await generateEveningShiftReport(
+                    reportData = await generateSecondShiftReport(
                         finalAttendanceData,
                         metricsData,
                         numericMonth,
@@ -363,7 +366,7 @@ exports.getDashboardReports = [
                     break;
 
                 case "Third Shift":
-                    reportData = await generateNightShiftReport(
+                    reportData = await generateThirdShiftReport(
                         finalAttendanceData,
                         metricsData,
                         numericMonth,
@@ -375,6 +378,44 @@ exports.getDashboardReports = [
                     );
                     break;
 
+                case "Day Shift":
+                    reportData = await generateDayShiftReport(
+                        finalAttendanceData,
+                        metricsData,
+                        numericMonth,
+                        numericYear,
+                        options,
+                        dateRange,
+                        employeeType,
+                        employeeDetails
+                    );
+                    break;
+
+                case "Evening Shift":
+                    reportData = await generateEveningShiftReport(
+                        finalAttendanceData,
+                        metricsData,
+                        numericMonth,
+                        numericYear,
+                        options,
+                        dateRange,
+                        employeeType,
+                        employeeDetails
+                    );
+                    break;
+
+                case "Night Shift":
+                    reportData = await generateNightShiftReport(
+                        finalAttendanceData,
+                        metricsData,
+                        numericMonth,
+                        numericYear,
+                        options,
+                        dateRange,
+                        employeeType,
+                        employeeDetails
+                    );
+                    break;
                 case "Absent":
                     reportData = await generateAbsentReport(
                         finalAttendanceData,

@@ -135,9 +135,15 @@ const DataRow = memo(function DataRow(props) {
                             if (field === "dnShift") {
                                 formattedValue = currentValue.toUpperCase();
                                 if (
-                                    !["1S", "2S", "3S", "GS"].includes(
-                                        formattedValue
-                                    )
+                                    ![
+                                        "1S",
+                                        "2S",
+                                        "3S",
+                                        "GS",
+                                        "DS",
+                                        "NS",
+                                        "ES",
+                                    ].includes(formattedValue)
                                 ) {
                                     formattedValue = "GS";
                                 }
@@ -254,8 +260,8 @@ const DataRow = memo(function DataRow(props) {
 
     // Updated mouse enter handler - show popup on hover only if no popup is currently open
     const handleMouseEnter = useCallback(() => {
-        console.log("handleMouseEnter called");
-        console.log(popupOpen);
+        //console.log("handleMouseEnter called");
+        //console.log(popupOpen);
 
         // Only show comment popup on hover if no popup is currently open AND this row has comments
         if (!popupOpen && hasAnyComments()) {
@@ -441,9 +447,15 @@ const DataRow = memo(function DataRow(props) {
                                 if (
                                     field === "dnShift" &&
                                     (!displayValue ||
-                                        !["1S", "2S", "3S", "GS"].includes(
-                                            displayValue
-                                        ))
+                                        ![
+                                            "1S",
+                                            "2S",
+                                            "3S",
+                                            "GS",
+                                            "DS",
+                                            "NS",
+                                            "ES",
+                                        ].includes(displayValue))
                                 ) {
                                     handleChange(
                                         { target: { value: "GS" } },
@@ -457,7 +469,7 @@ const DataRow = memo(function DataRow(props) {
                     ) : (
                         <div className={canEditThisCell ? "editable-cell" : ""}>
                             {field === "dnShift" &&
-                            ["1S", "2S", "3S", "GS"].includes(
+                            ["1S", "2S", "3S", "GS", "DS", "NS", "ES"].includes(
                                 cellValue?.toUpperCase()
                             )
                                 ? cellValue.toUpperCase()

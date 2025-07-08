@@ -99,14 +99,23 @@ export const formatValue = (value, column) => {
 // };
 
 export const getShiftClass = (shift) => {
-    console.log(shift);
+    // console.log(shift);
 
     if (!shift) return "";
+
     const upperShift = shift.toUpperCase();
-    if (upperShift === "1S") return "dnShift-Day";
-    if (upperShift === "2S") return "dnShift-Evening";
-    if (upperShift === "3S") return "dnShift-Night";
+
+    // Handle numbered shifts (1S, 2S, 3S)
+    if (upperShift === "1S") return "dnShift-1S";
+    if (upperShift === "2S") return "dnShift-2S";
+    if (upperShift === "3S") return "dnShift-3S";
+
+    // Handle named shifts
+    if (upperShift === "DS") return "dnShift-Day";
+    if (upperShift === "ES") return "dnShift-Evening";
+    if (upperShift === "NS") return "dnShift-Night";
     if (upperShift === "GS") return "dnShift-General";
+
     return "";
 };
 

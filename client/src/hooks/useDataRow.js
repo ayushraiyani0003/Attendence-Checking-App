@@ -499,7 +499,7 @@ const useDataRow = ({
                             attendanceRecord.date.split("/");
                         const dateObj = new Date(year, month - 1, day);
                         const isWednesday = dateObj.getDay() === 3; // 0 is Sunday, 3 is Wednesday
-                        console.log(isWednesday);
+                        //console.log(isWednesday);
 
                         if (isWednesday) {
                             // For Wednesdays, allow up to 24 hours for both netHR and otHR
@@ -525,21 +525,23 @@ const useDataRow = ({
                 }
             }
         } else if (column === "dnShift") {
-            // Handle First/Third shift values - accept only 1S, 2S, 3S, GS and convert to uppercase
+            // Handle shift values - accept D, N, E, 1S, 2S, 3S, GS, DS, NS, ES and convert to uppercase
             value = String(value).toUpperCase().trim();
-            console.log("Input value:", value);
 
             // Convert legacy shift codes to new format
             const shiftConversion = {
-                D: "1S", // First Shift
-                E: "2S", // Second Shift
-                N: "3S", // Third Shift
+                D: "DS", // Day Shift
+                N: "NS", // Night Shift
+                E: "ES", // Evening Shift
                 G: "GS", // General Shift
+                1: "1S", // First Shift
+                2: "2S", // Second Shift
+                3: "3S", // Third Shift
             };
 
             // Extract only the last typed character to determine the shift
             const lastChar = value.slice(-1);
-            console.log("Last character:", lastChar);
+            //console.log("Last character:", lastChar);
 
             if (["1", "2", "3"].includes(lastChar)) {
                 // User typed a number - convert to corresponding shift
@@ -547,7 +549,9 @@ const useDataRow = ({
             } else if (shiftConversion[lastChar]) {
                 // User typed a legacy shift code - convert it
                 value = shiftConversion[lastChar];
-            } else if (["1S", "2S", "3S", "GS"].includes(value)) {
+            } else if (
+                ["1S", "2S", "3S", "GS", "DS", "NS", "ES"].includes(value)
+            ) {
                 // User typed complete valid shift code - keep as is
                 value = value;
             } else {
@@ -555,7 +559,7 @@ const useDataRow = ({
                 value = "GS";
             }
 
-            console.log("Final value:", value);
+            // console.log("Final value:", value);
         }
 
         // Update edit value
@@ -1041,9 +1045,15 @@ const useDataRow = ({
                         if (field === "dnShift") {
                             formattedValue = currentValue.toUpperCase();
                             if (
-                                !["1S", "2S", "3S", "GS"].includes(
-                                    formattedValue
-                                )
+                                ![
+                                    "1S",
+                                    "2S",
+                                    "3S",
+                                    "GS",
+                                    "DS",
+                                    "NS",
+                                    "ES",
+                                ].includes(formattedValue)
                             ) {
                                 formattedValue = "GS"; // Default
                             }
