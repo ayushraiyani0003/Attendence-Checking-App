@@ -307,7 +307,7 @@ const makeAttendenceKeyRedis = (mysqlAttendanceData) => {
                 const redisData = records.map((record) => ({
                     employee_id: record.employee_id,
                     attendance_date: record.attendance_date,
-                    shift_type: record.shift_type || "D",
+                    shift_type: record.shift_type || "GS",
                     network_hours: record.network_hours || 0,
                     overtime_hours: record.overtime_hours || 0,
                     comment: record.comment || "",
@@ -524,7 +524,7 @@ function formatDate(dateString) {
 const getAttendanceFromRedis = async (date, reportingGroup) => {
     try {
         // Ensure that `date` is formatted correctly
-        const formattedDate = formatDate(date);  // Make sure 'date' is a string like "YYYY-MM-DD"
+        const formattedDate = formatDate(date); // Make sure 'date' is a string like "YYYY-MM-DD"
         const key = `attendance:${reportingGroup}:${formattedDate}`;
 
         // Get data from Redis
@@ -569,7 +569,10 @@ const addAttendanceToRedis = async (
         const key = `attendance:${reportingGroup}:${formattedDate}`;
 
         // Get existing data
-        const existingDataResult = await getAttendanceFromRedis(date, reportingGroup);
+        const existingDataResult = await getAttendanceFromRedis(
+            date,
+            reportingGroup
+        );
         let existingData = [];
 
         if (existingDataResult.success) {
