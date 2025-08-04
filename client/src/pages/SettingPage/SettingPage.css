@@ -1,6 +1,8 @@
 .user-list-page {
     margin-top: 25px;
     padding: 1.5rem;
+    overflow: scroll;
+    height: 99vh;
     /* background-color: var(--secondary-color); */
 }
 
