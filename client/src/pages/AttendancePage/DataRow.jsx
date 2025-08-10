@@ -563,6 +563,13 @@ const DataRow = memo(function DataRow(props) {
                 >
                     {row.department}
                 </div>
+                <div
+                    className={`data-cell division ${
+                        rowIndex % 2 === 0 ? "even-row" : "odd-row"
+                    }`}
+                >
+                    {row.division}
+                </div>
             </div>
 
             <div className="scrollable-data-cells" id="body-scrollable">

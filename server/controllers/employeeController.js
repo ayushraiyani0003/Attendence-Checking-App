@@ -95,8 +95,6 @@ const editEmployee = async (req, res) => {
             sections,
         } = req.body;
 
-        console.log(req.body);
-
         // Validate required fields (mobile_no and whatsApp_no are now optional)
         if (
             !name ||

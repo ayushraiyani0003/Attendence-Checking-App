@@ -117,6 +117,7 @@ const AttendanceHeader = React.memo(
                 { key: "name", label: "Name" },
                 { key: "designation", label: "Designation" },
                 { key: "department", label: "Department" },
+                { key: "division", label: "Division" },
             ];
 
             return headers.map((header) => (
